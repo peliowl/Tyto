@@ -195,3 +195,229 @@ Tyto 是一个基于 PySide6 的现代化 UI 组件库，采用原子设计（At
 1. THE Gallery SHALL 提供一个独立的 PySide6 应用程序，展示所有已实现组件的实时预览
 2. THE Gallery SHALL 提供主题切换功能，允许在 Light 和 Dark 模式间实时切换以预览效果
 3. THE Gallery SHALL 为每个组件提供独立的展示区域，包含不同状态和配置的示例
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.0.1
+
+## 简介
+
+V1.0.1 版本聚焦于 Gallery 预览画廊的全面重构，采用 MVVM 架构模式，将原有的单文件 Gallery 拆分为模块化、可扩展的结构。新版 Gallery 提供左侧分类导航菜单和右侧组件特性展示面板，提升开发者的组件浏览和测试体验。
+
+## 术语表
+
+- **MVVM**：Model-View-ViewModel 架构模式，将数据模型、视图展示和业务逻辑分离
+- **ViewModel**：视图模型，负责管理视图状态和业务逻辑，连接 Model 与 View
+- **NavigationMenu**：左侧导航菜单，按原子/分子/有机体分类展示所有组件
+- **ComponentShowcase**：右侧组件展示面板，展示选中组件的所有特性示例
+- **ShowcaseSection**：展示区块，对应组件的一个特性维度（如基础用法、形状、尺寸、禁用等）
+
+## 需求
+
+### 需求 16：Gallery MVVM 架构重构
+
+**用户故事：** 作为一名开发者，我希望 Gallery 采用 MVVM 架构进行模块化重构，以便代码结构清晰、易于维护和扩展新组件。
+
+#### 验收标准
+
+1. THE Gallery SHALL 采用 MVVM 架构模式，将视图（View）、视图模型（ViewModel）和数据模型（Model）分离到独立模块中
+2. THE Gallery SHALL 将代码组织为 `examples/gallery/` 目录结构，包含 models/、viewmodels/、views/、styles/ 子模块
+3. THE Gallery 的入口 SHALL 保持为 `examples/gallery.py`，内部委托给 `examples/gallery/` 包启动
+4. WHEN 新增一个组件时，开发者 SHALL 仅需添加一个 Showcase 模块并在注册表中注册，无需修改 Gallery 框架代码
+
+### 需求 17：Gallery 左侧导航菜单
+
+**用户故事：** 作为一名开发者，我希望 Gallery 左侧有一个分类导航菜单，以便快速定位和切换到目标组件的展示页面。
+
+#### 验收标准
+
+1. THE NavigationMenu SHALL 显示三个一级分类菜单项：原子组件（Atoms）、分子组件（Molecules）、有机体组件（Organisms）
+2. WHEN 用户展开某个分类时，THE NavigationMenu SHALL 列出该分类下的所有已注册组件名称
+3. THE NavigationMenu SHALL 高亮显示当前选中的组件项
+4. WHEN 用户点击某个组件项时，THE NavigationMenu SHALL 通知 ViewModel 更新当前选中组件
+5. THE NavigationMenu 的组件列表 SHALL 自动从组件注册表中获取，无需硬编码
+
+### 需求 18：Gallery 右侧组件展示面板
+
+**用户故事：** 作为一名开发者，我希望选中组件后右侧展示该组件的所有特性示例，以便全面了解组件的功能和外观。
+
+#### 验收标准
+
+1. WHEN 用户在左侧菜单选中一个组件时，THE ComponentShowcase SHALL 在右侧面板展示该组件的所有特性区块
+2. THE ComponentShowcase SHALL 为每个组件提供多个 ShowcaseSection，至少包含：基础用法（Basic Usage）
+3. THE ComponentShowcase SHALL 根据组件特性动态展示相关区块，例如：
+   - Button：基础用法、类型、加载状态、禁用状态
+   - Checkbox：基础用法、三态展示
+   - Switch：基础用法、禁用状态
+   - Tag：基础用法、颜色类型、尺寸、可关闭
+   - Input：基础用法、可清空、密码模式
+   - Radio：基础用法、分组互斥
+   - SearchBar：基础用法、可清空
+   - Breadcrumb：基础用法、自定义分隔符
+   - InputGroup：基础用法
+   - Message：基础用法（触发各类型消息）
+   - Modal：基础用法（打开/关闭对话框）
+4. EACH ShowcaseSection SHALL 包含标题、描述文字和组件实例展示区域
+5. THE ComponentShowcase SHALL 支持垂直滚动以容纳所有特性区块
+
+### 需求 19：Gallery 主题切换保持
+
+**用户故事：** 作为一名开发者，我希望重构后的 Gallery 仍然支持 Light/Dark 主题实时切换。
+
+#### 验收标准
+
+1. THE Gallery SHALL 在顶部栏保留主题切换开关（TSwitch）
+2. WHEN 用户切换主题时，THE Gallery 的所有区域（导航菜单、展示面板、顶部栏）SHALL 同步更新为对应主题样式
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.0.1 - Bug 修复
+
+## 简介
+
+V1.0.1 Bug 修复版本聚焦于解决 V1.0.0 中发现的组件样式渲染和交互逻辑缺陷。涉及 Button、Input、Tag、SearchBar 和 Message 五个组件，主要问题集中在 QSS 动态属性选择器未生效、清空按钮布局错位、Tag 关闭功能缺失以及 Message 弹出位置和样式异常。
+
+## 需求
+
+### 需求 20：Button 类型样式修复
+
+**用户故事：** 作为一名开发者，我希望不同类型的按钮能正确显示对应的边框效果和背景颜色，以便用户能直观区分按钮的功能层级。
+
+#### 验收标准
+
+1. WHEN TButton 的 button_type 为 PRIMARY 时，THE Button SHALL 显示绿色背景（`colors.primary`）和对应边框
+2. WHEN TButton 的 button_type 为 DASHED 时，THE Button SHALL 显示虚线边框
+3. WHEN TButton 的 button_type 为 TEXT 时，THE Button SHALL 显示透明背景且无边框
+4. WHEN TButton 的 button_type 为 DEFAULT 时，THE Button SHALL 显示白色背景和实线边框
+5. THE Button 的 QSS 动态属性选择器（`[buttonType="xxx"]`）SHALL 在组件创建后立即生效，无需额外操作
+
+### 需求 21：Input 清空按钮位置修复
+
+**用户故事：** 作为一名开发者，我希望输入框的清空按钮显示在输入框内部靠右边界处，而不是输入框外部，以保持视觉一致性。
+
+#### 验收标准
+
+1. WHEN TInput 的 clearable 属性为 True 且输入框内有文本时，THE 清空按钮 SHALL 显示在 QLineEdit 内部的右侧区域
+2. THE 清空按钮 SHALL 不超出 QLineEdit 的边框范围
+3. WHEN 用户点击清空按钮时，THE Input SHALL 正常清空文本并发射 cleared 信号（功能不变）
+
+### 需求 22：Tag 样式与交互修复
+
+**用户故事：** 作为一名开发者，我希望标签组件能正确显示不同类型的边框和背景颜色，并且关闭按钮能正常工作，以便标签组件可用于实际业务场景。
+
+#### 验收标准
+
+1. WHEN TTag 的 tag_type 为 PRIMARY/SUCCESS/WARNING/ERROR 时，THE Tag SHALL 显示对应的背景颜色和边框颜色
+2. WHEN TTag 的 tag_type 为 DEFAULT 时，THE Tag SHALL 显示默认背景色和边框
+3. THE Tag 的 QSS 动态属性选择器（`[tagType="xxx"]`）SHALL 在组件创建后立即生效
+4. THE Tag SHALL 始终显示可见的边框和背景颜色，以便用户能清晰辨识标签的尺寸和边界
+5. WHEN TTag 的 closable 属性为 True 且用户点击关闭按钮时，THE Tag SHALL 从界面中隐藏或删除自身
+
+### 需求 23：SearchBar 清空按钮位置修复
+
+**用户故事：** 作为一名开发者，我希望搜索栏内部输入框的清空按钮位置正确，与 Input 组件的修复保持一致。
+
+#### 验收标准
+
+1. THE SearchBar 内部的 TInput 组件 SHALL 遵循需求 21 的清空按钮位置规则
+2. THE 清空按钮 SHALL 显示在搜索输入框内部的右侧区域，不超出输入框边框
+
+### 需求 24：Message 组件综合修复
+
+**用户故事：** 作为一名开发者，我希望全局提示消息能在正确的位置显示、具有可见的背景色和边框，并且触发按钮样式正常，以便提供良好的用户反馈体验。
+
+#### 验收标准
+
+1. WHEN Message 被触发时，THE Message SHALL 显示在其所属窗口的顶部水平居中位置（相对于窗口而非屏幕）
+2. THE Message SHALL 具有可见的背景色（`colors.bg_default`）和边框（`colors.border`），不因透明背景属性而丢失样式
+3. THE Message 展示面板中的触发按钮 SHALL 正确显示对应的边框效果和背景颜色（与需求 20 的 Button 修复一致）
+4. WHEN 多条 Message 同时显示时，THE Message_Manager SHALL 确保所有消息在窗口顶部居中堆叠，位置计算正确
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.0.1 - Dark 模式颜色修复
+
+## 简介
+
+V1.0.1 Dark 模式修复版本聚焦于解决在 "dark" 主题下，多个组件和 Gallery 界面元素的颜色显示异常问题。涉及 Button、Input、Switch、Tag、SearchBar 等组件的背景色、文本颜色、边框颜色在 dark 模式下与 NaiveUI 参考效果图不一致，以及 Gallery 界面中导航菜单、列表项的颜色显示不正确。
+
+## 参考效果图
+
+- "dark" 模式下的 Button 参考图：`docs/image/reference/v1.0.1_1.png`
+- "dark" 模式下的 Input 参考图：`docs/image/reference/v1.0.1_2.png`
+- "dark" 模式下的 Switch 参考图：`docs/image/reference/v1.0.1_3.png`
+- "dark" 模式下的 Tag 参考图：`docs/image/reference/v1.0.1_4.png`
+- "dark" 模式下的 SearchBar 参考图：`docs/image/reference/v1.0.1_5.png`
+- "dark" 模式下的列表及列表项参考图：`docs/image/reference/v1.0.1_6.png`
+
+## 需求
+
+### 需求 25：Button 组件 Dark 模式颜色修复
+
+**用户故事：** 作为一名开发者，我希望在 dark 模式下 Button 组件的背景色、文本颜色和边框颜色与 NaiveUI dark 主题参考图一致，以便在深色主题下提供正确的视觉体验。
+
+#### 验收标准
+
+1. WHEN 主题为 dark 时，THE TButton（DEFAULT 类型）SHALL 显示深色背景（`colors.bg_default`）、浅色文本（`colors.text_primary`）和深色边框（`colors.border`），与参考图 v1.0.1_1.png 一致
+2. WHEN 主题为 dark 时，THE TButton（PRIMARY 类型）SHALL 显示绿色背景（`colors.primary`）和白色文本，与参考图一致
+3. WHEN 主题为 dark 时，THE TButton（DASHED 类型）SHALL 显示深色背景和虚线边框，边框颜色使用 dark 主题的 `colors.border`
+4. WHEN 主题为 dark 时，THE TButton（TEXT 类型）SHALL 显示透明背景和浅色文本
+5. WHEN 主题从 light 切换到 dark 时，THE TButton SHALL 立即更新为 dark 主题对应的颜色方案，无残留的 light 主题颜色
+
+### 需求 26：Input 组件 Dark 模式颜色修复
+
+**用户故事：** 作为一名开发者，我希望在 dark 模式下 Input 组件的背景色、文本颜色、边框颜色和占位符颜色与 NaiveUI dark 主题参考图一致。
+
+#### 验收标准
+
+1. WHEN 主题为 dark 时，THE TInput 的 QLineEdit SHALL 显示深色背景（`colors.bg_default`）、浅色文本（`colors.text_primary`）和深色边框（`colors.border`），与参考图 v1.0.1_2.png 一致
+2. WHEN 主题为 dark 时，THE TInput 的占位符文本 SHALL 使用 `colors.text_secondary` 颜色显示
+3. WHEN 主题为 dark 时，THE TInput 获得焦点时 SHALL 显示 `colors.border_focus` 颜色的边框
+4. WHEN 主题从 light 切换到 dark 时，THE TInput SHALL 立即更新为 dark 主题对应的颜色方案
+
+### 需求 27：Switch 组件 Dark 模式颜色修复
+
+**用户故事：** 作为一名开发者，我希望在 dark 模式下 Switch 组件的轨道颜色和滑块颜色与 NaiveUI dark 主题参考图一致。
+
+#### 验收标准
+
+1. WHEN 主题为 dark 且 Switch 未选中时，THE TSwitch 的轨道 SHALL 显示 dark 主题的 `colors.border` 颜色，与参考图 v1.0.1_3.png 一致
+2. WHEN 主题为 dark 且 Switch 已选中时，THE TSwitch 的轨道 SHALL 显示 dark 主题的 `colors.primary` 颜色
+3. WHEN 主题从 light 切换到 dark 时，THE TSwitch SHALL 立即重绘轨道为 dark 主题对应的颜色
+
+### 需求 28：Tag 组件 Dark 模式颜色修复
+
+**用户故事：** 作为一名开发者，我希望在 dark 模式下 Tag 组件的背景色、文本颜色和边框颜色与 NaiveUI dark 主题参考图一致。
+
+#### 验收标准
+
+1. WHEN 主题为 dark 时，THE TTag（DEFAULT 类型）SHALL 显示深色背景（`colors.bg_elevated`）、浅色文本（`colors.text_primary`）和深色边框（`colors.border`），与参考图 v1.0.1_4.png 一致
+2. WHEN 主题为 dark 时，THE TTag（PRIMARY/SUCCESS/WARNING/ERROR 类型）SHALL 显示对应的颜色背景和白色文本
+3. WHEN 主题从 light 切换到 dark 时，THE TTag SHALL 立即更新为 dark 主题对应的颜色方案
+
+### 需求 29：SearchBar 组件 Dark 模式颜色修复
+
+**用户故事：** 作为一名开发者，我希望在 dark 模式下 SearchBar 组件的输入框和搜索按钮颜色与 NaiveUI dark 主题参考图一致。
+
+#### 验收标准
+
+1. WHEN 主题为 dark 时，THE TSearchBar 内部的 TInput 和 TButton SHALL 显示 dark 主题对应的颜色方案，与参考图 v1.0.1_5.png 一致
+2. THE TSearchBar 的 dark 模式颜色修复 SHALL 自动受益于 TInput（需求 26）和 TButton（需求 25）的修复
+
+### 需求 30：Gallery 界面 Dark 模式颜色修复
+
+**用户故事：** 作为一名开发者，我希望在 dark 模式下 Gallery 的导航菜单、列表项、顶部栏等界面元素的颜色与 NaiveUI dark 主题参考图一致。
+
+#### 验收标准
+
+1. WHEN 主题为 dark 时，THE NavigationMenu SHALL 显示深色背景（`colors.bg_elevated`）和深色边框（`colors.border`），与参考图 v1.0.1_6.png 一致
+2. WHEN 主题为 dark 时，THE NavigationMenu 的分类标题 SHALL 使用 `colors.text_secondary` 颜色
+3. WHEN 主题为 dark 时，THE NavigationMenu 的组件列表项 SHALL 使用 `colors.text_primary` 颜色，悬停时使用深色高亮背景
+4. WHEN 主题为 dark 时，THE NavigationMenu 的选中项 SHALL 使用 `colors.primary` 颜色高亮
+5. WHEN 主题为 dark 时，THE TopBar SHALL 显示深色背景和浅色标题文本
+6. WHEN 主题为 dark 时，THE ComponentShowcase 的展示面板背景 SHALL 使用 `colors.bg_default` 深色背景
+7. WHEN 主题为 dark 时，THE BaseShowcase 的 section 标题和描述文本 SHALL 使用对应的 dark 主题文本颜色
+8. WHEN 主题从 light 切换到 dark 时，THE Gallery 的所有界面元素 SHALL 同步更新为 dark 主题颜色，无残留的 light 主题颜色

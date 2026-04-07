@@ -83,12 +83,13 @@ class TTag(BaseWidget):
             self._close_btn.setObjectName("tag_close_btn")
             self._close_btn.setFixedSize(QSize(16, 16))
             self._close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            self._close_btn.clicked.connect(self.closed.emit)
+            self._close_btn.clicked.connect(self._on_close_clicked)
             self._layout.addWidget(self._close_btn)
 
         # Dynamic properties for QSS selectors
         self.setProperty("tagType", tag_type.value)
         self.setProperty("tagSize", size.value)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
         self.apply_theme()
@@ -124,18 +125,25 @@ class TTag(BaseWidget):
         self._text = text
         self._label.setText(text)
 
+    def _on_close_clicked(self) -> None:
+        """Handle close button click: emit closed signal then hide the tag."""
+        self.closed.emit()
+        self.setVisible(False)
+
     # -- Theme --
 
     def apply_theme(self) -> None:
-        """Apply the current theme's QSS to this tag."""
+        """Apply the current theme's QSS to this tag.
+
+        The global stylesheet already contains TTag rules with property
+        selectors.  We only re-polish to pick up changes.
+        """
         engine = ThemeEngine.instance()
         if not engine.current_theme():
             return
-        try:
-            qss = engine.render_qss("tag.qss.j2")
-            self.setStyleSheet(qss)
-        except Exception:
-            pass
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
 
     def sizeHint(self) -> QSize:
         """Provide a reasonable default size."""

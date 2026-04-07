@@ -880,3 +880,579 @@ tests/
 - 组件间集成（SearchBar 内部的 Input + Button 协作）
 - 主题切换的端到端流程
 - 组件生命周期（创建、样式绑定、销毁清理）
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.0.1 - Gallery MVVM 重构
+
+## 概述
+
+V1.0.1 将 Gallery 预览画廊从单文件重构为基于 MVVM 架构的模块化结构。左侧提供按原子/分子/有机体分类的导航菜单，右侧展示选中组件的所有特性示例。架构设计确保新增组件时仅需添加 Showcase 模块并注册，无需修改框架代码。
+
+## 架构
+
+### Gallery MVVM 架构
+
+```mermaid
+graph TB
+    subgraph View["View 层"]
+        MainWindow["GalleryWindow<br/>主窗口"]
+        NavMenu["NavigationMenu<br/>左侧导航菜单"]
+        Showcase["ComponentShowcase<br/>右侧展示面板"]
+        TopBar["TopBar<br/>顶部栏"]
+    end
+
+    subgraph ViewModel["ViewModel 层"]
+        GalleryVM["GalleryViewModel<br/>管理导航状态与组件切换"]
+    end
+
+    subgraph Model["Model 层"]
+        Registry["ComponentRegistry<br/>组件注册表"]
+        CompInfo["ComponentInfo<br/>组件元数据"]
+    end
+
+    MainWindow --> TopBar
+    MainWindow --> NavMenu
+    MainWindow --> Showcase
+    NavMenu --> GalleryVM
+    Showcase --> GalleryVM
+    TopBar --> GalleryVM
+    GalleryVM --> Registry
+    Registry --> CompInfo
+```
+
+### 目录结构
+
+```
+examples/
+├── gallery.py                          # 入口文件，委托给 gallery 包
+└── gallery/
+    ├── __init__.py                     # 包初始化，导出 main()
+    ├── __main__.py                     # 支持 python -m examples.gallery
+    ├── models/
+    │   ├── __init__.py
+    │   ├── component_info.py           # ComponentInfo 数据模型
+    │   └── component_registry.py       # ComponentRegistry 组件注册表
+    ├── viewmodels/
+    │   ├── __init__.py
+    │   └── gallery_viewmodel.py        # GalleryViewModel
+    ├── views/
+    │   ├── __init__.py
+    │   ├── gallery_window.py           # GalleryWindow 主窗口
+    │   ├── navigation_menu.py          # NavigationMenu 左侧导航
+    │   ├── component_showcase.py       # ComponentShowcase 右侧展示面板
+    │   └── top_bar.py                  # TopBar 顶部栏
+    ├── showcases/
+    │   ├── __init__.py                 # register_all() 注册所有组件
+    │   ├── base_showcase.py            # BaseShowcase 基类
+    │   ├── button_showcase.py          # Button 展示
+    │   ├── checkbox_showcase.py        # Checkbox 展示
+    │   ├── radio_showcase.py           # Radio 展示
+    │   ├── input_showcase.py           # Input 展示
+    │   ├── switch_showcase.py          # Switch 展示
+    │   ├── tag_showcase.py             # Tag 展示
+    │   ├── searchbar_showcase.py       # SearchBar 展示
+    │   ├── breadcrumb_showcase.py      # Breadcrumb 展示
+    │   ├── inputgroup_showcase.py      # InputGroup 展示
+    │   ├── message_showcase.py         # Message 展示
+    │   └── modal_showcase.py           # Modal 展示
+    └── styles/
+        ├── __init__.py
+        └── gallery_styles.py           # Gallery 专用样式常量
+```
+
+## 组件与接口
+
+### 1. Model 层
+
+#### ComponentInfo
+
+```python
+@dataclass
+class ComponentInfo:
+    """Component metadata for registry."""
+    name: str                    # Display name, e.g. "Button"
+    key: str                     # Unique key, e.g. "button"
+    category: str                # "atoms" | "molecules" | "organisms"
+    showcase_factory: Callable[[QWidget], QWidget]  # Factory to create showcase widget
+```
+
+#### ComponentRegistry
+
+```python
+class ComponentRegistry:
+    """Singleton registry of all gallery components."""
+
+    def register(self, info: ComponentInfo) -> None:
+        """Register a component for the gallery."""
+
+    def get_by_key(self, key: str) -> ComponentInfo | None:
+        """Get component info by key."""
+
+    def get_by_category(self, category: str) -> list[ComponentInfo]:
+        """Get all components in a category."""
+
+    def categories(self) -> list[str]:
+        """Return ordered list of categories: ['atoms', 'molecules', 'organisms']."""
+
+    def all_components(self) -> list[ComponentInfo]:
+        """Return all registered components."""
+```
+
+### 2. ViewModel 层
+
+#### GalleryViewModel
+
+```python
+class GalleryViewModel(QObject):
+    """Manages gallery navigation state and component switching."""
+
+    # Signals
+    current_component_changed = Signal(str)  # component key
+    theme_changed = Signal(str)              # "light" | "dark"
+
+    def __init__(self, registry: ComponentRegistry) -> None: ...
+
+    def select_component(self, key: str) -> None:
+        """Select a component by key, emits current_component_changed."""
+
+    def current_component_key(self) -> str | None:
+        """Return the currently selected component key."""
+
+    def toggle_theme(self, dark: bool) -> None:
+        """Switch theme and emit theme_changed."""
+
+    def get_registry(self) -> ComponentRegistry:
+        """Return the component registry."""
+```
+
+### 3. View 层
+
+#### NavigationMenu
+
+```python
+class NavigationMenu(QWidget):
+    """Left sidebar navigation with categorized component list."""
+
+    component_selected = Signal(str)  # component key
+
+    def __init__(self, viewmodel: GalleryViewModel, parent: QWidget | None = None) -> None:
+        """Build tree-style menu from registry categories."""
+
+    def _on_item_clicked(self, key: str) -> None:
+        """Handle menu item click, emit component_selected."""
+
+    def set_active_item(self, key: str) -> None:
+        """Highlight the active menu item."""
+```
+
+#### ComponentShowcase
+
+```python
+class ComponentShowcase(QScrollArea):
+    """Right panel that displays the selected component's showcase."""
+
+    def __init__(self, viewmodel: GalleryViewModel, parent: QWidget | None = None) -> None: ...
+
+    def show_component(self, key: str) -> None:
+        """Load and display the showcase for the given component key."""
+```
+
+#### TopBar
+
+```python
+class TopBar(QWidget):
+    """Top bar with title and theme toggle switch."""
+
+    def __init__(self, viewmodel: GalleryViewModel, parent: QWidget | None = None) -> None: ...
+```
+
+#### GalleryWindow
+
+```python
+class GalleryWindow(QWidget):
+    """Main gallery window composing TopBar, NavigationMenu, and ComponentShowcase."""
+
+    def __init__(self) -> None:
+        """Initialize MVVM components and wire signals."""
+```
+
+### 4. Showcase 层
+
+#### BaseShowcase
+
+```python
+class BaseShowcase(QWidget):
+    """Base class for component showcases."""
+
+    def __init__(self, parent: QWidget | None = None) -> None: ...
+
+    def add_section(self, title: str, description: str, content: QWidget) -> None:
+        """Add a showcase section with title, description, and content widget."""
+
+    @staticmethod
+    def hbox(*widgets: QWidget) -> QWidget:
+        """Helper: wrap widgets in horizontal layout."""
+```
+
+每个具体 Showcase（如 ButtonShowcase）继承 BaseShowcase，在 `__init__` 中通过 `add_section()` 添加各特性区块。
+
+### 5. 样式模块
+
+#### GalleryStyles
+
+```python
+class GalleryStyles:
+    """Gallery-specific style constants, theme-aware."""
+
+    @staticmethod
+    def nav_menu_style(theme: str) -> str:
+        """Return QSS for navigation menu based on theme."""
+
+    @staticmethod
+    def top_bar_style(theme: str) -> str:
+        """Return QSS for top bar based on theme."""
+
+    @staticmethod
+    def showcase_section_title_style() -> str:
+        """Return QSS for showcase section titles."""
+
+    @staticmethod
+    def showcase_section_desc_style() -> str:
+        """Return QSS for showcase section descriptions."""
+```
+
+## 信号流
+
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant Nav as NavigationMenu
+    participant VM as GalleryViewModel
+    participant SC as ComponentShowcase
+
+    User->>Nav: 点击组件项 "Button"
+    Nav->>VM: select_component("button")
+    VM-->>VM: current_component_changed.emit("button")
+    VM-->>Nav: set_active_item("button")
+    VM-->>SC: show_component("button")
+    SC->>SC: 从 Registry 获取 showcase_factory
+    SC->>SC: 创建 ButtonShowcase 并显示
+```
+
+## 组件注册示例
+
+```python
+# In examples/gallery/showcases/__init__.py
+def register_all(registry: ComponentRegistry) -> None:
+    """Register all component showcases."""
+    from .button_showcase import ButtonShowcase
+    from .checkbox_showcase import CheckboxShowcase
+    # ... other imports
+
+    registry.register(ComponentInfo(
+        name="Button", key="button", category="atoms",
+        showcase_factory=lambda parent: ButtonShowcase(parent),
+    ))
+    registry.register(ComponentInfo(
+        name="Checkbox", key="checkbox", category="atoms",
+        showcase_factory=lambda parent: CheckboxShowcase(parent),
+    ))
+    # ... register all components
+```
+
+## 正确性属性
+
+### 属性 31：组件注册表完整性
+
+*对于任意*已注册的 ComponentInfo，通过 `get_by_key(info.key)` 应返回与原始注册信息等价的 ComponentInfo 对象。
+
+**验证需求：16.4, 17.5**
+
+### 属性 32：分类查询一致性
+
+*对于任意*已注册的 ComponentInfo，`get_by_category(info.category)` 返回的列表应包含该 ComponentInfo。
+
+**验证需求：17.1, 17.2**
+
+### 属性 33：ViewModel 组件切换信号
+
+*对于任意*已注册的组件 key，调用 `GalleryViewModel.select_component(key)` 后，`current_component_key()` 应返回该 key，且 `current_component_changed` 信号应携带该 key。
+
+**验证需求：17.4, 18.1**
+
+## 错误处理
+
+| 错误场景 | 处理方式 |
+|---------|---------|
+| 选择未注册的组件 key | ViewModel 忽略请求，不发射信号 |
+| Showcase 工厂创建失败 | ComponentShowcase 显示错误提示文字 |
+| 注册重复 key | ComponentRegistry 覆盖旧注册，记录警告日志 |
+
+## 测试策略
+
+V1.0.1 的属性基测试聚焦于 Model 和 ViewModel 层的纯逻辑验证：
+
+- **属性 31-32**：ComponentRegistry 的注册与查询逻辑
+- **属性 33**：GalleryViewModel 的状态管理与信号发射
+
+View 层（NavigationMenu、ComponentShowcase 等）通过手动 Gallery 运行验证，不编写自动化 UI 测试。
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.0.1 - Bug 修复
+
+## 概述
+
+V1.0.1 Bug 修复版本解决 V1.0.0 中发现的 5 个组件共 10 个缺陷。问题根因集中在三个方面：(1) QSS 动态属性选择器在 `setStyleSheet()` 后未触发重新匹配；(2) Input 清空按钮布局在 QLineEdit 外部而非内部；(3) Message 组件的窗口标志和背景属性导致样式丢失及定位异常。
+
+## Bug 根因分析
+
+### Bug 1：Button 类型样式未生效
+
+**现象**：不同 `button_type` 的按钮均显示为 DEFAULT 样式，无法区分 Primary/Dashed/Text 类型。
+
+**根因**：`TButton.__init__()` 中先调用 `setProperty("buttonType", ...)` 设置动态属性，再调用 `apply_theme()` 执行 `setStyleSheet(qss)`。但 Qt 的 QSS 属性选择器（如 `[buttonType="primary"]`）依赖 widget 的 style 系统在属性变更后重新匹配规则。当 `setStyleSheet()` 在 `setProperty()` 之后调用时，Qt 不会自动重新 polish widget，导致属性选择器未生效。
+
+**修复方案**：在 `apply_theme()` 中，调用 `setStyleSheet(qss)` 后，显式调用 `self.style().unpolish(self)` 和 `self.style().polish(self)` 强制 Qt 重新评估 QSS 属性选择器。
+
+### Bug 2：Input 清空按钮位置错误
+
+**现象**：当 `clearable=True` 时，清空按钮（✕）显示在 QLineEdit 右侧外部，而非输入框内部靠右边界处。
+
+**根因**：`TInput.__init__()` 将 `_clear_btn`（QToolButton）作为独立 widget 添加到外层 `QHBoxLayout` 中，与 `QLineEdit` 并列排列。这导致清空按钮在 QLineEdit 边框之外渲染。
+
+**修复方案**：使用 `QLineEdit.addAction(QAction, TrailingPosition)` 将清空动作嵌入 QLineEdit 内部。当文本非空时显示该 action，点击时触发清空逻辑。移除外层布局中的独立 QToolButton。同样处理密码可见性切换按钮。
+
+### Bug 3：Tag 类型样式未生效
+
+**现象**：不同 `tag_type` 的标签均显示为 DEFAULT 样式，无法区分 Primary/Success/Warning/Error 类型。标签无可见边框和背景色，无法辨识尺寸。
+
+**根因**：与 Bug 1 相同。`TTag.__init__()` 中 `setProperty("tagType", ...)` 后调用 `apply_theme()` 的 `setStyleSheet()`，但未触发 QSS 属性选择器重新匹配。
+
+**修复方案**：与 Bug 1 相同，在 `TTag.apply_theme()` 中 `setStyleSheet()` 后调用 `unpolish/polish`。
+
+### Bug 4：Tag 关闭按钮无法删除标签
+
+**现象**：当 `closable=True` 时，点击关闭按钮仅发射 `closed` 信号，但标签本身不会从界面中消失。
+
+**根因**：`TTag` 的关闭按钮 `clicked` 信号仅连接到 `self.closed.emit()`，未执行任何隐藏或删除操作。`closed` 信号的设计意图是通知外部，但组件自身也应提供默认的自我隐藏行为。
+
+**修复方案**：在关闭按钮的 `clicked` 处理中，先发射 `closed` 信号，然后调用 `self.setVisible(False)` 隐藏标签。外部代码可通过连接 `closed` 信号来决定是否真正删除 widget。
+
+### Bug 5：SearchBar 清空按钮位置错误
+
+**现象**：SearchBar 内部 TInput 的清空按钮位置与独立 TInput 相同，显示在输入框外部。
+
+**根因**：SearchBar 内部使用 TInput 组件，继承了 Bug 2 的问题。
+
+**修复方案**：修复 TInput（Bug 2）后，SearchBar 自动受益，无需额外修改。
+
+### Bug 6：Message 触发按钮样式异常
+
+**现象**：Message 展示面板中的触发按钮未显示对应的边框效果和背景颜色。
+
+**根因**：与 Bug 1 相同，MessageShowcase 中使用的 TButton 受同一 QSS 属性选择器问题影响。
+
+**修复方案**：修复 TButton（Bug 1）后，所有使用 TButton 的地方自动受益。
+
+### Bug 7：Message 弹出位置不正确
+
+**现象**：弹出的提示消息未显示在软件窗口的顶部水平居中位置。
+
+**根因**：`MessageManager._show()` 中通过 `QApplication.instance().activeWindow()` 获取 parent，但 `TMessage` 使用了 `Qt.WindowType.Tool` 窗口标志，使其成为独立顶层窗口。`msg.move(cx, y)` 中的坐标是相对于屏幕的绝对坐标，而非相对于 parent 窗口。当 parent 窗口不在屏幕左上角时，消息位置偏移。
+
+**修复方案**：在 `_update_positions()` 中，将 parent 窗口的全局坐标（`parent.mapToGlobal()`）纳入位置计算。水平居中应基于 parent 窗口的全局 x 坐标 + (parent 宽度 - message 宽度) / 2，垂直位置应基于 parent 窗口的全局 y 坐标 + 顶部边距。
+
+### Bug 8：Message 无背景色和边框
+
+**现象**：弹出的提示消息没有背景色和边框，内容悬浮在空中。
+
+**根因**：`TMessage.__init__()` 设置了 `WA_TranslucentBackground` 属性，该属性使 widget 的背景完全透明。虽然 QSS 中定义了 `background-color` 和 `border`，但 `WA_TranslucentBackground` 会覆盖 QSS 的背景渲染。同时 `FramelessWindowHint` 移除了系统边框。
+
+**修复方案**：移除 `WA_TranslucentBackground` 属性，或改为在 `TMessage` 内部使用一个带样式的容器 QFrame/QWidget 来承载内容，使 QSS 的背景色和边框能正确渲染。保留 `FramelessWindowHint` 以维持无系统标题栏的外观。
+
+## 修改范围
+
+### 需修改的源码文件
+
+| 文件 | 修改内容 | 关联 Bug |
+|------|---------|---------|
+| `src/tyto_ui_lib/components/atoms/button.py` | `apply_theme()` 中添加 unpolish/polish | Bug 1 |
+| `src/tyto_ui_lib/components/atoms/input.py` | 重构清空按钮为 QLineEdit 内部 action | Bug 2 |
+| `src/tyto_ui_lib/components/atoms/tag.py` | `apply_theme()` 添加 unpolish/polish；关闭按钮添加 `setVisible(False)` | Bug 3, 4 |
+| `src/tyto_ui_lib/components/organisms/message.py` | 修复位置计算；移除 `WA_TranslucentBackground` 或添加内容容器 | Bug 7, 8 |
+
+### 无需修改的文件
+
+- `searchbar.py`：修复 TInput 后自动受益（Bug 5）
+- `message_showcase.py`：修复 TButton 后自动受益（Bug 6）
+- QSS 模板文件：模板本身定义正确，问题在 Python 代码层
+
+## 正确性属性
+
+### 属性 34：Button QSS 属性选择器生效
+
+*对于任意* ButtonType 枚举值，创建 TButton 后，通过 `self.styleSheet()` 获取的 QSS 应包含对应 `[buttonType="xxx"]` 的规则，且 widget 的实际渲染样式应与该规则匹配。
+
+**验证需求：20.1, 20.2, 20.3, 20.4, 20.5**
+
+### 属性 35：Input 清空按钮在 QLineEdit 内部
+
+*对于任意* clearable=True 的 TInput，当输入框内有文本时，清空按钮的视觉位置应在 QLineEdit 的边框范围内。
+
+**验证需求：21.1, 21.2**
+
+### 属性 36：Tag QSS 属性选择器生效
+
+*对于任意* TagType 枚举值，创建 TTag 后，widget 的 QSS 动态属性选择器应立即生效，渲染对应的背景色和边框色。
+
+**验证需求：22.1, 22.2, 22.3, 22.4**
+
+### 属性 37：Tag 关闭按钮隐藏标签
+
+*对于任意* closable=True 的 TTag，模拟点击关闭按钮后，标签应变为不可见（`isVisible() == False`），且 `closed` 信号应被发射。
+
+**验证需求：22.5**
+
+### 属性 38：Message 窗口居中定位
+
+*对于任意* TMessage 及其 parent 窗口，Message 的水平中心点应与 parent 窗口的水平中心点对齐（误差不超过 1px），且 Message 的顶部应位于 parent 窗口顶部附近。
+
+**验证需求：24.1, 24.4**
+
+### 属性 39：Message 背景色和边框可见
+
+*对于任意* MessageType，创建并显示 TMessage 后，widget 应具有非透明的背景色和可见的边框。
+
+**验证需求：24.2**
+
+## 测试策略
+
+V1.0.1 Bug 修复的测试聚焦于验证修复后的行为正确性：
+
+- **属性 34**：通过 Hypothesis 生成任意 ButtonType，验证 QSS 属性选择器生效（检查 `property("buttonType")` 值和 `style().polish()` 调用）
+- **属性 35**：验证 TInput clearable 模式下清空 action 存在于 QLineEdit 内部
+- **属性 36**：通过 Hypothesis 生成任意 TagType，验证 QSS 属性选择器生效
+- **属性 37**：验证 TTag closable 点击后 `isVisible()` 为 False
+- **属性 38**：验证 Message 位置计算逻辑（单元测试，mock parent 窗口几何信息）
+- **属性 39**：验证 TMessage 不设置 `WA_TranslucentBackground` 或内容容器具有背景色
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.0.1 - Dark 模式颜色修复
+
+## 概述
+
+V1.0.1 Dark 模式修复版本解决在 "dark" 主题下组件和 Gallery 界面元素颜色显示异常的问题。问题根因集中在三个方面：(1) 部分组件使用 per-widget `setStyleSheet()` 覆盖了全局 QSS，导致主题切换后旧样式残留；(2) 自定义绘制组件（如 Switch 的轨道）在主题切换时未触发重绘；(3) Gallery 界面元素的 QSS 未正确使用 dark 主题 Token 值。
+
+## 参考效果图
+
+所有修复以 NaiveUI dark 主题风格为参考标准：
+
+| 组件 | 参考图 |
+|------|--------|
+| Button | `docs/image/reference/v1.0.1_1.png` |
+| Input | `docs/image/reference/v1.0.1_2.png` |
+| Switch | `docs/image/reference/v1.0.1_3.png` |
+| Tag | `docs/image/reference/v1.0.1_4.png` |
+| SearchBar | `docs/image/reference/v1.0.1_5.png` |
+| Gallery 列表/列表项 | `docs/image/reference/v1.0.1_6.png` |
+
+## Dark 模式根因分析
+
+### 问题 1：组件 per-widget setStyleSheet 覆盖全局 QSS
+
+**现象**：TInput、TSwitch、TSearchBar 等组件在 `apply_theme()` 中调用 `self.setStyleSheet(qss)` 设置 per-widget 样式。当 `ThemeEngine.switch_theme()` 更新全局 QSS 后，per-widget 样式的优先级高于全局 QSS，导致组件仍显示旧主题的颜色。
+
+**受影响组件**：TInput、TSwitch、TSearchBar
+
+**根因**：Qt 的样式优先级规则为：per-widget `setStyleSheet()` > 全局 `QApplication.setStyleSheet()`。当组件在 `apply_theme()` 中调用 `self.setStyleSheet(qss)` 时，虽然使用了当前主题的 Token 重新渲染 QSS，但如果 `apply_theme()` 未被正确触发（例如信号连接问题），或者渲染的 QSS 中某些选择器未覆盖所有状态，就会出现颜色残留。
+
+**修复方案**：统一组件的样式应用策略。对于已在全局 QSS 中定义了完整规则的组件（如 TButton、TTag），使用 `unpolish/polish` 方式让全局 QSS 生效。对于需要 per-widget 样式的组件（如 TInput、TSwitch、TSearchBar），确保 `apply_theme()` 在主题切换时被正确调用，并且重新渲染的 QSS 包含当前主题的所有 Token 值。
+
+### 问题 2：Switch 自定义绘制未响应主题切换
+
+**现象**：TSwitch 的轨道通过 `_SwitchTrack.paintEvent()` 自定义绘制，在绘制时通过 `ThemeEngine.get_token()` 获取颜色。主题切换后，虽然 Token 值已更新，但 `_SwitchTrack` 未调用 `update()` 触发重绘，导致轨道仍显示旧主题颜色。
+
+**根因**：`TSwitch.apply_theme()` 仅调用 `self.setStyleSheet(qss)` 更新 QSS，但 `_SwitchTrack` 的颜色是通过 `paintEvent()` 中的 `get_token()` 实时获取的。需要在主题切换时显式调用 `self._track.update()` 触发重绘。
+
+**修复方案**：在 `TSwitch.apply_theme()` 中，除了更新 QSS 外，显式调用 `self._track.update()` 强制轨道重绘。
+
+### 问题 3：Gallery 界面元素主题切换不完整
+
+**现象**：Gallery 的 NavigationMenu、TopBar 通过 `GalleryStyles` 生成 QSS，在主题切换时通过 `_on_theme_changed` 信号重新应用样式。但 ComponentShowcase 的容器背景和 BaseShowcase 的 section 标题/描述在主题切换时未更新。
+
+**根因**：
+- `ComponentShowcase` 的容器 `QWidget` 未设置背景色，依赖父级背景透传。在 dark 模式下，如果父级背景未更新，容器仍显示 light 主题背景。
+- `ComponentShowcase._set_placeholder()` 中硬编码了 `color: #999`，未使用 Token。
+- `GalleryWindow` 主窗口本身未设置背景色，导致 dark 模式下窗口背景仍为系统默认的浅色。
+
+**修复方案**：
+1. 在 `GalleryWindow` 中监听 `theme_changed` 信号，主题切换时更新主窗口和 showcase 区域的背景色。
+2. 在 `ComponentShowcase` 中添加主题响应，更新容器背景色。
+3. 移除 `_set_placeholder()` 中的硬编码颜色，使用 Token 值。
+
+## 修改范围
+
+### 需修改的源码文件
+
+| 文件 | 修改内容 | 关联需求 |
+|------|---------|---------|
+| `src/tyto_ui_lib/components/atoms/switch.py` | `apply_theme()` 中添加 `self._track.update()` 触发轨道重绘 | 需求 27 |
+| `src/tyto_ui_lib/components/atoms/input.py` | 确保 `apply_theme()` 正确重新渲染 dark 主题 QSS | 需求 26 |
+| `src/tyto_ui_lib/components/molecules/searchbar.py` | 确保 `apply_theme()` 正确重新渲染 dark 主题 QSS | 需求 29 |
+| `examples/gallery/views/gallery_window.py` | 添加主题切换时更新主窗口背景色 | 需求 30 |
+| `examples/gallery/views/component_showcase.py` | 添加主题响应，更新容器背景色；修复硬编码颜色 | 需求 30 |
+| `examples/gallery/styles/gallery_styles.py` | 添加 showcase 面板和主窗口的 dark 主题样式方法 | 需求 30 |
+
+### 可能需要修改的 Token 文件
+
+| 文件 | 修改内容 | 关联需求 |
+|------|---------|---------|
+| `src/tyto_ui_lib/styles/tokens/dark.json` | 根据参考图对比，调整 dark 主题 Token 值（如有偏差） | 需求 25-29 |
+
+### 可能需要修改的 QSS 模板文件
+
+| 文件 | 修改内容 | 关联需求 |
+|------|---------|---------|
+| `src/tyto_ui_lib/styles/templates/input.qss.j2` | 添加占位符颜色规则 `placeholder` | 需求 26 |
+
+### 无需修改的文件
+
+- `button.py`：TButton 已使用全局 QSS + unpolish/polish 方式，dark 主题 Token 通过全局 QSS 自动生效（需求 25）
+- `tag.py`：TTag 已使用全局 QSS + unpolish/polish 方式，dark 主题 Token 通过全局 QSS 自动生效（需求 28）
+- `button.qss.j2`、`tag.qss.j2`、`switch.qss.j2`、`searchbar.qss.j2`：模板已正确使用 Token 变量，无需修改
+
+## 正确性属性
+
+### 属性 40：组件 Dark 模式颜色一致性
+
+*对于任意*组件（TButton、TInput、TSwitch、TTag、TSearchBar）和任意主题（light、dark），切换到该主题后，组件通过 `ThemeEngine.get_token()` 获取的颜色值应与当前主题 Token 文件中定义的值一致。
+
+**验证需求：25.5, 26.4, 27.3, 28.3, 29.1**
+
+### 属性 41：Switch 轨道重绘响应主题切换
+
+*对于任意* TSwitch 和任意主题切换序列，每次主题切换后 `_SwitchTrack` 的 `paintEvent()` 应使用当前主题的 Token 颜色绘制轨道。
+
+**验证需求：27.1, 27.2, 27.3**
+
+### 属性 42：Gallery 界面 Dark 模式背景色
+
+*对于任意*主题（light、dark），切换后 Gallery 主窗口、NavigationMenu、TopBar、ComponentShowcase 的背景色应与当前主题 Token 中定义的 `bg_default` 或 `bg_elevated` 一致。
+
+**验证需求：30.1, 30.5, 30.6, 30.8**
+
+## 测试策略
+
+V1.0.1 Dark 模式修复的测试聚焦于验证主题切换后颜色的正确性：
+
+- **属性 40**：通过 Hypothesis 生成任意主题名称（light/dark），验证切换后组件的 Token 值与 Token 文件一致
+- **属性 41**：验证 TSwitch 主题切换后 `_track.update()` 被调用（通过 mock 或信号监听）
+- **属性 42**：验证 Gallery 界面元素在主题切换后的背景色与 Token 值一致（单元测试）
+
+View 层的视觉效果通过手动运行 `uv run python examples/gallery.py` 验证，对比参考效果图。

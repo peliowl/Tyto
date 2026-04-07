@@ -158,6 +158,7 @@ class TButton(
 
         # Apply dynamic property for QSS selectors
         self.setProperty("buttonType", button_type.value)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
@@ -223,15 +224,21 @@ class TButton(
     # -- Theme --
 
     def apply_theme(self) -> None:
-        """Apply the current theme's QSS to this button."""
+        """Apply the current theme's QSS to this button.
+
+        The global stylesheet (set by ThemeEngine.switch_theme) already
+        contains the TButton rules including property selectors like
+        ``[buttonType="primary"]``.  Per-widget setStyleSheet would
+        shadow those rules and break class-level property selectors,
+        so we only force a re-polish here.
+        """
         engine = ThemeEngine.instance()
         if not engine.current_theme():
             return
-        try:
-            qss = engine.render_qss("button.qss.j2")
-            self.setStyleSheet(qss)
-        except Exception:
-            pass
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
+
 
     # -- Event overrides --
 

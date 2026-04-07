@@ -117,3 +117,94 @@ class TestMessageManagerStacking:
         assert len(MessageManager.active_slots()) == 1
         MessageManager.reset()
         assert len(MessageManager.active_slots()) == 0
+
+
+# ---------------------------------------------------------------------------
+# Property-Based Tests for Bug Fixes (V1.0.1)
+# ---------------------------------------------------------------------------
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtWidgets import QWidget
+
+
+class TestMessageWindowCentering:
+    """Property 38: Message window centred positioning.
+
+    For any TMessage with a parent window, the message's horizontal centre
+    should align with the parent window's horizontal centre (within 1px),
+    and the message's top should be near the parent window's top.
+
+    **Validates: Requirements 24.1, 24.4**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 38: Message 窗口居中定位
+    @settings(max_examples=100, deadline=None)
+    @given(
+        msg_type=st.sampled_from(list(MessageType)),
+        parent_w=st.integers(min_value=300, max_value=1200),
+        parent_h=st.integers(min_value=200, max_value=800),
+    )
+    def test_message_centred_on_parent(
+        self,
+        qapp: QApplication,
+        msg_type: MessageType,
+        parent_w: int,
+        parent_h: int,
+    ) -> None:
+        """Message horizontal centre aligns with parent horizontal centre."""
+        MessageManager.reset()
+
+        parent = QWidget()
+        parent.resize(parent_w, parent_h)
+
+        msg = TMessage("test", msg_type=msg_type, duration=0, parent=parent)
+        msg.adjustSize()
+
+        # Manually trigger position calculation via the manager helper
+        mgr = MessageManager.instance()
+        from tyto_ui_lib.components.organisms.message import MessageSlot
+
+        slot = MessageSlot(message=msg)
+        mgr._slots.append(slot)
+        mgr._update_positions()
+
+        # The message's horizontal centre should match the parent's horizontal centre
+        parent_global = parent.mapToGlobal(QPoint(0, 0))
+        expected_cx = parent_global.x() + parent_w // 2
+        actual_cx = msg.x() + msg.width() // 2
+        assert abs(actual_cx - expected_cx) <= 1, (
+            f"Message centre {actual_cx} != parent centre {expected_cx}"
+        )
+
+        # The message top should be at parent_global_y + _TOP_MARGIN
+        expected_y = parent_global.y() + _TOP_MARGIN
+        assert msg.y() == expected_y, f"Message y {msg.y()} != expected {expected_y}"
+
+        mgr._slots.clear()
+
+
+class TestMessageBackgroundAndBorderVisible:
+    """Property 39: Message background colour and border are visible.
+
+    For any MessageType, a created TMessage should NOT have the
+    WA_TranslucentBackground attribute set, ensuring QSS background-color
+    and border rules render correctly.
+
+    **Validates: Requirements 24.2**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 39: Message 背景色和边框可见
+    @settings(max_examples=100)
+    @given(msg_type=st.sampled_from(list(MessageType)))
+    def test_message_not_translucent(
+        self,
+        qapp: QApplication,
+        msg_type: MessageType,
+    ) -> None:
+        """TMessage should not have WA_TranslucentBackground set."""
+        msg = TMessage("test", msg_type=msg_type, duration=0)
+        assert not msg.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground), (
+            f"TMessage with type {msg_type} should not have WA_TranslucentBackground"
+        )

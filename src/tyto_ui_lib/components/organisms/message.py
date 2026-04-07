@@ -97,7 +97,6 @@ class TMessage(BaseWidget):
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.Tool
         )
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
 
         # Layout: [icon] [text]
@@ -187,6 +186,8 @@ class TMessage(BaseWidget):
         try:
             qss = engine.render_qss("message.qss.j2")
             self.setStyleSheet(qss)
+            self.style().unpolish(self)
+            self.style().polish(self)
         except Exception:
             pass
 
@@ -348,23 +349,27 @@ class MessageManager:
 
         Messages are stacked top-to-bottom in creation order with a fixed
         gap between them.  Each message is horizontally centred relative
-        to its parent (or the primary screen).
+        to its parent window (using global coordinates since TMessage is a
+        top-level Tool window).
         """
         y = _TOP_MARGIN
         for slot in self._slots:
             msg = slot.message
             slot.y_offset = y
 
-            # Horizontal centre
+            # Horizontal centre relative to parent window (global coords)
             parent = msg.parentWidget()
             if parent is not None:
-                cx = (parent.width() - msg.width()) // 2
+                parent_global = parent.mapToGlobal(QPoint(0, 0))
+                cx = parent_global.x() + (parent.width() - msg.width()) // 2
+                cy = parent_global.y() + y
             else:
                 screen = QApplication.primaryScreen()
                 if screen is not None:
                     cx = (screen.availableGeometry().width() - msg.width()) // 2
                 else:
                     cx = 100
+                cy = y
 
-            msg.move(cx, y)
+            msg.move(cx, cy)
             y += msg.sizeHint().height() + _MESSAGE_GAP

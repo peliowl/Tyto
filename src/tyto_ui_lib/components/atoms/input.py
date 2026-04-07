@@ -7,8 +7,25 @@ visibility toggle. Emits text_changed and cleared signals.
 from __future__ import annotations
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPixmap, QPainter
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QToolButton, QWidget
+
+
+def _text_icon(char: str, size: int = 16, color: QColor | None = None) -> QIcon:
+    """Create a QIcon by rendering a single Unicode character onto a pixmap."""
+    px = QPixmap(size, size)
+    px.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(px)
+    if color is not None:
+        painter.setPen(color)
+    else:
+        painter.setPen(QColor("#667085"))
+    font = QFont()
+    font.setPixelSize(int(size * 0.75))
+    painter.setFont(font)
+    painter.drawText(px.rect(), Qt.AlignmentFlag.AlignCenter, char)
+    painter.end()
+    return QIcon(px)
 
 from tyto_ui_lib.common.base import BaseWidget
 from tyto_ui_lib.common.traits.focus_glow import FocusGlowMixin
@@ -60,7 +77,7 @@ class TInput(
         self._password = password
         self._password_visible = False
 
-        # Layout: [prefix_icon] [line_edit] [clear_btn] [toggle_btn] [suffix_icon]
+        # Layout: [prefix_icon] [line_edit] [suffix_icon]
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
@@ -82,28 +99,24 @@ class TInput(
         self._line_edit.textChanged.connect(self._on_text_changed)
         self._layout.addWidget(self._line_edit)
 
-        # Clear button (hidden by default)
-        self._clear_btn: QToolButton | None = None
+        # Clear action inside QLineEdit (hidden by default)
+        self._clear_action: QAction | None = None
         if clearable:
-            self._clear_btn = QToolButton(self)
-            self._clear_btn.setText("\u2715")  # Unicode X mark
-            self._clear_btn.setFixedSize(QSize(24, 24))
-            self._clear_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            self._clear_btn.setVisible(False)
-            self._clear_btn.clicked.connect(self._on_clear_clicked)
-            self._layout.addWidget(self._clear_btn)
+            self._clear_action = QAction(self._line_edit)
+            self._clear_action.setIcon(_text_icon("\u2715"))
+            self._clear_action.setToolTip("Clear")
+            self._line_edit.addAction(self._clear_action, QLineEdit.ActionPosition.TrailingPosition)
+            self._clear_action.setVisible(False)
+            self._clear_action.triggered.connect(self._on_clear_clicked)
 
-        # Password visibility toggle button
-        self._toggle_btn: QToolButton | None = None
+        # Password visibility toggle action inside QLineEdit
+        self._toggle_action: QAction | None = None
         if password:
-            self._toggle_btn = QToolButton(self)
-            self._toggle_btn.setText("\u25cf")  # Filled circle (eye-closed hint)
-            self._toggle_btn.setFixedSize(QSize(24, 24))
-            self._toggle_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            self._toggle_btn.clicked.connect(self.toggle_password_visibility)
-            self._layout.addWidget(self._toggle_btn)
+            self._toggle_action = QAction(self._line_edit)
+            self._toggle_action.setIcon(_text_icon("\u25cf"))
+            self._toggle_action.setToolTip("Toggle password visibility")
+            self._line_edit.addAction(self._toggle_action, QLineEdit.ActionPosition.TrailingPosition)
+            self._toggle_action.triggered.connect(self.toggle_password_visibility)
 
         # Suffix icon button
         self._suffix_btn: QToolButton | None = None
@@ -147,12 +160,12 @@ class TInput(
         self._password_visible = not self._password_visible
         if self._password_visible:
             self._line_edit.setEchoMode(QLineEdit.EchoMode.Normal)
-            if self._toggle_btn is not None:
-                self._toggle_btn.setText("\u25cb")  # Open circle (eye-open hint)
+            if self._toggle_action is not None:
+                self._toggle_action.setIcon(_text_icon("\u25cb"))
         else:
             self._line_edit.setEchoMode(QLineEdit.EchoMode.Password)
-            if self._toggle_btn is not None:
-                self._toggle_btn.setText("\u25cf")  # Filled circle (eye-closed hint)
+            if self._toggle_action is not None:
+                self._toggle_action.setIcon(_text_icon("\u25cf"))
 
     # -- Theme --
 
@@ -164,6 +177,22 @@ class TInput(
         try:
             qss = engine.render_qss("input.qss.j2")
             self.setStyleSheet(qss)
+        except Exception:
+            pass
+
+        # Set placeholder text color from token (QSS does not support this natively)
+        try:
+            color_str = engine.get_token("colors", "text_secondary")
+            color = QColor(color_str)
+            palette = self._line_edit.palette()
+            palette.setColor(palette.ColorRole.PlaceholderText, color)
+            self._line_edit.setPalette(palette)
+            # Update action icons to match current theme color
+            if self._clear_action is not None:
+                self._clear_action.setIcon(_text_icon("\u2715", color=color))
+            if self._toggle_action is not None:
+                icon_char = "\u25cb" if self._password_visible else "\u25cf"
+                self._toggle_action.setIcon(_text_icon(icon_char, color=color))
         except Exception:
             pass
 
@@ -181,11 +210,11 @@ class TInput(
         Args:
             text: The new text value.
         """
-        if self._clear_btn is not None:
-            self._clear_btn.setVisible(bool(text))
+        if self._clear_action is not None:
+            self._clear_action.setVisible(bool(text))
         self.text_changed.emit(text)
 
     def _on_clear_clicked(self) -> None:
-        """Handle clear button click."""
+        """Handle clear action click."""
         self._line_edit.clear()
         self.cleared.emit()

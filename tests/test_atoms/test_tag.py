@@ -67,3 +67,47 @@ class TestTTagClosedSignal:
         tag = TTag("old")
         tag.set_text("new")
         assert tag.text == "new"
+
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+
+class TestTTagQSSPropertySelector:
+    """Property 36: Tag QSS attribute selector takes effect after creation.
+
+    **Validates: Requirements 22.1, 22.2, 22.3, 22.4**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 36: Tag QSS 属性选择器生效
+    @settings(max_examples=100)
+    @given(tag_type=st.sampled_from(list(TTag.TagType)))
+    def test_tag_type_qss_property(self, qapp: QApplication, tag_type: TTag.TagType) -> None:
+        """For any TagType, the created TTag's dynamic property 'tagType' equals the type's value."""
+        tag = TTag("Test", tag_type=tag_type)
+        assert tag.property("tagType") == tag_type.value
+
+
+class TestTTagCloseButtonHidesTag:
+    """Property 37: Tag close button hides the tag.
+
+    **Validates: Requirements 22.5**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 37: Tag 关闭按钮隐藏标签
+    @settings(max_examples=100, deadline=None)
+    @given(tag_type=st.sampled_from(list(TTag.TagType)))
+    def test_close_button_hides_tag(self, qapp: QApplication, tag_type: TTag.TagType) -> None:
+        """For any closable TTag, clicking the close button emits closed and hides the tag."""
+        tag = TTag("Test", tag_type=tag_type, closable=True)
+        tag.show()
+        assert tag.isVisible()
+
+        received: list[bool] = []
+        tag.closed.connect(lambda: received.append(True))
+
+        assert tag._close_btn is not None
+        tag._close_btn.click()
+
+        assert len(received) == 1
+        assert not tag.isVisible()

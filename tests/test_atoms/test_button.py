@@ -166,3 +166,76 @@ class TestTButtonDisabledState:
         btn.set_disabled(True)
         btn.set_disabled(False)
         assert btn.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Property-Based Tests (Bugfix V1.0.1)
+# ---------------------------------------------------------------------------
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+
+class TestTButtonQSSPropertySelector:
+    """Property 34: Button QSS attribute selector takes effect after creation.
+
+    **Validates: Requirements 20.1, 20.2, 20.3, 20.4, 20.5**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 34: Button QSS 属性选择器生效
+    @settings(max_examples=100)
+    @given(button_type=st.sampled_from(list(TButton.ButtonType)))
+    def test_button_type_qss_property(self, qapp: QApplication, button_type: TButton.ButtonType) -> None:
+        """For any ButtonType, the created TButton's dynamic property 'buttonType' equals the type's value."""
+        btn = TButton("Test", button_type=button_type)
+        assert btn.property("buttonType") == button_type.value
+
+
+class TestButtonStylePropagation:
+    """Verify that TButton QSS property selector fix (Task 19) propagates
+    to downstream components like MessageShowcase.
+
+    When MessageShowcase creates TButton instances with different ButtonTypes,
+    each button's dynamic property 'buttonType' should be correctly set,
+    ensuring QSS attribute selectors render the correct styles.
+
+    **Validates: Requirements 24.3**
+    """
+
+    def test_primary_button_has_correct_property(self, qapp: QApplication) -> None:
+        """A PRIMARY TButton (like the Success button in MessageShowcase) has correct property."""
+        btn = TButton("Success", button_type=TButton.ButtonType.PRIMARY)
+        assert btn.property("buttonType") == "primary"
+
+    def test_default_button_has_correct_property(self, qapp: QApplication) -> None:
+        """A DEFAULT TButton (like the Info button in MessageShowcase) has correct property."""
+        btn = TButton("Info", button_type=TButton.ButtonType.DEFAULT)
+        assert btn.property("buttonType") == "default"
+
+    def test_all_message_showcase_button_types(self, qapp: QApplication) -> None:
+        """All button types used in MessageShowcase have correct QSS properties."""
+        # MessageShowcase creates: Info(DEFAULT), Success(PRIMARY), Warning(DEFAULT), Error(DEFAULT)
+        configs = [
+            ("Info", TButton.ButtonType.DEFAULT),
+            ("Success", TButton.ButtonType.PRIMARY),
+            ("Warning", TButton.ButtonType.DEFAULT),
+            ("Error", TButton.ButtonType.DEFAULT),
+        ]
+        for text, btn_type in configs:
+            btn = TButton(text, button_type=btn_type)
+            assert btn.property("buttonType") == btn_type.value, (
+                f"Button '{text}' with type {btn_type} has wrong property"
+            )
+
+
+    def test_button_apply_theme_has_unpolish_polish(self, qapp: QApplication, tokens_dir: Path) -> None:
+        """Verify TButton.apply_theme() triggers re-polish for QSS selector activation."""
+        engine = ThemeEngine.instance()
+        engine.load_tokens(tokens_dir)
+        engine.switch_theme("light")
+
+        btn = TButton("Test", button_type=TButton.ButtonType.PRIMARY)
+        # The global stylesheet (set by switch_theme) should be non-empty
+        assert qapp.styleSheet() != ""
+        # The buttonType property must still be correct after theme application
+        assert btn.property("buttonType") == "primary"

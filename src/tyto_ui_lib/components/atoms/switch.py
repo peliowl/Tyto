@@ -247,6 +247,11 @@ class TSwitch(
             self.setStyleSheet(qss)
         except Exception:
             pass
+        # Force the track to repaint so it picks up the new theme colors
+        # (the track reads colors.border / colors.primary in paintEvent).
+        # Guard: _track may not exist yet if called from BaseWidget.__init__.
+        if hasattr(self, "_track"):
+            self._track.update()
 
     # -- Events --
 

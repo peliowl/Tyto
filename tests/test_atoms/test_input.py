@@ -52,21 +52,22 @@ class TestTInputTextChanges:
         assert inp.get_text() == ""
         assert len(cleared) == 1
 
-    def test_clearable_button_visibility(self, qapp: QApplication) -> None:
+    def test_clearable_action_visibility(self, qapp: QApplication) -> None:
         inp = TInput(clearable=True)
-        assert inp._clear_btn is not None
-        assert inp._clear_btn.isHidden()
+        assert inp._clear_action is not None
+        assert not inp._clear_action.isVisible()
         inp.set_text("x")
-        assert not inp._clear_btn.isHidden()
+        assert inp._clear_action.isVisible()
         inp.set_text("")
-        assert inp._clear_btn.isHidden()
+        assert not inp._clear_action.isVisible()
 
-    def test_clear_button_click(self, qapp: QApplication) -> None:
+    def test_clear_action_click(self, qapp: QApplication) -> None:
         inp = TInput(clearable=True)
         inp.set_text("data")
         cleared: list[bool] = []
         inp.cleared.connect(lambda: cleared.append(True))
-        inp._clear_btn.click()  # type: ignore[union-attr]
+        assert inp._clear_action is not None
+        inp._clear_action.trigger()
         assert inp.get_text() == ""
         assert len(cleared) == 1
 
@@ -88,3 +89,37 @@ class TestTInputPassword:
         inp = TInput(password=False)
         inp.toggle_password_visibility()
         assert inp._line_edit.echoMode() == QLineEdit.EchoMode.Normal
+
+# ---------------------------------------------------------------------------
+# Property-Based Tests
+# ---------------------------------------------------------------------------
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+from PySide6.QtGui import QAction
+
+
+class TestTInputPBT:
+    """Property-based tests for TInput clear action positioning."""
+
+    # Feature: tyto-ui-lib-v1, Property 35: Input 清空按钮在 QLineEdit 内部
+    # **Validates: Requirements 21.1, 21.2**
+    @settings(max_examples=100, deadline=None)
+    @given(text=st.text(min_size=1, max_size=100))
+    def test_clear_action_is_trailing_inside_line_edit(self, qapp: QApplication, text: str) -> None:
+        """For any non-empty text, a clearable TInput's QLineEdit contains a
+        trailing QAction that is visible when text is present."""
+        inp = TInput(clearable=True)
+        inp.set_text(text)
+
+        # The clear action must exist and be a child of the QLineEdit
+        assert inp._clear_action is not None
+        assert isinstance(inp._clear_action, QAction)
+        assert inp._clear_action.parent() is inp._line_edit
+
+        # The action must be among the QLineEdit's actions
+        line_edit_actions = inp._line_edit.actions()
+        assert inp._clear_action in line_edit_actions
+
+        # The action must be visible when text is non-empty
+        assert inp._clear_action.isVisible()
