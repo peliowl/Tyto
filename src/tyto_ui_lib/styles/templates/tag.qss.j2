@@ -1,0 +1,68 @@
+{# tag.qss.j2 — QSS template for TTag component #}
+
+TTag {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    border-radius: {{ radius.small }}px;
+    padding: {{ spacing.small }}px {{ spacing.medium }}px;
+    font-size: {{ font_sizes.medium }}px;
+    outline: none;
+}
+
+/* Size variants */
+TTag[tagSize="small"] {
+    padding: 0px {{ spacing.small }}px;
+    font-size: {{ font_sizes.small }}px;
+}
+
+TTag[tagSize="large"] {
+    padding: {{ spacing.small }}px {{ spacing.large }}px;
+    font-size: {{ font_sizes.large }}px;
+}
+
+/* Color type variants */
+TTag[tagType="primary"] {
+    background-color: {{ colors.primary }};
+    color: {{ colors.white }};
+    border-color: {{ colors.primary }};
+}
+
+TTag[tagType="success"] {
+    background-color: {{ colors.success }};
+    color: {{ colors.white }};
+    border-color: {{ colors.success }};
+}
+
+TTag[tagType="warning"] {
+    background-color: {{ colors.warning }};
+    color: {{ colors.white }};
+    border-color: {{ colors.warning }};
+}
+
+TTag[tagType="error"] {
+    background-color: {{ colors.error }};
+    color: {{ colors.white }};
+    border-color: {{ colors.error }};
+}
+
+/* Close button */
+TTag QPushButton#tag_close_btn {
+    background-color: transparent;
+    border: none;
+    color: {{ colors.text_secondary }};
+    padding: 0px;
+    margin-left: {{ spacing.small }}px;
+    font-size: {{ font_sizes.small }}px;
+}
+
+TTag QPushButton#tag_close_btn:hover {
+    color: {{ colors.text_primary }};
+}
+
+TTag[tagType="primary"] QPushButton#tag_close_btn,
+TTag[tagType="success"] QPushButton#tag_close_btn,
+TTag[tagType="warning"] QPushButton#tag_close_btn,
+TTag[tagType="error"] QPushButton#tag_close_btn {
+    color: {{ colors.white }};
+}

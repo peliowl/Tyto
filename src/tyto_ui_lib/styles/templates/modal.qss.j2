@@ -1,0 +1,47 @@
+{# modal.qss.j2 — QSS template for TModal component #}
+
+TModal {
+    background-color: transparent;
+}
+
+TModal QWidget#modal_mask {
+    background-color: {{ colors.mask }};
+}
+
+TModal QWidget#modal_dialog {
+    background-color: {{ colors.bg_default }};
+    border-radius: {{ radius.large }}px;
+    border: 1px solid {{ colors.border }};
+}
+
+TModal QLabel#modal_title {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.large }}px;
+    font-weight: 600;
+    padding: {{ spacing.large }}px;
+}
+
+TModal QPushButton#modal_close_btn {
+    background-color: transparent;
+    border: none;
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.large }}px;
+    padding: {{ spacing.small }}px;
+}
+
+TModal QPushButton#modal_close_btn:hover {
+    color: {{ colors.text_primary }};
+}
+
+TModal QWidget#modal_header {
+    border-bottom: 1px solid {{ colors.border }};
+}
+
+TModal QWidget#modal_body {
+    padding: {{ spacing.large }}px;
+}
+
+TModal QWidget#modal_footer {
+    border-top: 1px solid {{ colors.border }};
+    padding: {{ spacing.medium }}px {{ spacing.large }}px;
+}

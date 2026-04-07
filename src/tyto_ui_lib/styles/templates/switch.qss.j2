@@ -1,0 +1,32 @@
+{# switch.qss.j2 — QSS template for TSwitch component #}
+
+TSwitch {
+    background-color: transparent;
+    padding: {{ spacing.small }}px;
+    outline: none;
+}
+
+TSwitch QWidget#switch_track {
+    background-color: {{ colors.border }};
+    border-radius: 10px;
+    min-width: 40px;
+    min-height: 20px;
+    max-width: 40px;
+    max-height: 20px;
+}
+
+TSwitch[checked="true"] QWidget#switch_track {
+    background-color: {{ colors.primary }};
+}
+
+TSwitch:hover QWidget#switch_track {
+    border: 1px solid {{ colors.primary_hover }};
+}
+
+TSwitch:disabled QWidget#switch_track {
+    background-color: {{ colors.bg_elevated }};
+}
+
+TSwitch[focused="true"] QWidget#switch_track {
+    border: 2px solid {{ colors.border_focus }};
+}

@@ -1,0 +1,53 @@
+{# message.qss.j2 — QSS template for TMessage component #}
+
+TMessage {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.medium }}px {{ spacing.large }}px;
+    font-size: {{ font_sizes.medium }}px;
+    outline: none;
+}
+
+TMessage[messageType="info"] {
+    border-left: 3px solid {{ colors.info }};
+}
+
+TMessage[messageType="success"] {
+    border-left: 3px solid {{ colors.success }};
+}
+
+TMessage[messageType="warning"] {
+    border-left: 3px solid {{ colors.warning }};
+}
+
+TMessage[messageType="error"] {
+    border-left: 3px solid {{ colors.error }};
+}
+
+TMessage QLabel#message_icon {
+    font-size: {{ font_sizes.large }}px;
+    padding-right: {{ spacing.small }}px;
+}
+
+TMessage[messageType="info"] QLabel#message_icon {
+    color: {{ colors.info }};
+}
+
+TMessage[messageType="success"] QLabel#message_icon {
+    color: {{ colors.success }};
+}
+
+TMessage[messageType="warning"] QLabel#message_icon {
+    color: {{ colors.warning }};
+}
+
+TMessage[messageType="error"] QLabel#message_icon {
+    color: {{ colors.error }};
+}
+
+TMessage QLabel#message_text {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+}

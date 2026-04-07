@@ -1,0 +1,31 @@
+{# breadcrumb.qss.j2 — QSS template for TBreadcrumb component #}
+
+TBreadcrumb {
+    background-color: transparent;
+    padding: 0px;
+}
+
+TBreadcrumb QLabel {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.medium }}px;
+    padding: {{ spacing.small }}px;
+    background-color: transparent;
+}
+
+TBreadcrumb QLabel[clickable="true"] {
+    color: {{ colors.text_primary }};
+}
+
+TBreadcrumb QLabel[clickable="true"]:hover {
+    color: {{ colors.primary }};
+}
+
+TBreadcrumb QLabel[separator="true"] {
+    color: {{ colors.text_disabled }};
+    padding: 0px {{ spacing.small }}px;
+}
+
+TBreadcrumb QLabel[current="true"] {
+    color: {{ colors.text_secondary }};
+    font-weight: 500;
+}

@@ -1,0 +1,43 @@
+{
+  "name": "light",
+  "colors": {
+    "primary": "#18a058",
+    "primary_hover": "#36ad6a",
+    "primary_pressed": "#0c7a43",
+    "success": "#18a058",
+    "warning": "#f0a020",
+    "error": "#d03050",
+    "info": "#2080f0",
+    "bg_default": "#ffffff",
+    "bg_elevated": "#f8f8fa",
+    "text_primary": "#333639",
+    "text_secondary": "#667085",
+    "text_disabled": "#c2c2c2",
+    "border": "#e0e0e6",
+    "border_focus": "#18a058",
+    "white": "#ffffff",
+    "mask": "rgba(0, 0, 0, 0.4)"
+  },
+  "spacing": {
+    "small": 4,
+    "medium": 8,
+    "large": 16,
+    "xlarge": 24
+  },
+  "radius": {
+    "small": 2,
+    "medium": 4,
+    "large": 8
+  },
+  "font_sizes": {
+    "small": 12,
+    "medium": 14,
+    "large": 16,
+    "xlarge": 20
+  },
+  "shadows": {
+    "small": "0 2px 8px rgba(0, 0, 0, 0.08)",
+    "medium": "0 4px 16px rgba(0, 0, 0, 0.12)",
+    "large": "0 8px 32px rgba(0, 0, 0, 0.16)"
+  }
+}

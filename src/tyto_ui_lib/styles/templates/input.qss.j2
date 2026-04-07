@@ -1,0 +1,43 @@
+{# input.qss.j2 — QSS template for TInput component #}
+
+TInput {
+    background-color: transparent;
+    padding: 0px;
+    outline: none;
+}
+
+TInput QLineEdit {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.small }}px {{ spacing.medium }}px;
+    font-size: {{ font_sizes.medium }}px;
+    selection-background-color: {{ colors.primary }};
+    selection-color: {{ colors.white }};
+}
+
+TInput QLineEdit:focus {
+    border-color: {{ colors.border_focus }};
+}
+
+TInput QLineEdit:hover {
+    border-color: {{ colors.primary_hover }};
+}
+
+TInput QLineEdit:disabled {
+    color: {{ colors.text_disabled }};
+    background-color: {{ colors.bg_elevated }};
+    border-color: {{ colors.border }};
+}
+
+TInput QToolButton {
+    background-color: transparent;
+    border: none;
+    padding: 2px;
+    color: {{ colors.text_secondary }};
+}
+
+TInput QToolButton:hover {
+    color: {{ colors.text_primary }};
+}

@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "文件删除后 Specs 同步检查",
+  "description": "当项目中的 Python 源码文件被删除时，自动检查 .kiro/specs/ 中的文档是否仍引用了已删除的文件或模块，确保文档与项目结构保持同步。",
+  "version": "1",
+  "when": {
+    "type": "fileDeleted",
+    "patterns": [
+      "src/**/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "一个 Python 源码文件被删除了。请检查 .kiro/specs/tyto-ui-lib-v1/ 目录下的 requirements.md、design.md 和 tasks.md 文档中是否仍引用了已删除的文件或模块。如果发现文档中引用了不再存在的文件路径或模块，列出需要更新的内容并询问用户是否需要更新 specs 文档。"
+  }
+}

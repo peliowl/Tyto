@@ -1,0 +1,81 @@
+{# button.qss.j2 — QSS template for TButton component #}
+
+TButton {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.small }}px {{ spacing.large }}px;
+    font-size: {{ font_sizes.medium }}px;
+    font-weight: 400;
+    outline: none;
+}
+
+TButton:hover {
+    color: {{ colors.primary }};
+    border-color: {{ colors.primary_hover }};
+}
+
+TButton:pressed {
+    color: {{ colors.primary_pressed }};
+    border-color: {{ colors.primary_pressed }};
+}
+
+TButton:disabled {
+    color: {{ colors.text_disabled }};
+    border-color: {{ colors.border }};
+    background-color: {{ colors.bg_elevated }};
+}
+
+/* Primary type */
+TButton[buttonType="primary"] {
+    background-color: {{ colors.primary }};
+    color: {{ colors.white }};
+    border: 1px solid {{ colors.primary }};
+}
+
+TButton[buttonType="primary"]:hover {
+    background-color: {{ colors.primary_hover }};
+    border-color: {{ colors.primary_hover }};
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="primary"]:pressed {
+    background-color: {{ colors.primary_pressed }};
+    border-color: {{ colors.primary_pressed }};
+}
+
+TButton[buttonType="primary"]:disabled {
+    background-color: {{ colors.primary }};
+    border-color: {{ colors.primary }};
+    color: {{ colors.white }};
+}
+
+/* Dashed type */
+TButton[buttonType="dashed"] {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border: 1px dashed {{ colors.border }};
+}
+
+TButton[buttonType="dashed"]:hover {
+    color: {{ colors.primary }};
+    border-color: {{ colors.primary_hover }};
+}
+
+/* Text type */
+TButton[buttonType="text"] {
+    background-color: transparent;
+    color: {{ colors.text_primary }};
+    border: none;
+}
+
+TButton[buttonType="text"]:hover {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.primary }};
+}
+
+/* Focus glow */
+TButton[focused="true"] {
+    border-color: {{ colors.border_focus }};
+}

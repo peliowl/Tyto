@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Specs 文档一致性检查",
+  "description": "当项目中的 Python 源码文件被创建或删除时，自动检查 .kiro/specs/ 中的相关文档（requirements.md、design.md、tasks.md）是否与项目最新状态保持一致。如果发现不一致（如新增了组件但文档未更新、删除了模块但文档仍引用），则提示用户并建议更新。",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "src/**/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "一个新的 Python 源码文件被创建了。请检查 .kiro/specs/tyto-ui-lib-v1/ 目录下的 requirements.md、design.md 和 tasks.md 文档内容是否与当前项目结构保持一致。具体检查：1) 新文件是否属于某个已有需求的实现，如果是则无需更新；2) 如果新文件代表了新的组件或模块，检查是否需要在 specs 文档中补充对应的需求、设计和任务；3) 如果发现不一致，列出需要更新的内容并询问用户是否需要更新。注意：只在发现实质性不一致时才提醒用户，不要对每个文件创建都发出警告。"
+  }
+}

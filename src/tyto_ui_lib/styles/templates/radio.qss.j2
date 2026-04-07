@@ -1,0 +1,47 @@
+{# radio.qss.j2 — QSS template for TRadio and TRadioGroup components #}
+
+TRadio {
+    background-color: transparent;
+    spacing: {{ spacing.small }}px;
+    padding: {{ spacing.small }}px;
+    font-size: {{ font_sizes.medium }}px;
+    color: {{ colors.text_primary }};
+    outline: none;
+}
+
+TRadio QWidget#radio_indicator {
+    border: 2px solid {{ colors.border }};
+    border-radius: 9px;
+    background-color: {{ colors.bg_default }};
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+}
+
+TRadio[checked="true"] QWidget#radio_indicator {
+    border-color: {{ colors.primary }};
+    background-color: {{ colors.bg_default }};
+}
+
+TRadio:hover QWidget#radio_indicator {
+    border-color: {{ colors.primary_hover }};
+}
+
+TRadio:disabled {
+    color: {{ colors.text_disabled }};
+}
+
+TRadio:disabled QWidget#radio_indicator {
+    border-color: {{ colors.border }};
+    background-color: {{ colors.bg_elevated }};
+}
+
+TRadio[focused="true"] QWidget#radio_indicator {
+    border-color: {{ colors.border_focus }};
+}
+
+TRadioGroup {
+    background-color: transparent;
+    padding: 0px;
+}

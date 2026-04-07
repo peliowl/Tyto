@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=75.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tyto-ui-lib"
+version = "1.0.0"
+description = "A modern PySide6 UI component library based on Atomic Design methodology"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [
+    { name = "Tyto Team" },
+]
+keywords = ["pyside6", "ui", "components", "desktop", "atomic-design"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: User Interfaces",
+]
+dependencies = [
+    "PySide6>=6.7",
+    "Jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-qt>=4.4",
+    "pytest-xdist>=3.5",
+    "hypothesis>=6.100",
+    "ruff>=0.8",
+    "pyright>=1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tyto_ui_lib"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
+addopts = "-v"
