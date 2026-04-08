@@ -90,3 +90,41 @@ class TestTCheckboxStateChanges:
         for state in TCheckbox.CheckState:
             cb.set_state(state)
             assert cb.get_state() == state
+
+
+
+# ---------------------------------------------------------------------------
+# Property-based tests for TCheckbox V1.0.2 enhanced features
+# ---------------------------------------------------------------------------
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+
+class TestTCheckboxSizeVariant:
+    """Property-based tests for TCheckbox size variants."""
+
+    # Feature: tyto-ui-lib-v1, Property 51: Checkbox 尺寸变体正确性
+    # **Validates: Requirements 33.1**
+    @settings(max_examples=100, deadline=None)
+    @given(size=st.sampled_from(list(TCheckbox.CheckboxSize)))
+    def test_size_property_matches(self, qapp: QApplication, size: TCheckbox.CheckboxSize) -> None:
+        cb = TCheckbox("Test", size=size)
+        assert cb.size == size
+        assert cb.property("checkboxSize") == size.value
+
+
+class TestTCheckboxDisabledState:
+    """Property-based tests for TCheckbox disabled state."""
+
+    # Feature: tyto-ui-lib-v1, Property 52: Checkbox Disabled 状态
+    # **Validates: Requirements 33.2**
+    @settings(max_examples=100, deadline=None)
+    @given(state=st.sampled_from(list(TCheckbox.CheckState)))
+    def test_disabled_blocks_click(self, qapp: QApplication, state: TCheckbox.CheckState) -> None:
+        cb = TCheckbox("Test", state=state, disabled=True)
+        received: list[int] = []
+        cb.state_changed.connect(received.append)
+        cb.mousePressEvent(_make_left_click())
+        assert cb.get_state() == state
+        assert received == []

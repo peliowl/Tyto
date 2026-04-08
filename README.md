@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-≥3.12-blue)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/PySide6-≥6.7-green)](https://doc.qt.io/qtforpython/)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.0.0-orange)](https://github.com/tyto-team/tyto-ui-lib)
+[![Version](https://img.shields.io/badge/Version-1.0.2-orange)](https://github.com/tyto-team/tyto-ui-lib)
 
 基于 PySide6 的现代化桌面 UI 组件库，采用**原子设计方法论**（Atomic Design），提供从基础控件到复杂业务模块的分层组件体系。
 
@@ -63,18 +63,58 @@ tyto_ui_lib/
 
 ---
 
-## v1.0.0 版本特性
+## 版本特性
+
+### v1.0.2 — 原子组件特性增强 & Playground
+
+
+V1.0.2 大幅增强了原子组件的功能覆盖度，并新增了交互式调试应用 Playground。
+
+#### 组件增强亮点
+
+- **TButton**：新增 9 种类型变体（tertiary / info / success / warning / error 等）、4 种尺寸（tiny / small / medium / large）、圆形/圆角/幽灵/块级/图标按钮、自定义颜色、secondary/tertiary/quaternary 层级样式
+- **TInput**：新增 text / textarea / password 三种输入模式、4 种尺寸、圆角输入框、字数统计、验证状态（success / warning / error）、加载动画、只读模式、textarea 自适应高度
+- **TCheckbox**：新增 3 种尺寸、禁用状态、value 属性、checked_value / unchecked_value 自定义返回值
+- **TCheckboxGroup**：新增分组管理器，支持 min / max 可选数量限制、统一尺寸和禁用控制
+- **TRadio**：新增 3 种尺寸、禁用状态、name 属性
+- **TRadioButton**：新增按钮样式单选组件，在 RadioGroup 中呈现为按钮组布局
+- **TSwitch**：新增 3 种尺寸、加载状态旋转动画、方形轨道模式、checked_value / unchecked_value 自定义值、轨道内文字显示、橡皮筋回弹效果
+- **TTag**：新增 info 类型和 tiny 尺寸、圆角标签、禁用状态、bordered 控制、自定义颜色、checkable 可选中交互、strong 加粗文字
+
+#### Playground 交互式调试应用
+
+新增独立的 Playground 应用，支持实时修改控件属性并预览效果：
+- 三栏布局：左侧导航菜单 + 中部组件预览 + 右侧属性面板
+- 属性面板根据属性类型自动生成编辑控件（下拉框、复选框、输入框、数字框等）
+- 支持 Light / Dark 主题实时切换
+
+### v1.0.1 — Gallery 重构 & Bug 修复 & Dark 模式优化
+
+- Gallery 采用 MVVM 架构重构，拆分为 models / viewmodels / views / showcases 模块化结构
+- 左侧分类导航菜单 + 右侧组件特性展示面板
+- 修复 Button / Tag QSS 动态属性选择器不生效问题
+- 修复 Input / SearchBar 清空按钮位置溢出问题
+- 修复 Message 弹出位置和样式异常
+- 全面优化 Dark 模式下所有组件和 Gallery 界面的颜色显示
+
+### v1.0.0 — 初始版本
+
+首个正式版本，交付完整的组件库核心架构和 11 个 UI 组件。
+
+---
+
+## 组件一览
 
 ### 原子组件（Atoms）
 
 | 组件 | 类名 | 说明 |
 |------|------|------|
-| 按钮 | `TButton` | Primary / Default / Dashed / Text 四种类型，支持 Loading 和 Disabled |
-| 复选框 | `TCheckbox` | 三态（Unchecked / Checked / Indeterminate），带勾选动画 |
-| 单选按钮 | `TRadio` / `TRadioGroup` | 环形缩放动画，RadioGroup 管理互斥逻辑 |
-| 输入框 | `TInput` | 前缀/后缀图标、可清除、密码模式 |
-| 开关 | `TSwitch` | iOS / NaiveUI 风格滑动开关，带缩放动画 |
-| 标签 | `TTag` | 五种颜色类型、三种尺寸、可关闭 |
+| 按钮 | `TButton` | 9 种类型、4 种尺寸、圆形/圆角/幽灵/块级/图标按钮，支持 Loading 和 Disabled |
+| 复选框 | `TCheckbox` / `TCheckboxGroup` | 三态、3 种尺寸、分组管理（min/max 限制） |
+| 单选按钮 | `TRadio` / `TRadioButton` / `TRadioGroup` | 3 种尺寸、按钮样式变体、RadioGroup 互斥管理 |
+| 输入框 | `TInput` | text / textarea / password 模式、4 种尺寸、字数统计、验证状态、加载动画 |
+| 开关 | `TSwitch` | 3 种尺寸、加载状态、方形/圆形轨道、轨道文字、橡皮筋回弹 |
+| 标签 | `TTag` | 6 种颜色类型、4 种尺寸、可关闭/可选中、自定义颜色 |
 
 ### 分子组件（Molecules）
 
@@ -96,6 +136,7 @@ tyto_ui_lib/
 - **Jinja2 模板引擎**渲染 QSS，每个组件对应独立的 `.qss.j2` 模板
 - **Light / Dark 双主题** Token 文件（`light.json` / `dark.json`）
 - **ThemeEngine 单例**管理主题状态，通过信号驱动全局样式刷新
+- **组件尺寸令牌**（`component_sizes` / `switch_sizes`）支持多尺寸变体的统一管理
 
 ### 交互行为 Mixin
 
@@ -162,9 +203,9 @@ from tyto_ui_lib import TButton, TInput, TCheckbox
 window = QWidget()
 layout = QVBoxLayout(window)
 
-layout.addWidget(TInput(placeholder="Enter your name"))
-layout.addWidget(TCheckbox("I agree to the terms"))
-layout.addWidget(TButton("Submit", button_type=TButton.ButtonType.PRIMARY))
+layout.addWidget(TInput(placeholder="Enter your name", size=TInput.InputSize.MEDIUM))
+layout.addWidget(TCheckbox("I agree to the terms", size=TCheckbox.CheckboxSize.MEDIUM))
+layout.addWidget(TButton("Submit", button_type=TButton.ButtonType.PRIMARY, size=TButton.ButtonSize.MEDIUM))
 
 window.show()
 ```
@@ -188,6 +229,14 @@ Gallery 是一个交互式组件预览画廊，展示所有组件的各种状态
 uv run python examples/gallery.py
 ```
 
+### 运行 Playground 调试应用
+
+Playground 支持实时修改控件属性并预览效果：
+
+```bash
+uv run python examples/playground.py
+```
+
 ---
 
 ## 开发指南
@@ -198,7 +247,9 @@ uv run python examples/gallery.py
 Tyto/
 ├── src/tyto_ui_lib/       # 源码
 ├── tests/                 # 测试（与源码目录结构对应）
-├── examples/              # Gallery 预览画廊
+├── examples/              # Gallery 预览画廊 & Playground 调试应用
+│   ├── gallery/           #   Gallery MVVM 模块（models / viewmodels / views / showcases）
+│   └── playground/        #   Playground MVVM 模块（definitions / models / viewmodels / views）
 ├── docs/                  # 技术参考文档
 ├── pyproject.toml         # 项目配置
 └── AGENTS.md              # AI Agent 开发规范
@@ -256,7 +307,7 @@ twine upload dist/*
 | [分子组件](docs/references/v1/04-分子组件.md) | SearchBar, Breadcrumb, InputGroup |
 | [有机体组件](docs/references/v1/05-有机体组件.md) | Message, Modal |
 | [样式系统](docs/references/v1/06-样式系统.md) | Design Token、QSS 模板、主题配置 |
-| [快速上手](docs/references/v1/07-快速上手.md) | 安装、初始化、Gallery 示例 |
+| [快速上手](docs/references/v1/07-快速上手.md) | 安装、初始化、Gallery / Playground 示例 |
 
 ---
 

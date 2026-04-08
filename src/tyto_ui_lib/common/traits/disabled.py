@@ -1,19 +1,24 @@
-"""Disabled state mixin: 0.5 opacity + Forbidden cursor.
+"""Disabled state mixin: 0.5 opacity via QSS + Forbidden cursor.
 
-Provides a consistent disabled visual treatment for any widget.
+Uses QSS dynamic properties instead of QGraphicsOpacityEffect to avoid
+rendering conflicts with QScrollArea viewports.
 """
 
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QWidget
+from PySide6.QtWidgets import QWidget
 
 
 class DisabledMixin:
-    """Mixin that applies 0.5 opacity and ForbiddenCursor when disabled.
+    """Mixin that applies 0.5 opacity via QSS and ForbiddenCursor when disabled.
 
     Call ``set_disabled_style(True)`` to enter the disabled visual state
     and ``set_disabled_style(False)`` to restore normal appearance.
+
+    Opacity is controlled through a ``disabledState`` QSS dynamic property
+    rather than ``QGraphicsOpacityEffect``, which causes rendering artefacts
+    inside ``QScrollArea``.
 
     Designed for cooperative multiple inheritance with QWidget subclasses.
 
@@ -24,14 +29,11 @@ class DisabledMixin:
         ...         self._init_disabled()
     """
 
-    _disabled_opacity_effect: QGraphicsOpacityEffect | None
     _disabled_original_cursor: Qt.CursorShape | None
 
     def _init_disabled(self: QWidget) -> None:  # type: ignore[misc]
         """Initialise disabled mixin resources. Call from __init__."""
         self._disabled_original_cursor = self.cursor().shape()
-        self._disabled_opacity_effect = QGraphicsOpacityEffect(self)
-        self._disabled_opacity_effect.setOpacity(1.0)
 
     def set_disabled_style(self, disabled: bool) -> None:
         """Apply or remove the disabled visual state.
@@ -42,15 +44,14 @@ class DisabledMixin:
         widget: QWidget = self  # type: ignore[assignment]
 
         if disabled:
-            if hasattr(self, "_disabled_opacity_effect") and self._disabled_opacity_effect is not None:
-                self._disabled_opacity_effect.setOpacity(0.5)
-                widget.setGraphicsEffect(self._disabled_opacity_effect)
+            widget.setProperty("disabledState", True)
             widget.setCursor(Qt.CursorShape.ForbiddenCursor)
             widget.setEnabled(False)
         else:
-            if hasattr(self, "_disabled_opacity_effect") and self._disabled_opacity_effect is not None:
-                self._disabled_opacity_effect.setOpacity(1.0)
-                widget.setGraphicsEffect(self._disabled_opacity_effect)
+            widget.setProperty("disabledState", False)
             original = getattr(self, "_disabled_original_cursor", Qt.CursorShape.ArrowCursor)
             widget.setCursor(original)
             widget.setEnabled(True)
+
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)

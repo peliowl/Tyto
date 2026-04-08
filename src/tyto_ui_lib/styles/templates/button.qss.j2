@@ -1,5 +1,7 @@
 {# button.qss.j2 — QSS template for TButton component #}
 
+/* ===== Base styles ===== */
+
 TButton {
     background-color: {{ colors.bg_default }};
     color: {{ colors.text_primary }};
@@ -11,14 +13,28 @@ TButton {
     outline: none;
 }
 
+TButton > QLabel {
+    background: transparent;
+    border: none;
+    color: {{ colors.text_primary }};
+}
+
 TButton:hover {
     color: {{ colors.primary }};
     border-color: {{ colors.primary_hover }};
 }
 
+TButton:hover > QLabel {
+    color: {{ colors.primary }};
+}
+
 TButton:pressed {
     color: {{ colors.primary_pressed }};
     border-color: {{ colors.primary_pressed }};
+}
+
+TButton:pressed > QLabel {
+    color: {{ colors.primary_pressed }};
 }
 
 TButton:disabled {
@@ -27,6 +43,38 @@ TButton:disabled {
     background-color: {{ colors.bg_elevated }};
 }
 
+TButton:disabled > QLabel {
+    color: {{ colors.text_disabled }};
+}
+
+/* ===== Size variants ===== */
+
+TButton[buttonSize="tiny"] {
+    min-height: {{ component_sizes.tiny.height }}px;
+    padding: 0 {{ component_sizes.tiny.padding_h }}px;
+    font-size: {{ component_sizes.tiny.font_size }}px;
+}
+
+TButton[buttonSize="small"] {
+    min-height: {{ component_sizes.small.height }}px;
+    padding: 0 {{ component_sizes.small.padding_h }}px;
+    font-size: {{ component_sizes.small.font_size }}px;
+}
+
+TButton[buttonSize="medium"] {
+    min-height: {{ component_sizes.medium.height }}px;
+    padding: 0 {{ component_sizes.medium.padding_h }}px;
+    font-size: {{ component_sizes.medium.font_size }}px;
+}
+
+TButton[buttonSize="large"] {
+    min-height: {{ component_sizes.large.height }}px;
+    padding: 0 {{ component_sizes.large.padding_h }}px;
+    font-size: {{ component_sizes.large.font_size }}px;
+}
+
+/* ===== Type variants ===== */
+
 /* Primary type */
 TButton[buttonType="primary"] {
     background-color: {{ colors.primary }};
@@ -34,9 +82,17 @@ TButton[buttonType="primary"] {
     border: 1px solid {{ colors.primary }};
 }
 
+TButton[buttonType="primary"] > QLabel {
+    color: {{ colors.white }};
+}
+
 TButton[buttonType="primary"]:hover {
     background-color: {{ colors.primary_hover }};
     border-color: {{ colors.primary_hover }};
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="primary"]:hover > QLabel {
     color: {{ colors.white }};
 }
 
@@ -51,6 +107,10 @@ TButton[buttonType="primary"]:disabled {
     color: {{ colors.white }};
 }
 
+TButton[buttonType="primary"]:disabled > QLabel {
+    color: {{ colors.white }};
+}
+
 /* Dashed type */
 TButton[buttonType="dashed"] {
     background-color: {{ colors.bg_default }};
@@ -58,9 +118,17 @@ TButton[buttonType="dashed"] {
     border: 1px dashed {{ colors.border }};
 }
 
+TButton[buttonType="dashed"] > QLabel {
+    color: {{ colors.text_primary }};
+}
+
 TButton[buttonType="dashed"]:hover {
     color: {{ colors.primary }};
     border-color: {{ colors.primary_hover }};
+}
+
+TButton[buttonType="dashed"]:hover > QLabel {
+    color: {{ colors.primary }};
 }
 
 /* Text type */
@@ -70,12 +138,289 @@ TButton[buttonType="text"] {
     border: none;
 }
 
+TButton[buttonType="text"] > QLabel {
+    color: {{ colors.text_primary }};
+}
+
 TButton[buttonType="text"]:hover {
     background-color: {{ colors.bg_elevated }};
     color: {{ colors.primary }};
 }
 
-/* Focus glow */
+TButton[buttonType="text"]:hover > QLabel {
+    color: {{ colors.primary }};
+}
+
+/* Tertiary type */
+TButton[buttonType="tertiary"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.text_primary }};
+    border: 1px solid transparent;
+}
+
+TButton[buttonType="tertiary"] > QLabel {
+    color: {{ colors.text_primary }};
+}
+
+TButton[buttonType="tertiary"]:hover {
+    background-color: {{ colors.border }};
+}
+
+/* Info type */
+TButton[buttonType="info"] {
+    background-color: {{ colors.info }};
+    color: {{ colors.white }};
+    border: 1px solid {{ colors.info }};
+}
+
+TButton[buttonType="info"] > QLabel {
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="info"]:hover {
+    background-color: {{ colors.info_hover }};
+    border-color: {{ colors.info_hover }};
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="info"]:hover > QLabel {
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="info"]:pressed {
+    background-color: {{ colors.info_pressed }};
+    border-color: {{ colors.info_pressed }};
+}
+
+/* Success type */
+TButton[buttonType="success"] {
+    background-color: {{ colors.success }};
+    color: {{ colors.white }};
+    border: 1px solid {{ colors.success }};
+}
+
+TButton[buttonType="success"] > QLabel {
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="success"]:hover {
+    background-color: {{ colors.primary_hover }};
+    border-color: {{ colors.primary_hover }};
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="success"]:hover > QLabel {
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="success"]:pressed {
+    background-color: {{ colors.primary_pressed }};
+    border-color: {{ colors.primary_pressed }};
+}
+
+/* Warning type */
+TButton[buttonType="warning"] {
+    background-color: {{ colors.warning }};
+    color: {{ colors.white }};
+    border: 1px solid {{ colors.warning }};
+}
+
+TButton[buttonType="warning"] > QLabel {
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="warning"]:hover {
+    background-color: {{ colors.warning }};
+    border-color: {{ colors.warning }};
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="warning"]:hover > QLabel {
+    color: {{ colors.white }};
+}
+
+/* Error type */
+TButton[buttonType="error"] {
+    background-color: {{ colors.error }};
+    color: {{ colors.white }};
+    border: 1px solid {{ colors.error }};
+}
+
+TButton[buttonType="error"] > QLabel {
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="error"]:hover {
+    background-color: {{ colors.error }};
+    border-color: {{ colors.error }};
+    color: {{ colors.white }};
+}
+
+TButton[buttonType="error"]:hover > QLabel {
+    color: {{ colors.white }};
+}
+
+/* ===== Ghost variant ===== */
+
+TButton[ghost="true"] {
+    background-color: transparent;
+}
+
+TButton[ghost="true"][buttonType="primary"] {
+    background-color: transparent;
+    color: {{ colors.primary }};
+    border: 1px solid {{ colors.primary }};
+}
+
+TButton[ghost="true"][buttonType="primary"] > QLabel {
+    color: {{ colors.primary }};
+}
+
+TButton[ghost="true"][buttonType="primary"]:hover {
+    color: {{ colors.primary_hover }};
+    border-color: {{ colors.primary_hover }};
+    background-color: transparent;
+}
+
+TButton[ghost="true"][buttonType="primary"]:hover > QLabel {
+    color: {{ colors.primary_hover }};
+}
+
+TButton[ghost="true"][buttonType="info"] {
+    background-color: transparent;
+    color: {{ colors.info }};
+    border: 1px solid {{ colors.info }};
+}
+
+TButton[ghost="true"][buttonType="info"] > QLabel {
+    color: {{ colors.info }};
+}
+
+TButton[ghost="true"][buttonType="info"]:hover {
+    color: {{ colors.info_hover }};
+    border-color: {{ colors.info_hover }};
+    background-color: transparent;
+}
+
+TButton[ghost="true"][buttonType="info"]:hover > QLabel {
+    color: {{ colors.info_hover }};
+}
+
+TButton[ghost="true"][buttonType="success"] {
+    background-color: transparent;
+    color: {{ colors.success }};
+    border: 1px solid {{ colors.success }};
+}
+
+TButton[ghost="true"][buttonType="success"] > QLabel {
+    color: {{ colors.success }};
+}
+
+TButton[ghost="true"][buttonType="success"]:hover {
+    color: {{ colors.primary_hover }};
+    border-color: {{ colors.primary_hover }};
+    background-color: transparent;
+}
+
+TButton[ghost="true"][buttonType="success"]:hover > QLabel {
+    color: {{ colors.primary_hover }};
+}
+
+TButton[ghost="true"][buttonType="warning"] {
+    background-color: transparent;
+    color: {{ colors.warning }};
+    border: 1px solid {{ colors.warning }};
+}
+
+TButton[ghost="true"][buttonType="warning"] > QLabel {
+    color: {{ colors.warning }};
+}
+
+TButton[ghost="true"][buttonType="error"] {
+    background-color: transparent;
+    color: {{ colors.error }};
+    border: 1px solid {{ colors.error }};
+}
+
+TButton[ghost="true"][buttonType="error"] > QLabel {
+    color: {{ colors.error }};
+}
+
+/* ===== Round variant ===== */
+
+TButton[round="true"] {
+    border-radius: {{ component_sizes.medium.height }}px;
+    background-color: transparent;
+    border: none;
+}
+
+TButton[round="true"][buttonSize="tiny"] {
+    border-radius: {{ component_sizes.tiny.height }}px;
+}
+
+TButton[round="true"][buttonSize="small"] {
+    border-radius: {{ component_sizes.small.height }}px;
+}
+
+TButton[round="true"][buttonSize="large"] {
+    border-radius: {{ component_sizes.large.height }}px;
+}
+
+/* ===== Circle variant ===== */
+
+TButton[circle="true"] {
+    border-radius: {{ (component_sizes.medium.height / 2)|int }}px;
+    background-color: transparent;
+    border: none;
+}
+
+TButton[circle="true"][buttonSize="tiny"] {
+    border-radius: {{ (component_sizes.tiny.height / 2)|int }}px;
+}
+
+TButton[circle="true"][buttonSize="small"] {
+    border-radius: {{ (component_sizes.small.height / 2)|int }}px;
+}
+
+TButton[circle="true"][buttonSize="large"] {
+    border-radius: {{ (component_sizes.large.height / 2)|int }}px;
+}
+
+/* Round/Circle hover/pressed/disabled: keep QSS background transparent
+   so the custom paintEvent handles all fill rendering.
+   Double attribute selector boosts specificity above type+state combos. */
+TButton[round="true"][round="true"],
+TButton[round="true"][round="true"]:hover,
+TButton[round="true"][round="true"]:pressed,
+TButton[round="true"][round="true"]:disabled,
+TButton[circle="true"][circle="true"],
+TButton[circle="true"][circle="true"]:hover,
+TButton[circle="true"][circle="true"]:pressed,
+TButton[circle="true"][circle="true"]:disabled {
+    background-color: transparent;
+    border: none;
+}
+
+/* ===== Block variant ===== */
+
+TButton[block="true"] {
+    width: 100%;
+}
+
+/* ===== Bordered false ===== */
+
+TButton[bordered="false"] {
+    border: none;
+}
+
+/* ===== Strong (bold) ===== */
+
+TButton[strong="true"] {
+    font-weight: 700;
+}
+
+/* ===== Focus glow ===== */
+
 TButton[focused="true"] {
     border-color: {{ colors.border_focus }};
 }

@@ -568,3 +568,377 @@
 - TButton 和 TTag 已使用全局 QSS + unpolish/polish 方式，dark 模式下应自动生效，任务 26.3 为验证性任务
 - TSearchBar 的 dark 模式修复自动受益于 TInput 和 TButton 的修复，任务 26.4 为验证性任务
 - 所有修复以参考效果图为最终验收标准
+
+
+---
+
+# 实现计划：Tyto UI 组件库 V1.0.2 - 原子组件特性增强
+
+## 概述
+
+在现有原子组件基础上扩展属性和变体，新增 TCheckboxGroup 和 TRadioButton 子组件。按依赖关系排序：先扩展 Design Token，再逐个增强原子组件，最后更新 Gallery Showcase 和编写测试。
+
+## 任务
+
+- [x] 30. Token 扩展 - 尺寸变体和新增颜色
+  - [x] 30.1 扩展 light.json 和 dark.json Token 文件
+    - 在 `src/tyto_ui_lib/styles/tokens/light.json` 和 `dark.json` 中新增 `component_sizes` 节点（tiny/small/medium/large 的 height、padding_h、font_size、icon_size）
+    - 新增 `switch_sizes` 节点（small/medium/large 的 width、height、thumb）
+    - 新增 `colors.info`、`colors.info_hover`、`colors.info_pressed` 颜色值
+    - 确保 light 和 dark 两套主题包含完全相同的新增键集合
+    - _需求：31.1, 32.1, 33.1, 34.1, 35.1, 36.2_
+
+  - [x] 30.2 更新 ThemeEngine 和 DesignTokenSet 以支持新增 Token 结构
+    - 确保 `ThemeEngine.render_qss()` 能将 `component_sizes` 和 `switch_sizes` 传递给 Jinja2 模板上下文
+    - 如需要，扩展 `DesignTokenSet` dataclass 以包含新增字段
+    - _需求：31.1, 35.1_
+
+- [x] 31. TButton 特性增强
+  - [x] 31.1 扩展 TButton 类 - 新增属性和枚举
+    - 在 `src/tyto_ui_lib/components/atoms/button.py` 中
+    - 扩展 `ButtonType` 枚举新增 TERTIARY / INFO / SUCCESS / WARNING / ERROR
+    - 新增 `ButtonSize` 枚举（TINY / SMALL / MEDIUM / LARGE）
+    - 新增 `IconPlacement` 枚举（LEFT / RIGHT）和 `AttrType` 枚举（BUTTON / SUBMIT / RESET）
+    - 扩展 `__init__` 参数：size、circle、round、ghost、secondary、tertiary、quaternary、strong、block、color、text_color、bordered、icon、icon_placement、attr_type、focusable
+    - 实现各属性的 setter 方法，每个 setter 更新 QSS 动态属性并调用 unpolish/polish
+    - 实现 icon 布局逻辑（icon_placement 控制图标在文字左侧或右侧）
+    - 实现 block 模式（设置 sizePolicy 水平策略为 Expanding）
+    - 实现 circle 模式（设置固定宽高相等 + 圆形 border-radius）
+    - _需求：31.1 - 31.15_
+
+  - [x] 31.2 扩展 button.qss.j2 模板
+    - 新增尺寸变体选择器（`[size="tiny"]`、`[size="small"]` 等）
+    - 新增类型变体选择器（`[buttonType="info"]`、`[buttonType="success"]` 等）
+    - 新增 ghost 变体选择器（`[ghost="true"]` 组合各 buttonType）
+    - 新增 round 变体选择器（`[round="true"]`）
+    - 新增 block 变体选择器（`[block="true"]`）
+    - 新增 bordered=false 选择器（`[bordered="false"]`）
+    - 新增 strong 选择器（`[strong="true"]`）
+    - _需求：31.1 - 31.12_
+
+  - [x] 31.3 编写 TButton 增强特性的属性基测试
+    - **属性 43：Button 尺寸变体正确性**
+    - **属性 44：Button 扩展类型正确性**
+    - **属性 45：Button Ghost 样式不变量**
+    - **属性 46：Button Block 宽度不变量**
+    - **验证需求：31.1, 31.2, 31.5, 31.8**
+
+- [x] 32. TInput 特性增强
+  - [x] 32.1 扩展 TInput 类 - 新增属性和 Textarea 模式
+    - 在 `src/tyto_ui_lib/components/atoms/input.py` 中
+    - 新增 `InputType` 枚举（TEXT / TEXTAREA / PASSWORD）、`InputSize` 枚举、`InputStatus` 枚举
+    - 扩展 `__init__` 参数：input_type、size、round、bordered、maxlength、minlength、show_count、readonly、autosize、rows、loading、status、resizable、show_password_on
+    - 实现 Textarea 模式：当 input_type=TEXTAREA 时使用 QPlainTextEdit 替代 QLineEdit
+    - 实现 maxlength 约束（QLineEdit.setMaxLength 或 QPlainTextEdit 文本过滤）
+    - 实现 show_count 字数统计显示
+    - 实现 autosize 自适应高度逻辑
+    - 实现 status 验证状态边框颜色
+    - 实现 loading 加载动画
+    - _需求：32.1 - 32.15_
+
+  - [x] 32.2 扩展 input.qss.j2 模板
+    - 新增尺寸变体选择器
+    - 新增 round 变体选择器
+    - 新增 bordered=false 选择器
+    - 新增 status 变体选择器（`[status="success"]`、`[status="warning"]`、`[status="error"]`）
+    - 新增 textarea 模式样式规则
+    - _需求：32.1, 32.4, 32.5, 32.13_
+
+  - [x] 32.3 编写 TInput 增强特性的属性基测试
+    - **属性 47：Input 尺寸变体正确性**
+    - **属性 48：Input Textarea 模式切换**
+    - **属性 49：Input Maxlength 约束**
+    - **属性 50：Input Status 边框颜色**
+    - **验证需求：32.1, 32.2, 32.3, 32.6, 32.13**
+
+- [x] 33. TCheckbox 特性增强 + TCheckboxGroup
+  - [x] 33.1 扩展 TCheckbox 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/checkbox.py` 中
+    - 新增 `CheckboxSize` 枚举（SMALL / MEDIUM / LARGE）
+    - 扩展 `__init__` 参数：size、disabled、value、focusable、checked_value、unchecked_value、default_checked
+    - 实现 disabled 状态（降低透明度 + Forbidden 光标 + 屏蔽交互）
+    - 实现尺寸变体（调整 indicator 和 label 的大小）
+    - 实现 value 属性用于 CheckboxGroup 标识
+    - _需求：33.1 - 33.6_
+
+  - [x] 33.2 实现 TCheckboxGroup 组件
+    - 在 `src/tyto_ui_lib/components/atoms/checkbox.py` 中新增 TCheckboxGroup 类
+    - 实现 add_checkbox()、get_value()、set_value() 方法
+    - 实现 min/max 选中数量约束逻辑
+    - 实现 size 统一设置和 disabled 统一禁用
+    - 实现 value_changed 信号
+    - _需求：33.7 - 33.10_
+
+  - [x] 33.3 扩展 checkbox.qss.j2 模板
+    - 新增尺寸变体选择器
+    - 新增 disabled 样式规则
+    - _需求：33.1, 33.2_
+
+  - [x] 33.4 编写 TCheckbox/TCheckboxGroup 增强特性的属性基测试
+    - **属性 51：Checkbox 尺寸变体正确性**
+    - **属性 52：Checkbox Disabled 状态**
+    - **属性 53：CheckboxGroup 选中数量约束**
+    - **属性 54：CheckboxGroup value 一致性**
+    - **验证需求：33.1, 33.2, 33.7, 33.8**
+
+- [x] 34. TRadio 特性增强 + TRadioButton
+  - [x] 34.1 扩展 TRadio 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/radio.py` 中
+    - 新增 `RadioSize` 枚举（SMALL / MEDIUM / LARGE）
+    - 扩展 `__init__` 参数：size、disabled、name
+    - 实现 disabled 状态
+    - 实现尺寸变体
+    - _需求：34.1 - 34.3_
+
+  - [x] 34.2 实现 TRadioButton 组件
+    - 在 `src/tyto_ui_lib/components/atoms/radio.py` 中新增 TRadioButton 类
+    - 继承 BaseWidget，实现按钮样式的单选交互
+    - 实现 toggled 信号、is_checked()、set_checked() 方法
+    - 创建 `radiobutton.qss.j2` 模板
+    - _需求：34.4_
+
+  - [x] 34.3 扩展 TRadioGroup - 新增属性和按钮模式
+    - 扩展 `__init__` 参数：name、size、disabled、default_value
+    - 实现 `add_radio()` 支持 TRadio 和 TRadioButton 两种类型
+    - 实现按钮模式检测（is_button_mode）和布局切换（水平紧凑排列）
+    - 实现 set_disabled() 和 set_size() 统一控制
+    - _需求：34.5 - 34.9_
+
+  - [x] 34.4 扩展 radio.qss.j2 模板
+    - 新增尺寸变体选择器
+    - 新增 disabled 样式规则
+    - _需求：34.1, 34.2_
+
+  - [x] 34.5 编写 TRadio/TRadioButton 增强特性的属性基测试
+    - **属性 55：Radio 尺寸变体正确性**
+    - **属性 56：Radio Disabled 状态**
+    - **属性 57：RadioButton 互斥不变量**
+    - **验证需求：34.1, 34.2, 34.4, 34.9**
+
+- [x] 35. TSwitch 特性增强
+  - [x] 35.1 扩展 TSwitch 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/switch.py` 中
+    - 新增 `SwitchSize` 枚举（SMALL / MEDIUM / LARGE）
+    - 扩展 `__init__` 参数：size、loading、round、checked_value、unchecked_value、rubber_band、checked_text、unchecked_text
+    - 实现尺寸变体（根据 switch_sizes Token 调整轨道和滑块尺寸）
+    - 实现 loading 状态（滑块上显示旋转动画 + 屏蔽交互）
+    - 实现 round=False 方形轨道模式
+    - 实现 checked_value/unchecked_value 自定义值和 get_typed_value()
+    - 实现 rubber_band 橡皮筋回弹效果
+    - 实现 checked_text/unchecked_text 轨道内文字显示
+    - _需求：35.1 - 35.6_
+
+  - [x] 35.2 扩展 switch.qss.j2 模板
+    - 新增尺寸变体样式规则
+    - 新增 round=false 方形轨道样式
+    - _需求：35.1, 35.3_
+
+  - [x] 35.3 编写 TSwitch 增强特性的属性基测试
+    - **属性 58：Switch 尺寸变体正确性**
+    - **属性 59：Switch Loading 屏蔽交互**
+    - **属性 60：Switch 自定义值 Round-Trip**
+    - **验证需求：35.1, 35.2, 35.4**
+
+- [x] 36. TTag 特性增强
+  - [x] 36.1 扩展 TTag 类 - 新增属性和枚举
+    - 在 `src/tyto_ui_lib/components/atoms/tag.py` 中
+    - 扩展 `TagType` 枚举新增 INFO
+    - 扩展 `TagSize` 枚举新增 TINY
+    - 扩展 `__init__` 参数：round、disabled、bordered、color、checkable、checked、strong
+    - 新增 `checked_changed` 信号
+    - 实现 checkable 模式（点击切换选中/未选中状态）
+    - 实现 disabled 状态
+    - 实现自定义 color dict 覆盖类型预设
+    - 实现 round、bordered、strong 样式变体
+    - _需求：36.1 - 36.9_
+
+  - [x] 36.2 扩展 tag.qss.j2 模板
+    - 新增 info 类型选择器（`[tagType="info"]`）
+    - 新增 tiny 尺寸选择器（`[tagSize="tiny"]`）
+    - 新增 round 变体选择器
+    - 新增 bordered=false 选择器
+    - 新增 strong 选择器
+    - 新增 checkable 选中/未选中样式
+    - 新增 disabled 样式规则
+    - _需求：36.1 - 36.9_
+
+  - [x] 36.3 编写 TTag 增强特性的属性基测试
+    - **属性 61：Tag Info 类型正确性**
+    - **属性 62：Tag Tiny 尺寸正确性**
+    - **属性 63：Tag Checkable Toggle Round-Trip**
+    - **属性 64：Tag 自定义颜色覆盖**
+    - **验证需求：36.1, 36.2, 36.6, 36.7, 36.8**
+
+- [x] 37. Gallery Showcase 同步更新
+  - [x] 37.1 更新 ButtonShowcase
+    - 在 `examples/gallery/showcases/button_showcase.py` 中
+    - 新增展示区块：尺寸变体、圆形/圆角按钮、幽灵按钮、块级按钮、图标按钮、新增类型变体
+    - _需求：37.1_
+
+  - [x] 37.2 更新 InputShowcase
+    - 在 `examples/gallery/showcases/input_showcase.py` 中
+    - 新增展示区块：尺寸变体、Textarea 模式、字数统计、验证状态、圆角输入框
+    - _需求：37.2_
+
+  - [x] 37.3 更新 CheckboxShowcase
+    - 在 `examples/gallery/showcases/checkbox_showcase.py` 中
+    - 新增展示区块：尺寸变体、禁用状态、CheckboxGroup 示例
+    - _需求：37.3_
+
+  - [x] 37.4 更新 RadioShowcase
+    - 在 `examples/gallery/showcases/radio_showcase.py` 中
+    - 新增展示区块：尺寸变体、禁用状态、RadioButton 按钮组示例
+    - _需求：37.4_
+
+  - [x] 37.5 更新 SwitchShowcase
+    - 在 `examples/gallery/showcases/switch_showcase.py` 中
+    - 新增展示区块：尺寸变体、加载状态、方形开关、轨道文字
+    - _需求：37.5_
+
+  - [x] 37.6 更新 TagShowcase
+    - 在 `examples/gallery/showcases/tag_showcase.py` 中
+    - 新增展示区块：Tiny 尺寸、Info 类型、圆角标签、可选中标签、自定义颜色
+    - _需求：37.6_
+
+  - [x] 37.7 更新组件注册表
+    - 确保 `examples/gallery/showcases/__init__.py` 中的 `register_all()` 无需修改（现有注册已覆盖）
+    - 如新增了独立组件（如 TCheckboxGroup 作为独立展示），在注册表中添加
+    - _需求：37.3, 37.4_
+
+- [x] 38. 检查点 - V1.0.2 全部验证
+  - 运行 `uv run pytest` 确保所有测试通过
+  - 手动运行 `uv run python examples/gallery.py` 验证所有新增特性的展示效果
+  - 验证 light/dark 主题下新增特性的颜色正确性
+
+## 备注
+
+- 任务 30 为前置任务，所有组件增强依赖 Token 扩展
+- 任务 31-36 可按任意顺序实现，彼此无依赖
+- 任务 37（Gallery 更新）依赖对应组件增强任务完成
+- 所有新增属性通过 QSS 动态属性选择器驱动样式，保持与 V1.0.0/V1.0.1 一致的架构模式
+- 属性基测试使用 Hypothesis 框架，每个属性至少 100 次迭代
+
+
+---
+
+# 实现计划：Tyto UI 组件库 V1.0.2 - Playground 交互式调试应用
+
+## 概述
+
+新增 Playground 交互式调试应用，采用与 Gallery 一致的 MVVM 架构。三栏布局：左侧导航菜单、中部组件预览、右侧属性面板。通过声明式 PropertyDefinition 驱动属性面板生成，支持 Light/Dark 主题切换。
+
+## 任务
+
+- [x] 39. Playground 基础架构
+  - [x] 39.1 创建 Playground 包目录结构
+    - 创建 `examples/playground/` 目录及子目录：models/、viewmodels/、views/、definitions/、styles/
+    - 在每个子目录下创建 `__init__.py`
+    - 创建 `examples/playground/__main__.py` 支持模块化启动
+    - 创建 `examples/playground.py` 入口文件
+    - _需求：38.1_
+
+  - [x] 39.2 实现 Model 层 - PropertyDefinition 和 PropertyRegistry
+    - 在 `examples/playground/models/property_definition.py` 中实现 PropertyDefinition dataclass
+    - 在 `examples/playground/models/property_registry.py` 中实现 PropertyRegistry
+    - 实现 register()、get_definitions()、register_factory()、get_factory() 方法
+    - _需求：42.1, 42.4_
+
+  - [x] 39.3 实现 ViewModel 层 - PlaygroundViewModel
+    - 在 `examples/playground/viewmodels/playground_viewmodel.py` 中实现 PlaygroundViewModel
+    - 实现 select_component()、current_component_key()、update_property()、toggle_theme() 方法
+    - 实现 current_component_changed、property_changed、theme_changed 信号
+    - _需求：38.2, 39.3, 40.3_
+
+  - [x] 39.4 实现样式模块 - PlaygroundStyles
+    - 在 `examples/playground/styles/playground_styles.py` 中实现 PlaygroundStyles
+    - 提供 nav_menu_style()、top_bar_style()、main_window_style()、property_panel_style()、preview_panel_style()、property_row_style() 静态方法
+    - 复用 GalleryStyles 的 Token 读取模式，支持 light/dark 主题
+    - _需求：43.2_
+
+- [x] 40. Playground View 层实现
+  - [x] 40.1 实现 TopBar 视图
+    - 在 `examples/playground/views/top_bar.py` 中实现 TopBar
+    - 包含标题 "Tyto UI Playground" 和 TSwitch 主题切换开关
+    - 连接 TSwitch.toggled 到 PlaygroundViewModel.toggle_theme()
+    - _需求：38.4, 43.1_
+
+  - [x] 40.2 实现 NavigationMenu 视图
+    - 在 `examples/playground/views/navigation_menu.py` 中实现 NavigationMenu
+    - 从 ComponentRegistry 读取分类和组件列表，构建树形菜单
+    - 显示三个一级分类：Atoms、Molecules、Organisms
+    - 实现点击组件项时发射 component_selected 信号
+    - 实现 set_active_item() 高亮当前选中项
+    - _需求：39.1, 39.2, 39.3, 39.4_
+
+  - [x] 40.3 实现 ComponentPreview 视图
+    - 在 `examples/playground/views/component_preview.py` 中实现 ComponentPreview
+    - 继承 QScrollArea，支持垂直滚动
+    - 实现 show_component(key) 方法，从 PropertyRegistry 获取工厂创建默认组件实例
+    - 实现 update_property(name, value) 方法，查找对应 PropertyDefinition 的 apply 回调并执行
+    - _需求：40.1, 40.2, 40.3, 40.4_
+
+  - [x] 40.4 实现 PropertyPanel 视图
+    - 在 `examples/playground/views/property_panel.py` 中实现 PropertyPanel
+    - 继承 QScrollArea，支持垂直滚动
+    - 实现 load_properties(key) 方法，从 PropertyRegistry 获取属性定义并动态生成编辑控件
+    - 实现 _create_editor(prop_def) 方法：
+      - enum → QComboBox（填充 options）
+      - bool → QCheckBox
+      - str → QLineEdit
+      - int → QSpinBox
+      - color → QLineEdit（支持 hex 格式）
+    - 编辑控件值变化时发射 property_value_changed 信号
+    - _需求：41.1, 41.2, 41.3, 41.4, 41.5, 41.6_
+
+  - [x] 40.5 实现 PlaygroundWindow 主窗口
+    - 在 `examples/playground/views/playground_window.py` 中实现 PlaygroundWindow
+    - 组合 TopBar（顶部）、NavigationMenu（左侧）、ComponentPreview（中部）、PropertyPanel（右侧）
+    - 初始化 ComponentRegistry、PropertyRegistry、PlaygroundViewModel，连接信号
+    - 信号连接：Nav → VM → Preview + Nav + Props；Props → VM → Preview
+    - _需求：38.3, 38.5_
+
+- [x] 41. Playground 属性定义注册
+  - [x] 41.1 实现原子组件属性定义
+    - 在 `examples/playground/definitions/button_props.py` 中定义 TButton 属性：text、button_type、size、loading、disabled、circle、round、ghost、strong、block、bordered、color、text_color
+    - 在 `examples/playground/definitions/input_props.py` 中定义 TInput 属性：placeholder、input_type、size、clearable、password、round、bordered、maxlength、show_count、readonly、loading、status
+    - 在 `examples/playground/definitions/checkbox_props.py` 中定义 TCheckbox 属性：label、size、disabled、default_checked
+    - 在 `examples/playground/definitions/radio_props.py` 中定义 TRadio 属性：label、size、disabled
+    - 在 `examples/playground/definitions/switch_props.py` 中定义 TSwitch 属性：size、disabled、loading、round、checked_text、unchecked_text
+    - 在 `examples/playground/definitions/tag_props.py` 中定义 TTag 属性：text、tag_type、size、closable、round、disabled、bordered、checkable、strong
+    - _需求：42.2_
+
+  - [x] 41.2 实现分子组件属性定义
+    - 在 `examples/playground/definitions/searchbar_props.py` 中定义 TSearchBar 属性：placeholder、clearable
+    - 在 `examples/playground/definitions/breadcrumb_props.py` 中定义 TBreadcrumb 属性：separator
+    - _需求：42.3_
+
+  - [x] 41.3 实现组件注册和入口文件
+    - 在 `examples/playground/definitions/__init__.py` 中实现 register_all_properties() 注册所有属性定义
+    - 在 `examples/playground/__init__.py` 中实现 main() 函数，复用 Gallery 的 ComponentRegistry 注册逻辑
+    - 更新 `examples/playground.py` 入口文件委托给 playground 包
+    - _需求：38.1, 38.5_
+
+- [x] 42. 检查点 - Playground 功能验证
+  - 手动运行 `uv run python examples/playground.py` 验证 Playground 功能
+  - 验证左侧菜单分类展示、组件切换、中部预览、右侧属性面板、属性实时更新、主题切换
+
+- [ ]* 43. Playground 属性基测试
+  - [ ]* 43.1 编写 PropertyRegistry 属性基测试
+    - **属性 65：PropertyRegistry 注册与查询一致性**
+    - **验证需求：42.1**
+
+  - [ ]* 43.2 编写 PropertyPanel 编辑器类型匹配单元测试
+    - **属性 66：PropertyPanel 编辑器类型匹配**
+    - **验证需求：41.2**
+
+  - [ ]* 43.3 编写属性变更信号传播单元测试
+    - **属性 67：属性变更信号传播**
+    - **验证需求：40.3, 41.3**
+
+## 备注
+
+- 标记 `*` 的任务为可选任务
+- Playground 复用 Gallery 的 ComponentRegistry 和 ComponentInfo 模型，不重复实现
+- 每个组件的属性定义独立维护，新增组件仅需添加 `xxx_props.py` 并在 `register_all_properties()` 中注册
+- View 层的视觉效果通过手动运行验证
+- Playground 的样式模块复用 GalleryStyles 的 Token 读取模式

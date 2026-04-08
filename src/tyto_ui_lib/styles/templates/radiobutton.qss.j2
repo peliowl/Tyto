@@ -1,0 +1,52 @@
+{# radiobutton.qss.j2 — QSS template for TRadioButton component #}
+
+TRadioButton {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    padding: {{ spacing.small }}px {{ spacing.medium }}px;
+    font-size: {{ font_sizes.medium }}px;
+    outline: none;
+}
+
+TRadioButton[checked="true"] {
+    background-color: {{ colors.primary }};
+    color: {{ colors.white }};
+    border-color: {{ colors.primary }};
+}
+
+TRadioButton:hover {
+    border-color: {{ colors.primary_hover }};
+    color: {{ colors.primary_hover }};
+}
+
+TRadioButton[checked="true"]:hover {
+    background-color: {{ colors.primary_hover }};
+    color: {{ colors.white }};
+    border-color: {{ colors.primary_hover }};
+}
+
+TRadioButton:disabled {
+    color: {{ colors.text_disabled }};
+    background-color: {{ colors.bg_elevated }};
+    border-color: {{ colors.border }};
+}
+
+/* Size variants */
+TRadioButton[radioButtonSize="small"] {
+    min-height: {{ component_sizes.small.height }}px;
+    padding: 0 {{ component_sizes.small.padding_h }}px;
+    font-size: {{ component_sizes.small.font_size }}px;
+}
+
+TRadioButton[radioButtonSize="medium"] {
+    min-height: {{ component_sizes.medium.height }}px;
+    padding: 0 {{ component_sizes.medium.padding_h }}px;
+    font-size: {{ component_sizes.medium.font_size }}px;
+}
+
+TRadioButton[radioButtonSize="large"] {
+    min-height: {{ component_sizes.large.height }}px;
+    padding: 0 {{ component_sizes.large.padding_h }}px;
+    font-size: {{ component_sizes.large.font_size }}px;
+}

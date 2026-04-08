@@ -29,6 +29,8 @@ def _make_valid_token_data(name: str) -> dict:
             "warning": "#f0a020",
             "error": "#d03050",
             "info": "#2080f0",
+            "info_hover": "#4098fc",
+            "info_pressed": "#1060c9",
             "bg_default": "#ffffff",
             "bg_elevated": "#f8f8fa",
             "text_primary": "#333639",

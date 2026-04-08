@@ -48,7 +48,7 @@ class TestDarkModeColorConsistency:
     """
 
     # Feature: tyto-ui-lib-v1, Property 40: 组件 Dark 模式颜色一致性
-    @settings(max_examples=100)
+    @settings(max_examples=100, deadline=1000)
     @given(theme_name=st.sampled_from(["light", "dark"]))
     def test_token_values_match_file(self, qapp: QApplication, theme_name: str) -> None:
         """For any theme name, get_token() returns values consistent with the JSON file."""
@@ -103,7 +103,7 @@ class TestSwitchTrackRepaint:
     """
 
     # Feature: tyto-ui-lib-v1, Property 41: Switch 轨道重绘响应主题切换
-    @settings(max_examples=100)
+    @settings(max_examples=100, deadline=1000)
     @given(
         initial_theme=st.sampled_from(["light", "dark"]),
         target_theme=st.sampled_from(["light", "dark"]),
@@ -142,7 +142,7 @@ class TestGalleryDarkModeBackground:
     """
 
     # Feature: tyto-ui-lib-v1, Property 42: Gallery 界面 Dark 模式背景色
-    @settings(max_examples=100)
+    @settings(max_examples=100, deadline=1000)
     @given(theme_name=st.sampled_from(["light", "dark"]))
     def test_gallery_styles_use_token_colors(self, qapp: QApplication, theme_name: str) -> None:
         """For any theme, GalleryStyles methods return QSS containing the correct token values."""

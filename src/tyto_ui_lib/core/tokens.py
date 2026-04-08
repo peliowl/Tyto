@@ -38,6 +38,8 @@ REQUIRED_COLOR_KEYS: frozenset[str] = frozenset(
         "warning",
         "error",
         "info",
+        "info_hover",
+        "info_pressed",
         "bg_default",
         "bg_elevated",
         "text_primary",
@@ -70,6 +72,8 @@ class DesignTokenSet:
         radius: Border-radius tokens mapping name to pixel value.
         font_sizes: Font-size tokens mapping name to pixel value.
         shadows: Box-shadow tokens mapping name to CSS shadow string.
+        component_sizes: Per-size-variant dimensions (height, padding_h, font_size, icon_size).
+        switch_sizes: Per-size-variant switch dimensions (width, height, thumb).
     """
 
     name: str = ""
@@ -78,10 +82,12 @@ class DesignTokenSet:
     radius: dict[str, int] = field(default_factory=dict)
     font_sizes: dict[str, int] = field(default_factory=dict)
     shadows: dict[str, str] = field(default_factory=dict)
+    component_sizes: dict[str, dict[str, int]] = field(default_factory=dict)
+    switch_sizes: dict[str, dict[str, int]] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the token set to a plain dictionary (JSON-compatible)."""
-        return {
+        result: dict[str, Any] = {
             "name": self.name,
             "colors": dict(self.colors),
             "spacing": dict(self.spacing),
@@ -89,6 +95,11 @@ class DesignTokenSet:
             "font_sizes": dict(self.font_sizes),
             "shadows": dict(self.shadows),
         }
+        if self.component_sizes:
+            result["component_sizes"] = {k: dict(v) for k, v in self.component_sizes.items()}
+        if self.switch_sizes:
+            result["switch_sizes"] = {k: dict(v) for k, v in self.switch_sizes.items()}
+        return result
 
 
 # -- Validation helpers --
@@ -145,6 +156,8 @@ def _parse_token_set(data: dict[str, Any]) -> DesignTokenSet:
         radius=data["radius"],
         font_sizes=data["font_sizes"],
         shadows=data["shadows"],
+        component_sizes=data.get("component_sizes", {}),
+        switch_sizes=data.get("switch_sizes", {}),
     )
 
 

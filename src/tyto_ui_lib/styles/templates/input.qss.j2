@@ -1,5 +1,7 @@
 {# input.qss.j2 — QSS template for TInput component #}
 
+/* ===== Base styles ===== */
+
 TInput {
     background-color: transparent;
     padding: 0px;
@@ -40,4 +42,160 @@ TInput QToolButton {
 
 TInput QToolButton:hover {
     color: {{ colors.text_primary }};
+}
+
+/* ===== Textarea styles ===== */
+
+TInput QPlainTextEdit {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.small }}px {{ spacing.medium }}px;
+    font-size: {{ font_sizes.medium }}px;
+    selection-background-color: {{ colors.primary }};
+    selection-color: {{ colors.white }};
+}
+
+TInput QPlainTextEdit:focus {
+    border-color: {{ colors.border_focus }};
+}
+
+TInput QPlainTextEdit:hover {
+    border-color: {{ colors.primary_hover }};
+}
+
+TInput QPlainTextEdit:disabled {
+    color: {{ colors.text_disabled }};
+    background-color: {{ colors.bg_elevated }};
+    border-color: {{ colors.border }};
+}
+
+
+/* ===== Size variants ===== */
+
+TInput[inputSize="tiny"] QLineEdit {
+    min-height: {{ component_sizes.tiny.height }}px;
+    padding: 0 {{ component_sizes.tiny.padding_h }}px;
+    font-size: {{ component_sizes.tiny.font_size }}px;
+}
+
+TInput[inputSize="small"] QLineEdit {
+    min-height: {{ component_sizes.small.height }}px;
+    padding: 0 {{ component_sizes.small.padding_h }}px;
+    font-size: {{ component_sizes.small.font_size }}px;
+}
+
+TInput[inputSize="medium"] QLineEdit {
+    min-height: {{ component_sizes.medium.height }}px;
+    padding: 0 {{ component_sizes.medium.padding_h }}px;
+    font-size: {{ component_sizes.medium.font_size }}px;
+}
+
+TInput[inputSize="large"] QLineEdit {
+    min-height: {{ component_sizes.large.height }}px;
+    padding: 0 {{ component_sizes.large.padding_h }}px;
+    font-size: {{ component_sizes.large.font_size }}px;
+}
+
+TInput[inputSize="tiny"] QPlainTextEdit {
+    font-size: {{ component_sizes.tiny.font_size }}px;
+}
+
+TInput[inputSize="small"] QPlainTextEdit {
+    font-size: {{ component_sizes.small.font_size }}px;
+}
+
+TInput[inputSize="medium"] QPlainTextEdit {
+    font-size: {{ component_sizes.medium.font_size }}px;
+}
+
+TInput[inputSize="large"] QPlainTextEdit {
+    font-size: {{ component_sizes.large.font_size }}px;
+}
+
+/* ===== Round variant ===== */
+
+TInput[round="true"] QLineEdit {
+    border-radius: {{ component_sizes.medium.height }}px;
+}
+
+TInput[round="true"][inputSize="tiny"] QLineEdit {
+    border-radius: {{ component_sizes.tiny.height }}px;
+}
+
+TInput[round="true"][inputSize="small"] QLineEdit {
+    border-radius: {{ component_sizes.small.height }}px;
+}
+
+TInput[round="true"][inputSize="large"] QLineEdit {
+    border-radius: {{ component_sizes.large.height }}px;
+}
+
+/* ===== Bordered false ===== */
+
+TInput[bordered="false"] QLineEdit {
+    border: none;
+}
+
+TInput[bordered="false"] QPlainTextEdit {
+    border: none;
+}
+
+/* ===== Status variants ===== */
+
+TInput[status="success"] QLineEdit {
+    border-color: {{ colors.success }};
+}
+
+TInput[status="success"] QLineEdit:focus {
+    border-color: {{ colors.success }};
+}
+
+TInput[status="warning"] QLineEdit {
+    border-color: {{ colors.warning }};
+}
+
+TInput[status="warning"] QLineEdit:focus {
+    border-color: {{ colors.warning }};
+}
+
+TInput[status="error"] QLineEdit {
+    border-color: {{ colors.error }};
+}
+
+TInput[status="error"] QLineEdit:focus {
+    border-color: {{ colors.error }};
+}
+
+TInput[status="success"] QPlainTextEdit {
+    border-color: {{ colors.success }};
+}
+
+TInput[status="success"] QPlainTextEdit:focus {
+    border-color: {{ colors.success }};
+}
+
+TInput[status="warning"] QPlainTextEdit {
+    border-color: {{ colors.warning }};
+}
+
+TInput[status="warning"] QPlainTextEdit:focus {
+    border-color: {{ colors.warning }};
+}
+
+TInput[status="error"] QPlainTextEdit {
+    border-color: {{ colors.error }};
+}
+
+TInput[status="error"] QPlainTextEdit:focus {
+    border-color: {{ colors.error }};
+}
+
+/* ===== Count label ===== */
+
+TInput QLabel#inputCountLabel {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.small }}px;
+    padding: 0 {{ spacing.small }}px;
 }

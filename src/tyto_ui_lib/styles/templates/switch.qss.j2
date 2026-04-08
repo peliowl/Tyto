@@ -6,26 +6,68 @@ TSwitch {
     outline: none;
 }
 
-TSwitch QWidget#switch_track {
+/* --- Size variants --- */
+
+TSwitch[switchSize="small"] QWidget#switch_track {
     background-color: {{ colors.border }};
-    border-radius: 10px;
-    min-width: 40px;
-    min-height: 20px;
-    max-width: 40px;
-    max-height: 20px;
+    border-radius: {{ switch_sizes.small.height // 2 }}px;
+    min-width: {{ switch_sizes.small.width }}px;
+    min-height: {{ switch_sizes.small.height }}px;
+    max-width: {{ switch_sizes.small.width }}px;
+    max-height: {{ switch_sizes.small.height }}px;
 }
+
+TSwitch[switchSize="medium"] QWidget#switch_track {
+    background-color: {{ colors.border }};
+    border-radius: {{ switch_sizes.medium.height // 2 }}px;
+    min-width: {{ switch_sizes.medium.width }}px;
+    min-height: {{ switch_sizes.medium.height }}px;
+    max-width: {{ switch_sizes.medium.width }}px;
+    max-height: {{ switch_sizes.medium.height }}px;
+}
+
+TSwitch[switchSize="large"] QWidget#switch_track {
+    background-color: {{ colors.border }};
+    border-radius: {{ switch_sizes.large.height // 2 }}px;
+    min-width: {{ switch_sizes.large.width }}px;
+    min-height: {{ switch_sizes.large.height }}px;
+    max-width: {{ switch_sizes.large.width }}px;
+    max-height: {{ switch_sizes.large.height }}px;
+}
+
+/* --- Checked state --- */
 
 TSwitch[checked="true"] QWidget#switch_track {
     background-color: {{ colors.primary }};
 }
 
+/* --- Round=false (square track) --- */
+
+TSwitch[round="false"][switchSize="small"] QWidget#switch_track {
+    border-radius: {{ (switch_sizes.small.height / 6) | int }}px;
+}
+
+TSwitch[round="false"][switchSize="medium"] QWidget#switch_track {
+    border-radius: {{ (switch_sizes.medium.height / 6) | int }}px;
+}
+
+TSwitch[round="false"][switchSize="large"] QWidget#switch_track {
+    border-radius: {{ (switch_sizes.large.height / 6) | int }}px;
+}
+
+/* --- Hover --- */
+
 TSwitch:hover QWidget#switch_track {
     border: 1px solid {{ colors.primary_hover }};
 }
 
+/* --- Disabled --- */
+
 TSwitch:disabled QWidget#switch_track {
     background-color: {{ colors.bg_elevated }};
 }
+
+/* --- Focus --- */
 
 TSwitch[focused="true"] QWidget#switch_track {
     border: 2px solid {{ colors.border_focus }};

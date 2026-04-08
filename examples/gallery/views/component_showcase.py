@@ -62,7 +62,6 @@ class ComponentShowcase(QScrollArea):
 
         showcase = info.showcase_factory(container)
         layout.addWidget(showcase)
-        layout.addStretch()
 
         self.setWidget(container)
         self._apply_style()

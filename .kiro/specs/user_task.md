@@ -34,3 +34,151 @@
     - "dark"模式下的Tag参考图：[v1.0.1_4.png](../../docs/image/reference/v1.0.1_4.png)
     - "dark"模式下的SearchBar参考图：[v1.0.1_5.png](../../docs/image/reference/v1.0.1_5.png)
     - "dark"模式下的列表及列表项参考图：[v1.0.1_6.png](../../docs/image/reference/v1.0.1_6.png)
+
+- [x] 修改specs中的requirement、task、design文档及其它相关文档，增加/修改V1.0.2版本需求，完成v1.0.1版本中原子组件还未实现的特性：
+  ### TButton 未实现特性
+  - `size`：尺寸变体（NaiveUI 支持 tiny / small / medium / large）
+  - `type` 缺少变体：NaiveUI 支持 tertiary / info / success / warning / error，Tyto 仅有 primary / default / dashed / text
+  - `circle`：圆形按钮
+  - `round`：圆角按钮
+  - `ghost`：幽灵按钮（透明背景 + 彩色边框/文字）
+  - `secondary`：次要按钮样式
+  - `tertiary`：三级按钮样式
+  - `quaternary`：四级按钮样式
+  - `strong`：加粗文字
+  - `block`：块级按钮（宽度撑满父容器）
+  - `color`：自定义颜色
+  - `textColor`：自定义文字颜色
+  - `bordered`：是否显示边框
+  - `iconPlacement`：图标位置（left / right）
+  - `renderIcon` / icon 插槽：自定义图标
+  - `attrType`：原生 button type 属性（button / submit / reset）
+  - `keyboard`：是否支持键盘操作
+  - `focusable`：是否可聚焦
+  - `tag`：自定义渲染根元素标签
+  - `spinProps`：自定义加载旋转器属性
+
+  ### TInput 未实现特性
+  - `size`：尺寸变体（NaiveUI 支持 tiny / small / medium / large）
+  - `type` 缺少 textarea 模式：NaiveUI 支持 text / textarea / password
+  - `round`：圆角输入框
+  - `bordered`：是否显示边框
+  - `maxlength` / `minlength`：输入长度限制
+  - `showCount`：显示字数统计
+  - `readonly`：只读模式
+  - `autofocus`：自动聚焦
+  - `autosize`：textarea 自适应高度（支持 minRows / maxRows）
+  - `rows`：textarea 行数
+  - `pair`：成对输入框模式
+  - `separator`：成对输入框分隔符
+  - `loading`：加载状态
+  - `allowInput`：输入过滤函数
+  - `status`：验证状态（success / warning / error）
+  - `countGraphemes`：自定义字符计数函数
+  - `renderCount`：自定义字数统计渲染
+  - `passivelyActivated`：被动激活模式
+  - `resizable`：textarea 是否可拖拽调整大小
+  - `showPasswordOn`：密码可见触发方式（mousedown / click）
+  - prefix / suffix 插槽：前缀/后缀自定义内容插槽
+  - clear-icon 插槽：自定义清除图标
+  - word-count 插槽：自定义字数统计插槽
+
+  ### TCheckbox 未实现特性
+  - `size`：尺寸变体（NaiveUI 支持 small / medium / large）
+  - `disabled`：禁用状态
+  - `value`：关联值（用于 CheckboxGroup）
+  - `focusable`：是否可聚焦
+  - `checkedValue` / `uncheckedValue`：自定义选中/未选中时的值
+  - `defaultChecked`：默认选中状态（受控/非受控模式）
+  - CheckboxGroup 组件：
+    - `min` / `max`：最少/最多可选数量
+    - `size`：统一尺寸
+    - `disabled`：统一禁用
+    - `value` / `defaultValue`：受控/非受控值
+
+  ### TRadio 未实现特性
+  - `size`：尺寸变体（NaiveUI 支持 small / medium / large）
+  - `disabled`：禁用状态
+  - `name`：原生 radio name 属性
+  - `defaultChecked`：默认选中状态（受控/非受控模式）
+  - RadioButton 组件：按钮样式的单选（NaiveUI 独立组件）
+  - RadioGroup 增强：
+    - `name`：统一 name 属性
+    - `size`：统一尺寸
+    - `disabled`：统一禁用
+    - `defaultValue`：默认值
+    - 按钮模式（RadioButton 子项自动切换为按钮组样式）
+
+  ### TSwitch 未实现特性
+  - `size`：尺寸变体（NaiveUI 支持 small / medium / large）
+  - `loading`：加载状态（带旋转动画）
+  - `round`：是否圆角（NaiveUI 默认 true，支持设为 false 变方形）
+  - `value` / `defaultValue`：受控/非受控模式
+  - `checkedValue` / `uncheckedValue`：自定义开/关时的值（支持 string / number / boolean）
+  - `railStyle`：自定义轨道样式函数
+  - `rubberBand`：橡皮筋回弹效果
+  - `spinProps`：自定义加载旋转器属性
+  - checked / unchecked 插槽：开/关状态下轨道内显示的文字内容
+  - checked-icon / unchecked-icon / icon 插槽：自定义滑块图标
+
+  ### TTag 未实现特性
+  - `type` 缺少 info 变体：NaiveUI 支持 default / primary / success / info / warning / error
+  - `size` 缺少 tiny 变体：NaiveUI 支持 tiny / small / medium / large
+  - `round`：圆角标签
+  - `disabled`：禁用状态
+  - `bordered`：是否显示边框
+  - `color`：自定义颜色对象（color / borderColor / textColor）
+  - `checkable`：可选中标签（类似 toggle）
+  - `checked`：选中状态（配合 checkable 使用）
+  - `strong`：加粗文字
+  - `triggerClickOnClose`：点击关闭按钮时是否同时触发标签点击事件
+  - avatar 插槽：标签前置头像/图标区域
+  - icon 插槽：标签图标插槽
+  - default 插槽：自定义标签内容
+
+- [x] 修改specs中的requirement、task、design文档及其它相关文档，补充V1.0.2版本需求：
+  - 在examples下增加一个案例应用，用于自由设置Tyto控件的属性并实时查看效果
+    - 案例应用的布局与gallery保持一致，布局右侧增加一个属性面板，能够设置控件所提供的属性特性
+    - 在案例应用的左侧点击菜单项后，中部区域显示该控件的默认状态，在右侧属性面板设置属性后，实时更新控件状态
+    - 案例应用支持设置light/dark模式，参考gallery案例
+    - 该案例应用目标是使开发人员方便调试控件效果及用户能够快速体验Tyto
+
+- [ ] 修改specs中的requirement、task、design文档及其它相关文档，增加V1.1.0版本需求：
+  - 增加以下原子控件，需要严格遵循naiveUI的标准并且在文档中明确指出其指标数据：
+    - Spin (加载中)：
+      - 支持嵌套模式（作为容器遮罩）与独立模式。
+      - 提供 3 种内置动画形态（旋转环、跳动点、呼吸灯）。
+    - Slider (滑动条)：
+      - 支持单滑块与双滑块（Range Selector）。
+      - 内置刻度（Marks）与数值悬浮提示（Tooltip）。
+    - InputNumber (数字输入框)：
+      - 精确控制数值步长（Step）、最大/最小值及精度（Precision）。
+      - 支持键盘上下键与长按快速增减。
+    - Empty (空状态)：
+      - 提供标准的占位符逻辑，支持自定义图标、文本及描述。
+    - BackTop (回到顶部)：
+      - 支持滚动高度阈值触发。
+      - 提供平滑的线性滚动回归算法。
+  - 增加以下分子组件，需要严格遵循naiveUI的标准并且在文档中明确指出其指标数据：
+    - Alert (警告提示)：
+      - 非悬浮的常驻式提示（不同于 Message），支持四种语义（Success, Info, Warning, Error）。
+      - 支持多行内容描述及操作按钮嵌入。
+    - Collapse (折叠面板)：
+      - 支持手风琴模式（Accordion）。
+      - 优化动画性能，确保在嵌套大量复杂 Widget 时无掉帧展开。
+    - Popconfirm (气泡确认框)：
+      - 在点击元素旁弹出的轻量化确认窗口，替代沉重的模态框。
+      - 支持自定义操作按钮文字与图标。
+    - Timeline (时间线)：
+      - 用于记录日志、版本演进或状态流转追踪。
+      - 支持节点状态（Pending, Finished）与自定义节点颜色。
+  - 增加以下有机体组件，需要严格遵循naiveUI的标准并且在文档中明确指出其指标数据：
+    - Layout (标准布局容器)：
+      - 实现经典的 Header, Sider, Content, Footer 结构组合。
+      - 支持 Sider 的折叠/展开动画及响应式断点切换。
+    - Card (卡片容器)：
+      - 标准化容器组件，支持 Header 操作区、Body 渲染区及 Footer 统计区。
+      - 支持 Hover 阴影加深效果（Shadow Cardinality）。
+    - Menu (垂直/水平菜单)：
+      - 支持多级嵌套缩进逻辑（Indentation）。
+      - 核心升级：内置路由联动感知（感知当前 Active 路径）。

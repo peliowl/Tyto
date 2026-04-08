@@ -1,5 +1,7 @@
 {# checkbox.qss.j2 — QSS template for TCheckbox component #}
 
+/* ===== Base styles ===== */
+
 TCheckbox {
     background-color: transparent;
     spacing: {{ spacing.small }}px;
@@ -33,6 +35,47 @@ TCheckbox:hover QWidget#checkbox_indicator {
     border-color: {{ colors.primary_hover }};
 }
 
+TCheckbox[focused="true"] QWidget#checkbox_indicator {
+    border-color: {{ colors.border_focus }};
+}
+
+/* ===== Size variants ===== */
+
+TCheckbox[checkboxSize="small"] {
+    font-size: {{ font_sizes.small }}px;
+}
+
+TCheckbox[checkboxSize="small"] QWidget#checkbox_indicator {
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+}
+
+TCheckbox[checkboxSize="medium"] {
+    font-size: {{ font_sizes.medium }}px;
+}
+
+TCheckbox[checkboxSize="medium"] QWidget#checkbox_indicator {
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+}
+
+TCheckbox[checkboxSize="large"] {
+    font-size: {{ font_sizes.large }}px;
+}
+
+TCheckbox[checkboxSize="large"] QWidget#checkbox_indicator {
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+}
+
+/* ===== Disabled state ===== */
+
 TCheckbox:disabled {
     color: {{ colors.text_disabled }};
 }
@@ -42,6 +85,12 @@ TCheckbox:disabled QWidget#checkbox_indicator {
     background-color: {{ colors.bg_elevated }};
 }
 
-TCheckbox[focused="true"] QWidget#checkbox_indicator {
-    border-color: {{ colors.border_focus }};
+TCheckbox:disabled[checkState="checked"] QWidget#checkbox_indicator {
+    background-color: {{ colors.primary }};
+    border-color: {{ colors.primary }};
+}
+
+TCheckbox:disabled[checkState="indeterminate"] QWidget#checkbox_indicator {
+    background-color: {{ colors.primary }};
+    border-color: {{ colors.primary }};
 }

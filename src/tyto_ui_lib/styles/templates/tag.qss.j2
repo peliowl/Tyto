@@ -5,19 +5,24 @@ TTag {
     color: {{ colors.text_primary }};
     border: 1px solid {{ colors.border }};
     border-radius: {{ radius.small }}px;
-    padding: {{ spacing.small }}px {{ spacing.medium }}px;
+    padding: 0px;
     font-size: {{ font_sizes.medium }}px;
     outline: none;
 }
 
 /* Size variants */
+TTag[tagSize="tiny"] {
+    padding: 0px;
+    font-size: {{ component_sizes.tiny.font_size }}px;
+}
+
 TTag[tagSize="small"] {
-    padding: 0px {{ spacing.small }}px;
+    padding: 0px;
     font-size: {{ font_sizes.small }}px;
 }
 
 TTag[tagSize="large"] {
-    padding: {{ spacing.small }}px {{ spacing.large }}px;
+    padding: 0px;
     font-size: {{ font_sizes.large }}px;
 }
 
@@ -34,6 +39,12 @@ TTag[tagType="success"] {
     border-color: {{ colors.success }};
 }
 
+TTag[tagType="info"] {
+    background-color: {{ colors.info }};
+    color: {{ colors.white }};
+    border-color: {{ colors.info }};
+}
+
 TTag[tagType="warning"] {
     background-color: {{ colors.warning }};
     color: {{ colors.white }};
@@ -44,6 +55,51 @@ TTag[tagType="error"] {
     background-color: {{ colors.error }};
     color: {{ colors.white }};
     border-color: {{ colors.error }};
+}
+
+/* Round variant */
+TTag[round="true"] {
+    border-radius: {{ component_sizes.medium.height }}px;
+}
+
+TTag[round="true"][tagSize="tiny"] {
+    border-radius: {{ component_sizes.tiny.height }}px;
+}
+
+TTag[round="true"][tagSize="small"] {
+    border-radius: {{ component_sizes.small.height }}px;
+}
+
+TTag[round="true"][tagSize="large"] {
+    border-radius: {{ component_sizes.large.height }}px;
+}
+
+/* Bordered=false variant */
+TTag[bordered="false"] {
+    border: none;
+}
+
+/* Strong variant */
+TTag[strong="true"] {
+    font-weight: bold;
+}
+
+/* Checkable checked state */
+TTag[checkable="true"][checked="true"] {
+    background-color: {{ colors.primary }};
+    color: {{ colors.white }};
+    border-color: {{ colors.primary }};
+}
+
+TTag[checkable="true"][checked="false"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.text_primary }};
+    border-color: {{ colors.border }};
+}
+
+/* Disabled state */
+TTag[disabled="true"] {
+    opacity: 0.5;
 }
 
 /* Close button */
@@ -62,6 +118,7 @@ TTag QPushButton#tag_close_btn:hover {
 
 TTag[tagType="primary"] QPushButton#tag_close_btn,
 TTag[tagType="success"] QPushButton#tag_close_btn,
+TTag[tagType="info"] QPushButton#tag_close_btn,
 TTag[tagType="warning"] QPushButton#tag_close_btn,
 TTag[tagType="error"] QPushButton#tag_close_btn {
     color: {{ colors.white }};

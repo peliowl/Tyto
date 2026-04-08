@@ -111,3 +111,102 @@ class TestTTagCloseButtonHidesTag:
 
         assert len(received) == 1
         assert not tag.isVisible()
+
+
+class TestTTagInfoType:
+    """Property 61: Tag Info type correctness.
+
+    For any TagType enum value (including the new INFO), creating a TTag
+    with that type should set the tag_type property to the passed value.
+
+    **Validates: Requirements 36.1**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 61: Tag Info 类型正确性
+    @settings(max_examples=100)
+    @given(tag_type=st.sampled_from(list(TTag.TagType)))
+    def test_tag_info_type_correctness(self, qapp: QApplication, tag_type: TTag.TagType) -> None:
+        """For any TagType (including INFO), tag_type property equals the passed value."""
+        tag = TTag("Test", tag_type=tag_type)
+        assert tag.tag_type == tag_type
+        assert tag.property("tagType") == tag_type.value
+
+
+class TestTTagTinySize:
+    """Property 62: Tag Tiny size correctness.
+
+    For any TagSize enum value (including the new TINY), creating a TTag
+    with that size should set the size property to the passed value.
+
+    **Validates: Requirements 36.2**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 62: Tag Tiny 尺寸正确性
+    @settings(max_examples=100)
+    @given(tag_size=st.sampled_from(list(TTag.TagSize)))
+    def test_tag_tiny_size_correctness(self, qapp: QApplication, tag_size: TTag.TagSize) -> None:
+        """For any TagSize (including TINY), size property equals the passed value."""
+        tag = TTag("Test", size=tag_size)
+        assert tag.size == tag_size
+        assert tag.property("tagSize") == tag_size.value
+
+
+class TestTTagCheckableToggle:
+    """Property 63: Tag Checkable Toggle Round-Trip.
+
+    For any checkable=True TTag, clicking toggles is_checked() to the opposite
+    value, and clicking again returns to the initial value. checked_changed
+    signal carries the correct boolean.
+
+    **Validates: Requirements 36.7, 36.8**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 63: Tag Checkable Toggle Round-Trip
+    @settings(max_examples=100, deadline=None)
+    @given(initial_checked=st.booleans())
+    def test_tag_checkable_toggle_roundtrip(self, qapp: QApplication, initial_checked: bool) -> None:
+        """Toggling a checkable tag twice returns to the initial checked state."""
+        tag = TTag("Filter", checkable=True, checked=initial_checked)
+        assert tag.is_checked() == initial_checked
+
+        signals: list[bool] = []
+        tag.checked_changed.connect(lambda v: signals.append(v))
+
+        # First toggle
+        tag.set_checked(not initial_checked)
+        assert tag.is_checked() == (not initial_checked)
+        assert len(signals) == 1
+        assert signals[0] == (not initial_checked)
+
+        # Second toggle (round-trip)
+        tag.set_checked(initial_checked)
+        assert tag.is_checked() == initial_checked
+        assert len(signals) == 2
+        assert signals[1] == initial_checked
+
+
+class TestTTagCustomColor:
+    """Property 64: Tag custom color override.
+
+    For any custom color dict (with color / border_color / text_color),
+    setting it on a TTag should apply those colors as inline stylesheet.
+
+    **Validates: Requirements 36.6**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 64: Tag 自定义颜色覆盖
+    @settings(max_examples=100, deadline=None)
+    @given(
+        bg=st.from_regex(r"#[0-9a-f]{6}", fullmatch=True),
+        border=st.from_regex(r"#[0-9a-f]{6}", fullmatch=True),
+        text=st.from_regex(r"#[0-9a-f]{6}", fullmatch=True),
+    )
+    def test_tag_custom_color_override(self, qapp: QApplication, bg: str, border: str, text: str) -> None:
+        """Custom color dict overrides the tag's inline stylesheet."""
+        color_dict = {"color": bg, "border_color": border, "text_color": text}
+        tag = TTag("Custom", color=color_dict)
+
+        ss = tag.styleSheet()
+        assert bg in ss
+        assert border in ss
+        assert text in ss

@@ -41,6 +41,43 @@ TRadio[focused="true"] QWidget#radio_indicator {
     border-color: {{ colors.border_focus }};
 }
 
+/* Size variants */
+TRadio[radioSize="small"] {
+    font-size: {{ font_sizes.small }}px;
+}
+
+TRadio[radioSize="small"] QWidget#radio_indicator {
+    min-width: 14px;
+    min-height: 14px;
+    max-width: 14px;
+    max-height: 14px;
+    border-radius: 8px;
+}
+
+TRadio[radioSize="medium"] {
+    font-size: {{ font_sizes.medium }}px;
+}
+
+TRadio[radioSize="medium"] QWidget#radio_indicator {
+    min-width: 16px;
+    min-height: 16px;
+    max-width: 16px;
+    max-height: 16px;
+    border-radius: 9px;
+}
+
+TRadio[radioSize="large"] {
+    font-size: {{ font_sizes.large }}px;
+}
+
+TRadio[radioSize="large"] QWidget#radio_indicator {
+    min-width: 20px;
+    min-height: 20px;
+    max-width: 20px;
+    max-height: 20px;
+    border-radius: 11px;
+}
+
 TRadioGroup {
     background-color: transparent;
     padding: 0px;

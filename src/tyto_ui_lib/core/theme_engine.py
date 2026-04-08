@@ -186,6 +186,8 @@ class ThemeEngine(QObject):
             "radius": tokens.radius,
             "font_sizes": tokens.font_sizes,
             "shadows": tokens.shadows,
+            "component_sizes": tokens.component_sizes,
+            "switch_sizes": tokens.switch_sizes,
             "theme": tokens.name,
             **extra_context,
         }

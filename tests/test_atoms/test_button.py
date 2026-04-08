@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from PySide6.QtCore import QEvent, QPointF, Qt
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QSizePolicy
 
 from tyto_ui_lib.components.atoms.button import TButton
 from tyto_ui_lib.core.theme_engine import ThemeEngine
@@ -25,6 +25,8 @@ def _make_valid_token_data(name: str) -> dict:
             "warning": "#f0a020",
             "error": "#d03050",
             "info": "#2080f0",
+            "info_hover": "#4098fc",
+            "info_pressed": "#1060c9",
             "bg_default": "#ffffff",
             "bg_elevated": "#f8f8fa",
             "text_primary": "#333639",
@@ -239,3 +241,88 @@ class TestButtonStylePropagation:
         assert qapp.styleSheet() != ""
         # The buttonType property must still be correct after theme application
         assert btn.property("buttonType") == "primary"
+
+
+# ---------------------------------------------------------------------------
+# Property-Based Tests (V1.0.2 Enhancement)
+# ---------------------------------------------------------------------------
+
+
+class TestTButtonSizeVariant:
+    """Property 43: Button size variant correctness.
+
+    For any ButtonSize enum value, creating a TButton with that size
+    should set the ``size`` property to the given value and the QSS
+    dynamic property ``[size]`` should match.
+
+    **Validates: Requirements 31.1**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 43: Button 尺寸变体正确性
+    @settings(max_examples=100)
+    @given(size=st.sampled_from(list(TButton.ButtonSize)))
+    def test_button_size_property(self, qapp: QApplication, size: TButton.ButtonSize) -> None:
+        """For any ButtonSize, the TButton's size property and QSS dynamic property match."""
+        btn = TButton("Test", size=size)
+        assert btn.size == size
+        assert btn.property("buttonSize") == size.value
+
+
+class TestTButtonExtendedType:
+    """Property 44: Button extended type correctness.
+
+    For any ButtonType enum value (including new tertiary/info/success/
+    warning/error), creating a TButton should set the ``buttonType``
+    dynamic property correctly.
+
+    **Validates: Requirements 31.2**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 44: Button 扩展类型正确性
+    @settings(max_examples=100)
+    @given(button_type=st.sampled_from(list(TButton.ButtonType)))
+    def test_button_extended_type_property(self, qapp: QApplication, button_type: TButton.ButtonType) -> None:
+        """For any ButtonType, the TButton's buttonType dynamic property equals the type's value."""
+        btn = TButton("Test", button_type=button_type)
+        assert btn.button_type == button_type
+        assert btn.property("buttonType") == button_type.value
+
+
+class TestTButtonGhostInvariant:
+    """Property 45: Button ghost style invariant.
+
+    For any ghost=True TButton and any ButtonType, the QSS dynamic
+    property ``[ghost]`` should be "true".
+
+    **Validates: Requirements 31.5**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 45: Button Ghost 样式不变量
+    @settings(max_examples=100)
+    @given(button_type=st.sampled_from(list(TButton.ButtonType)))
+    def test_button_ghost_property(self, qapp: QApplication, button_type: TButton.ButtonType) -> None:
+        """For any ButtonType with ghost=True, the ghost dynamic property is 'true'."""
+        btn = TButton("Test", button_type=button_type, ghost=True)
+        assert btn.ghost is True
+        assert btn.property("ghost") == "true"
+
+
+class TestTButtonBlockInvariant:
+    """Property 46: Button block width invariant.
+
+    For any block=True TButton, the QSS dynamic property ``[block]``
+    should be "true" and the sizePolicy horizontal policy should be
+    Expanding.
+
+    **Validates: Requirements 31.8**
+    """
+
+    # Feature: tyto-ui-lib-v1, Property 46: Button Block 宽度不变量
+    @settings(max_examples=100)
+    @given(button_type=st.sampled_from(list(TButton.ButtonType)))
+    def test_button_block_property(self, qapp: QApplication, button_type: TButton.ButtonType) -> None:
+        """For any ButtonType with block=True, block property is 'true' and sizePolicy is Expanding."""
+        btn = TButton("Test", button_type=button_type, block=True)
+        assert btn.block is True
+        assert btn.property("block") == "true"
+        assert btn.sizePolicy().horizontalPolicy() == QSizePolicy.Policy.Expanding

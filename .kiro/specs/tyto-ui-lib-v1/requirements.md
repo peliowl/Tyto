@@ -421,3 +421,243 @@ V1.0.1 Dark 模式修复版本聚焦于解决在 "dark" 主题下，多个组件
 6. WHEN 主题为 dark 时，THE ComponentShowcase 的展示面板背景 SHALL 使用 `colors.bg_default` 深色背景
 7. WHEN 主题为 dark 时，THE BaseShowcase 的 section 标题和描述文本 SHALL 使用对应的 dark 主题文本颜色
 8. WHEN 主题从 light 切换到 dark 时，THE Gallery 的所有界面元素 SHALL 同步更新为 dark 主题颜色，无残留的 light 主题颜色
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.0.2 - 原子组件特性增强
+
+## 简介
+
+V1.0.2 版本聚焦于补齐原子组件（Atom）在 V1.0.0/V1.0.1 中尚未实现的特性，使 Tyto 组件库的原子组件功能覆盖度对齐 NaiveUI。涉及 TButton、TInput、TCheckbox、TRadio、TSwitch、TTag 六个原子组件的属性扩展、新增子组件（TCheckboxGroup、TRadioButton）以及 Gallery Showcase 的同步更新。
+
+## 术语表
+
+- **Size_Variant**：尺寸变体，组件支持的预设尺寸（tiny / small / medium / large）
+- **Ghost_Button**：幽灵按钮，透明背景 + 彩色边框/文字的按钮样式
+- **Block_Button**：块级按钮，宽度撑满父容器的按钮
+- **Textarea_Mode**：多行文本输入模式，支持自适应高度和行数控制
+- **Checkable_Tag**：可选中标签，类似 toggle 的标签交互模式
+- **RadioButton**：按钮样式的单选组件，在 RadioGroup 中呈现为按钮组样式
+
+## 需求
+
+### 需求 31：TButton 特性增强
+
+**用户故事：** 作为一名开发者，我希望按钮组件支持更多尺寸变体、样式变体和自定义选项，以便在不同业务场景中灵活使用。
+
+#### 验收标准
+
+1. THE TButton SHALL 支持 tiny / small / medium / large 四种尺寸变体，通过 `size` 属性设置，默认为 medium
+2. THE TButton SHALL 新增 tertiary / info / success / warning / error 五种类型变体，与现有 primary / default / dashed / text 共存
+3. WHEN TButton 的 `circle` 属性为 True 时，THE TButton SHALL 渲染为正圆形按钮
+4. WHEN TButton 的 `round` 属性为 True 时，THE TButton SHALL 渲染为全圆角（胶囊形）按钮
+5. WHEN TButton 的 `ghost` 属性为 True 时，THE TButton SHALL 显示透明背景 + 对应类型的彩色边框和文字
+6. THE TButton SHALL 支持 `secondary`、`tertiary`、`quaternary` 三种层级样式变体
+7. WHEN TButton 的 `strong` 属性为 True 时，THE TButton 的文字 SHALL 以加粗字体显示
+8. WHEN TButton 的 `block` 属性为 True 时，THE TButton 的宽度 SHALL 撑满父容器
+9. WHEN TButton 的 `color` 属性被设置时，THE TButton SHALL 使用该自定义颜色作为主色调
+10. WHEN TButton 的 `text_color` 属性被设置时，THE TButton SHALL 使用该颜色作为文字颜色
+11. THE TButton SHALL 支持 `bordered` 属性控制是否显示边框，默认为 True
+12. THE TButton SHALL 支持 `icon_placement` 属性（left / right）控制图标相对于文字的位置
+13. THE TButton SHALL 支持通过 `icon` 参数传入自定义 QIcon 图标
+14. THE TButton SHALL 支持 `attr_type` 属性设置原生 button type（button / submit / reset）
+15. THE TButton SHALL 支持 `focusable` 属性控制是否可聚焦，默认为 True
+
+### 需求 32：TInput 特性增强
+
+**用户故事：** 作为一名开发者，我希望输入框组件支持多行文本、尺寸变体、字数统计和验证状态等高级功能，以便满足复杂表单场景的需求。
+
+#### 验收标准
+
+1. THE TInput SHALL 支持 tiny / small / medium / large 四种尺寸变体，通过 `size` 属性设置，默认为 medium
+2. THE TInput SHALL 支持 text / textarea / password 三种输入模式，通过 `type` 属性设置
+3. WHEN TInput 的 `type` 为 textarea 时，THE TInput SHALL 渲染为多行文本输入区域
+4. WHEN TInput 的 `round` 属性为 True 时，THE TInput SHALL 渲染为全圆角输入框
+5. THE TInput SHALL 支持 `bordered` 属性控制是否显示边框，默认为 True
+6. WHEN TInput 的 `maxlength` 属性被设置时，THE TInput SHALL 限制输入文本的最大长度
+7. WHEN TInput 的 `minlength` 属性被设置时，THE TInput SHALL 在文本长度不足时标记为无效状态
+8. WHEN TInput 的 `show_count` 属性为 True 时，THE TInput SHALL 在输入框右下角显示当前字数 / 最大字数
+9. WHEN TInput 的 `readonly` 属性为 True 时，THE TInput SHALL 允许选择和复制文本但禁止编辑
+10. WHEN TInput 的 `autosize` 属性被设置时（支持 min_rows / max_rows），THE textarea SHALL 根据内容自适应高度
+11. THE TInput SHALL 支持 `rows` 属性设置 textarea 的默认行数
+12. WHEN TInput 的 `loading` 属性为 True 时，THE TInput SHALL 在后缀位置显示加载旋转动画
+13. THE TInput SHALL 支持 `status` 属性设置验证状态（success / warning / error），显示对应的边框颜色
+14. WHEN TInput 的 `resizable` 属性为 True 时，THE textarea SHALL 支持用户拖拽调整大小
+15. THE TInput SHALL 支持 `show_password_on` 属性设置密码可见触发方式（mousedown / click）
+
+### 需求 33：TCheckbox 特性增强
+
+**用户故事：** 作为一名开发者，我希望复选框组件支持尺寸变体、禁用状态和分组管理，以便在表单中实现灵活的多选交互。
+
+#### 验收标准
+
+1. THE TCheckbox SHALL 支持 small / medium / large 三种尺寸变体，通过 `size` 属性设置，默认为 medium
+2. WHEN TCheckbox 的 `disabled` 属性为 True 时，THE TCheckbox SHALL 降低透明度、显示 Forbidden 光标并屏蔽所有交互
+3. THE TCheckbox SHALL 支持 `value` 属性，用于在 TCheckboxGroup 中标识该选项
+4. THE TCheckbox SHALL 支持 `focusable` 属性控制是否可聚焦，默认为 True
+5. THE TCheckbox SHALL 支持 `checked_value` / `unchecked_value` 属性，自定义选中/未选中时的返回值
+6. THE TCheckbox SHALL 支持 `default_checked` 属性设置默认选中状态（非受控模式）
+7. THE TCheckboxGroup SHALL 管理一组 TCheckbox 的选中状态，提供 `value` / `default_value` 属性
+8. THE TCheckboxGroup SHALL 支持 `min` / `max` 属性限制最少/最多可选数量
+9. THE TCheckboxGroup SHALL 支持 `size` 属性统一设置组内所有 TCheckbox 的尺寸
+10. THE TCheckboxGroup SHALL 支持 `disabled` 属性统一禁用组内所有 TCheckbox
+
+### 需求 34：TRadio 特性增强
+
+**用户故事：** 作为一名开发者，我希望单选框组件支持尺寸变体、禁用状态和按钮样式变体，以便在不同 UI 场景中灵活使用。
+
+#### 验收标准
+
+1. THE TRadio SHALL 支持 small / medium / large 三种尺寸变体，通过 `size` 属性设置，默认为 medium
+2. WHEN TRadio 的 `disabled` 属性为 True 时，THE TRadio SHALL 降低透明度、显示 Forbidden 光标并屏蔽所有交互
+3. THE TRadio SHALL 支持 `name` 属性设置原生 radio name
+4. THE TRadioButton SHALL 作为独立组件提供按钮样式的单选交互
+5. THE TRadioGroup SHALL 支持 `name` 属性统一设置组内所有 TRadio 的 name
+6. THE TRadioGroup SHALL 支持 `size` 属性统一设置组内所有 TRadio 的尺寸
+7. THE TRadioGroup SHALL 支持 `disabled` 属性统一禁用组内所有 TRadio
+8. THE TRadioGroup SHALL 支持 `default_value` 属性设置默认选中值
+9. WHEN TRadioGroup 包含 TRadioButton 子项时，THE TRadioGroup SHALL 自动切换为按钮组样式布局
+
+### 需求 35：TSwitch 特性增强
+
+**用户故事：** 作为一名开发者，我希望开关组件支持尺寸变体、加载状态和自定义值，以便在更多业务场景中使用。
+
+#### 验收标准
+
+1. THE TSwitch SHALL 支持 small / medium / large 三种尺寸变体，通过 `size` 属性设置，默认为 medium
+2. WHEN TSwitch 的 `loading` 属性为 True 时，THE TSwitch SHALL 在滑块上显示旋转加载动画并屏蔽交互
+3. WHEN TSwitch 的 `round` 属性为 False 时，THE TSwitch SHALL 渲染为方形轨道和滑块
+4. THE TSwitch SHALL 支持 `checked_value` / `unchecked_value` 属性，自定义开/关时的返回值（支持 str / int / bool）
+5. THE TSwitch SHALL 支持 `rubber_band` 属性启用橡皮筋回弹效果
+6. THE TSwitch SHALL 支持 `checked_text` / `unchecked_text` 属性，在轨道内显示开/关状态文字
+
+### 需求 36：TTag 特性增强
+
+**用户故事：** 作为一名开发者，我希望标签组件支持更多类型变体、可选中交互和自定义颜色，以便在标签筛选和状态展示场景中使用。
+
+#### 验收标准
+
+1. THE TTag SHALL 新增 info 类型变体，与现有 default / primary / success / warning / error 共存
+2. THE TTag SHALL 新增 tiny 尺寸变体，与现有 small / medium / large 共存
+3. WHEN TTag 的 `round` 属性为 True 时，THE TTag SHALL 渲染为全圆角标签
+4. WHEN TTag 的 `disabled` 属性为 True 时，THE TTag SHALL 降低透明度并屏蔽所有交互
+5. THE TTag SHALL 支持 `bordered` 属性控制是否显示边框，默认为 True
+6. WHEN TTag 的 `color` 属性被设置时（包含 color / border_color / text_color），THE TTag SHALL 使用自定义颜色覆盖类型预设
+7. WHEN TTag 的 `checkable` 属性为 True 时，THE TTag SHALL 支持点击切换选中/未选中状态
+8. WHEN TTag 的 `checkable` 为 True 且 `checked` 状态变化时，THE TTag SHALL 发射 `checked_changed` 信号
+9. WHEN TTag 的 `strong` 属性为 True 时，THE TTag 的文字 SHALL 以加粗字体显示
+
+### 需求 37：Gallery Showcase 同步更新
+
+**用户故事：** 作为一名开发者，我希望 Gallery 的组件展示面板同步展示 V1.0.2 新增的所有特性，以便直观预览和测试新功能。
+
+#### 验收标准
+
+1. THE ButtonShowcase SHALL 新增展示区块：尺寸变体、圆形/圆角、幽灵按钮、块级按钮、图标按钮
+2. THE InputShowcase SHALL 新增展示区块：尺寸变体、Textarea 模式、字数统计、验证状态、圆角输入框
+3. THE CheckboxShowcase SHALL 新增展示区块：尺寸变体、禁用状态、CheckboxGroup
+4. THE RadioShowcase SHALL 新增展示区块：尺寸变体、禁用状态、RadioButton 按钮组
+5. THE SwitchShowcase SHALL 新增展示区块：尺寸变体、加载状态、方形开关、轨道文字
+6. THE TagShowcase SHALL 新增展示区块：Tiny 尺寸、Info 类型、圆角标签、可选中标签、自定义颜色
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.0.2 - Playground 交互式调试应用
+
+## 简介
+
+V1.0.2 Playground 版本新增一个独立的交互式调试应用（Playground），允许开发者和用户自由设置 Tyto 控件的属性并实时查看效果。Playground 的布局与 Gallery 保持一致（左侧导航 + 中部展示），并在右侧新增属性面板（Property Panel），支持动态修改控件的所有可配置属性。目标是为开发人员提供便捷的控件调试工具，同时让用户能够快速体验 Tyto 组件库的全部能力。
+
+## 术语表
+
+- **Playground**：交互式调试应用，支持实时修改控件属性并预览效果
+- **PropertyPanel**：属性面板，位于布局右侧，提供控件属性的编辑控件
+- **PropertyEditor**：属性编辑器，单个属性的编辑控件（如下拉框、复选框、输入框等）
+- **ComponentPreview**：组件预览区域，位于布局中部，展示当前控件的实时状态
+- **PropertyDefinition**：属性定义，描述控件某个属性的名称、类型、默认值和可选值
+
+## 需求
+
+### 需求 38：Playground 应用架构
+
+**用户故事：** 作为一名开发者，我希望有一个独立的 Playground 应用，采用与 Gallery 一致的 MVVM 架构，以便代码结构清晰、易于维护。
+
+#### 验收标准
+
+1. THE Playground SHALL 作为独立应用存放在 `examples/playground/` 目录下，入口文件为 `examples/playground.py`
+2. THE Playground SHALL 采用 MVVM 架构模式，复用 Gallery 的 Model 层（ComponentRegistry、ComponentInfo）
+3. THE Playground SHALL 提供三栏布局：左侧导航菜单、中部组件预览区域、右侧属性面板
+4. THE Playground 的顶部栏 SHALL 包含标题 "Tyto UI Playground" 和 Light/Dark 主题切换开关
+5. WHEN 新增一个组件时，开发者 SHALL 仅需添加一个 PropertyDefinition 配置并注册，无需修改 Playground 框架代码
+
+### 需求 39：Playground 左侧导航菜单
+
+**用户故事：** 作为一名开发者，我希望 Playground 左侧有与 Gallery 一致的分类导航菜单，以便快速切换到目标控件。
+
+#### 验收标准
+
+1. THE Playground 的 NavigationMenu SHALL 显示三个一级分类：原子组件（Atoms）、分子组件（Molecules）、有机体组件（Organisms）
+2. THE NavigationMenu SHALL 列出每个分类下的所有已注册组件
+3. WHEN 用户点击某个组件项时，THE NavigationMenu SHALL 通知 ViewModel 更新当前选中组件
+4. THE NavigationMenu SHALL 高亮显示当前选中的组件项
+
+### 需求 40：Playground 中部组件预览区域
+
+**用户故事：** 作为一名开发者，我希望在左侧选择控件后，中部区域展示该控件的默认状态实例，以便直观查看控件效果。
+
+#### 验收标准
+
+1. WHEN 用户在左侧菜单选中一个组件时，THE ComponentPreview SHALL 在中部区域创建并展示该组件的一个实时实例
+2. THE ComponentPreview SHALL 以默认属性值创建组件实例
+3. WHEN 右侧属性面板的属性值发生变化时，THE ComponentPreview SHALL 实时更新组件实例的对应属性
+4. THE ComponentPreview SHALL 支持垂直滚动以容纳不同尺寸的组件
+
+### 需求 41：Playground 右侧属性面板
+
+**用户故事：** 作为一名开发者，我希望在右侧有一个属性面板，能够设置当前选中控件的所有可配置属性，以便实时调试控件效果。
+
+#### 验收标准
+
+1. WHEN 用户选中一个组件时，THE PropertyPanel SHALL 动态生成该组件所有可配置属性的编辑控件
+2. THE PropertyPanel SHALL 根据属性类型自动选择合适的编辑控件：
+   - 枚举类型（如 ButtonType、ButtonSize）：使用下拉选择框（QComboBox）
+   - 布尔类型（如 disabled、loading）：使用复选框（QCheckBox）
+   - 字符串类型（如 text、placeholder）：使用文本输入框（QLineEdit）
+   - 整数类型（如 maxlength、rows）：使用数字输入框（QSpinBox）
+   - 颜色类型（如 color、text_color）：使用颜色输入框（QLineEdit，支持 hex 格式）
+3. WHEN 用户修改属性面板中的某个属性值时，THE PropertyPanel SHALL 立即通知 ViewModel，触发组件预览区域的实时更新
+4. THE PropertyPanel SHALL 为每个属性显示属性名称和当前值
+5. THE PropertyPanel SHALL 支持垂直滚动以容纳所有属性编辑控件
+6. WHEN 用户切换到另一个组件时，THE PropertyPanel SHALL 清除旧属性并重新生成新组件的属性编辑控件
+
+### 需求 42：Playground 属性定义与组件注册
+
+**用户故事：** 作为一名开发者，我希望通过声明式的属性定义来配置每个组件的可编辑属性，以便快速扩展新组件的 Playground 支持。
+
+#### 验收标准
+
+1. THE PropertyDefinition SHALL 描述组件属性的名称（name）、显示标签（label）、属性类型（prop_type）、默认值（default）和可选值列表（options，仅枚举类型需要）
+2. THE Playground SHALL 为以下原子组件提供完整的属性定义：
+   - TButton：text、button_type、size、loading、disabled、circle、round、ghost、strong、block、bordered、color、text_color
+   - TInput：placeholder、input_type、size、clearable、password、round、bordered、maxlength、show_count、readonly、loading、status
+   - TCheckbox：label、size、disabled、default_checked
+   - TRadio：label、size、disabled
+   - TSwitch：size、disabled、loading、round、checked_text、unchecked_text
+   - TTag：text、tag_type、size、closable、round、disabled、bordered、checkable、strong
+3. THE Playground SHALL 为分子和有机体组件提供基础属性定义：
+   - TSearchBar：placeholder、clearable
+   - TBreadcrumb：separator
+   - TMessage：触发各类型消息的按钮（非属性编辑，而是操作按钮）
+4. EACH 属性定义 SHALL 包含一个 `apply` 回调函数，用于将属性值应用到组件实例上
+
+### 需求 43：Playground 主题切换
+
+**用户故事：** 作为一名开发者，我希望 Playground 支持 Light/Dark 主题实时切换，以便在不同主题下调试控件效果。
+
+#### 验收标准
+
+1. THE Playground SHALL 在顶部栏保留主题切换开关（TSwitch）
+2. WHEN 用户切换主题时，THE Playground 的所有区域（导航菜单、预览区域、属性面板、顶部栏）SHALL 同步更新为对应主题样式
+3. WHEN 用户切换主题时，THE ComponentPreview 中的组件实例 SHALL 自动响应主题变化并更新样式

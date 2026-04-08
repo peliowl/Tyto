@@ -6,6 +6,7 @@ a ``hbox`` static helper for horizontal widget layouts.
 
 from __future__ import annotations
 
+from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from examples.gallery.styles.gallery_styles import GalleryStyles
@@ -30,6 +31,10 @@ class BaseShowcase(QWidget):
 
         engine = ThemeEngine.instance()
         engine.theme_changed.connect(self._refresh_styles)
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        """Return the layout's preferred size so the scroll area allocates enough space."""
+        return self._layout.sizeHint()
 
     def add_section(self, title: str, description: str, content: QWidget) -> None:
         """Add a showcase section with title, description, and content widget.
@@ -56,6 +61,9 @@ class BaseShowcase(QWidget):
     def hbox(*widgets: QWidget) -> QWidget:
         """Wrap widgets in a horizontal layout container.
 
+        A small bottom margin prevents child widget borders from being
+        clipped by the container edge.
+
         Args:
             widgets: Widgets to arrange horizontally.
 
@@ -64,7 +72,7 @@ class BaseShowcase(QWidget):
         """
         container = QWidget()
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 0, 0, 2)
         layout.setSpacing(12)
         for w in widgets:
             layout.addWidget(w)
