@@ -1,0 +1,38 @@
+{# empty.qss.j2 — QSS template for TEmpty component #}
+
+TEmpty {
+    background-color: transparent;
+    outline: none;
+}
+
+TEmpty QLabel#empty_description {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.medium }}px;
+    background-color: transparent;
+}
+
+TEmpty QLabel#empty_icon {
+    background-color: transparent;
+}
+
+{# Size variant selectors #}
+
+TEmpty[emptySize="tiny"] QLabel#empty_description {
+    font-size: {{ font_sizes.small }}px;
+}
+
+TEmpty[emptySize="small"] QLabel#empty_description {
+    font-size: {{ font_sizes.small }}px;
+}
+
+TEmpty[emptySize="medium"] QLabel#empty_description {
+    font-size: {{ font_sizes.medium }}px;
+}
+
+TEmpty[emptySize="large"] QLabel#empty_description {
+    font-size: {{ font_sizes.large }}px;
+}
+
+TEmpty[emptySize="huge"] QLabel#empty_description {
+    font-size: {{ font_sizes.xlarge }}px;
+}

@@ -942,3 +942,548 @@
 - 每个组件的属性定义独立维护，新增组件仅需添加 `xxx_props.py` 并在 `register_all_properties()` 中注册
 - View 层的视觉效果通过手动运行验证
 - Playground 的样式模块复用 GalleryStyles 的 Token 读取模式
+
+
+---
+
+# 实现计划：Tyto UI 组件库 V1.1.0 - 新增组件与架构增强
+
+## 概述
+
+新增 12 个 UI 组件和 3 项架构增强。按依赖关系排序：先实现架构增强模块（EventBus、EasingEngine、ContainerQuery），再扩展 Design Token，然后逐层实现原子组件、分子组件和有机体组件，最后更新 Gallery/Playground 和包导出。
+
+## 任务
+
+- [x] 44. 架构增强 - 全局事件总线
+  - [x] 44.1 实现 EventBus 单例
+    - 在 `src/tyto_ui_lib/core/event_bus.py` 中实现 EventBus 类
+    - 实现 `instance()` 单例方法
+    - 实现 `emit()`、`on()`、`off()`、`once()`、`clear()`、`clear_all()` 方法
+    - emit 中捕获回调异常并记录日志，继续执行后续回调
+    - 按订阅顺序调用回调
+    - _需求：56.1, 56.2, 56.3, 56.4, 56.5, 56.6, 56.7, 56.8_
+
+  - [ ]* 44.2 编写 EventBus 属性基测试
+    - **属性 98：EventBus 发布/订阅 Round-Trip**
+    - **属性 99：EventBus 取消订阅**
+    - **属性 100：EventBus once 单次触发**
+    - **属性 101：EventBus 异常隔离**
+    - **验证需求：56.2, 56.3, 56.4, 56.5, 56.6, 56.7, 56.8**
+
+- [x] 45. 架构增强 - 贝塞尔曲线动画引擎
+  - [x] 45.1 实现 EasingEngine
+    - 在 `src/tyto_ui_lib/core/easing_engine.py` 中实现 EasingEngine 类
+    - 实现 `ease_in_cubic()`、`ease_out_cubic()`、`ease_in_out_cubic()` 静态方法
+    - 实现 `ease_in_quad()`、`ease_out_quad()`、`ease_in_out_quad()` 静态方法
+    - 实现 `custom_bezier(p1x, p1y, p2x, p2y)` 方法，返回自定义缓动函数
+    - 输入 t 超出 [0, 1] 时自动 clamp
+    - _需求：57.1, 57.2, 57.3, 57.4, 57.5, 57.6_
+
+  - [ ]* 45.2 编写 EasingEngine 属性基测试
+    - **属性 102：EasingEngine 值域不变量**
+    - **属性 103：EasingEngine 边界条件**
+    - **属性 104：EasingEngine 自定义贝塞尔边界条件**
+    - **验证需求：57.2, 57.3, 57.4**
+
+- [x] 46. 架构增强 - 容器查询系统
+  - [x] 46.1 实现 ContainerQueryMixin
+    - 在 `src/tyto_ui_lib/common/traits/container_query.py` 中实现 ContainerQueryMixin
+    - 实现 `add_breakpoint()`、`current_breakpoint()`、`container_resized()` 方法
+    - 实现 `_install_resize_filter()` 使用 QResizeEvent 监听父容器尺寸变化
+    - 实现 `breakpoint_changed` 信号
+    - 父容器为 None 时记录警告日志
+    - _需求：58.1, 58.2, 58.3, 58.4, 58.5, 58.6, 58.7_
+
+  - [ ]* 46.2 编写 ContainerQuery 属性基测试
+    - **属性 105：ContainerQuery 断点匹配**
+    - **属性 106：ContainerQuery resize 回调**
+    - **验证需求：58.2, 58.3, 58.4, 58.5**
+
+- [x] 47. 检查点 - 架构增强验证
+  - 确保所有测试通过，如有问题请向用户确认。
+
+- [x] 48. Token 扩展 - 新增组件 Token
+  - [x] 48.1 扩展 light.json 和 dark.json Token 文件
+    - 新增 `spin_sizes` 节点（small/medium/large 的 size）
+    - 新增 `slider` 节点（track_height、thumb_size、thumb_border_size）
+    - 新增 `layout` 节点（header_height、footer_height、sider_width、sider_collapsed_width、breakpoints）
+    - 新增 `card` 节点（padding_small、padding_medium、padding_large）
+    - 新增 `menu` 节点（indent、item_height、collapsed_width）
+    - 新增 `colors` 中的 alert 背景色、timeline 节点色、spin 遮罩色
+    - 确保 light 和 dark 两套主题包含完全相同的新增键集合
+    - _需求：44.4, 45.4, 46.9, 49.1, 52.2, 53.5, 53.8, 53.9, 54.8, 55.4_
+
+  - [x] 48.2 更新 ThemeEngine 以支持新增 Token 结构
+    - 确保 `ThemeEngine.render_qss()` 能将新增 Token 节点传递给 Jinja2 模板上下文
+    - _需求：44.4, 53.10_
+
+- [x] 49. 原子组件 - TSpin
+  - [x] 49.1 创建 spin.qss.j2 模板并实现 TSpin 组件
+    - 在 `styles/templates/spin.qss.j2` 中创建 Spin 样式模板
+    - 在 `src/tyto_ui_lib/components/atoms/spin.py` 中实现 TSpin
+    - 实现 SpinMode（standalone/nested）、AnimationType（ring/dots/pulse）、SpinSize 枚举
+    - 实现独立模式和嵌套模式（遮罩层 opacity 0.38）
+    - 实现三种动画形态的 paintEvent 绘制
+    - 实现 delay 延迟显示逻辑（QTimer）
+    - 实现 spinning_changed 信号
+    - _需求：44.1, 44.2, 44.3, 44.4, 44.5, 44.6, 44.7, 44.8_
+
+  - [ ]* 49.2 编写 TSpin 属性基测试
+    - **属性 68：TSpin 配置正确性**
+    - **属性 69：TSpin spinning 状态 Round-Trip**
+    - **验证需求：44.1, 44.3, 44.4, 44.5**
+
+- [x] 50. 原子组件 - TSlider
+  - [x] 50.1 创建 slider.qss.j2 模板并实现 TSlider 组件
+    - 在 `styles/templates/slider.qss.j2` 中创建 Slider 样式模板
+    - 在 `src/tyto_ui_lib/components/atoms/slider.py` 中实现 TSlider
+    - 实现单滑块和双滑块（range）模式
+    - 实现 min/max 值域约束和 step 步长吸附
+    - 实现 marks 刻度标签渲染
+    - 实现 tooltip 数值悬浮提示
+    - 实现 vertical 垂直模式
+    - 实现 disabled 状态
+    - 实现 value_changed 信号
+    - 混入 HoverEffectMixin
+    - _需求：45.1, 45.2, 45.3, 45.4, 45.5, 45.6, 45.7, 45.8, 45.9, 45.10_
+
+  - [ ]* 50.2 编写 TSlider 属性基测试
+    - **属性 70：TSlider 范围模式不变量**
+    - **属性 71：TSlider 值域约束不变量**
+    - **属性 72：TSlider 步长吸附**
+    - **属性 73：TSlider value_changed 信号**
+    - **验证需求：45.3, 45.4, 45.5, 45.8**
+
+- [x] 51. 原子组件 - TInputNumber
+  - [x] 51.1 创建 inputnumber.qss.j2 模板并实现 TInputNumber 组件
+    - 在 `styles/templates/inputnumber.qss.j2` 中创建 InputNumber 样式模板
+    - 在 `src/tyto_ui_lib/components/atoms/inputnumber.py` 中实现 TInputNumber
+    - 实现 step 步长、min/max 范围约束、precision 精度控制
+    - 实现键盘上下箭头增减
+    - 实现长按按钮连续增减（500ms 启动，100ms 间隔）
+    - 实现 +/- 增减按钮
+    - 实现非数字输入拒绝（QValidator）
+    - 实现 InputNumberSize 尺寸变体
+    - 实现 disabled 状态
+    - 实现 value_changed 信号
+    - 混入 FocusGlowMixin
+    - _需求：46.1, 46.2, 46.3, 46.4, 46.5, 46.6, 46.7, 46.8, 46.9, 46.10, 46.11_
+
+  - [ ]* 51.2 编写 TInputNumber 属性基测试
+    - **属性 74：TInputNumber 步进正确性**
+    - **属性 75：TInputNumber 值域约束不变量**
+    - **属性 76：TInputNumber 精度格式化**
+    - **属性 77：TInputNumber 非数字输入拒绝**
+    - **属性 78：TInputNumber 尺寸变体正确性**
+    - **验证需求：46.1, 46.2, 46.3, 46.4, 46.5, 46.9, 46.10**
+
+- [x] 52. 原子组件 - TEmpty 和 TBackTop
+  - [x] 52.1 创建 empty.qss.j2 模板并实现 TEmpty 组件
+    - 在 `styles/templates/empty.qss.j2` 中创建 Empty 样式模板
+    - 在 `src/tyto_ui_lib/components/atoms/empty.py` 中实现 TEmpty
+    - 实现默认 SVG 空状态图标
+    - 实现 description、image、image_size 属性
+    - 实现 set_extra() 自定义操作区域
+    - 实现垂直居中布局
+    - _需求：47.1, 47.2, 47.3, 47.4, 47.5, 47.6_
+
+  - [x] 52.2 创建 backtop.qss.j2 模板并实现 TBackTop 组件
+    - 在 `styles/templates/backtop.qss.j2` 中创建 BackTop 样式模板
+    - 在 `src/tyto_ui_lib/components/atoms/backtop.py` 中实现 TBackTop
+    - 实现目标滚动区域监听（QScrollArea 的 verticalScrollBar valueChanged 信号）
+    - 实现 visibility_height 阈值触发显示/隐藏（淡入淡出动画）
+    - 实现平滑线性滚动回顶算法（300ms，使用 EasingEngine）
+    - 实现 right/bottom 定位偏移
+    - 实现 set_content() 自定义按钮内容
+    - 实现 clicked 信号
+    - _需求：48.1, 48.2, 48.3, 48.4, 48.5, 48.6, 48.7_
+
+  - [ ]* 52.3 编写 TEmpty 和 TBackTop 单元测试
+    - TEmpty：验证默认描述文本、自定义 image、set_extra
+    - TBackTop：验证 visibility_height 属性、right/bottom 偏移
+    - _需求：47.1, 47.2, 47.3, 48.5, 48.6_
+
+- [x] 53. 检查点 - 原子组件验证
+  - 确保所有测试通过，如有问题请向用户确认。
+
+- [x] 54. 分子组件 - TAlert
+  - [x] 54.1 创建 alert.qss.j2 模板并实现 TAlert 组件
+    - 在 `styles/templates/alert.qss.j2` 中创建 Alert 样式模板
+    - 在 `src/tyto_ui_lib/components/molecules/alert.py` 中实现 TAlert
+    - 实现 AlertType（success/info/warning/error）四种语义类型，各有独立图标和配色
+    - 实现 title 和 description 属性
+    - 实现 closable 关闭按钮和淡出动画
+    - 实现 set_action() 嵌入操作按钮
+    - 实现 bordered 左侧彩色边框条
+    - 实现 closed 信号
+    - _需求：49.1, 49.2, 49.3, 49.4, 49.5, 49.6, 49.7, 49.8_
+
+  - [ ]* 54.2 编写 TAlert 属性基测试
+    - **属性 79：TAlert 类型正确性**
+    - **属性 80：TAlert 关闭行为**
+    - **验证需求：49.1, 49.5, 49.6**
+
+- [x] 55. 分子组件 - TCollapse
+  - [x] 55.1 创建 collapse.qss.j2 模板并实现 TCollapse 和 TCollapseItem 组件
+    - 在 `styles/templates/collapse.qss.j2` 中创建 Collapse 样式模板
+    - 在 `src/tyto_ui_lib/components/molecules/collapse.py` 中实现 TCollapseItem 和 TCollapse
+    - 实现 TCollapseItem 的标题栏点击展开/收起，使用 ease-in-out 缓动曲线（200ms）
+    - 实现 TCollapse 的 accordion 手风琴模式
+    - 实现 expanded_names 初始展开控制
+    - 实现 disabled 屏蔽交互
+    - 实现 item_expanded 和 expanded_changed 信号
+    - _需求：50.1, 50.2, 50.3, 50.4, 50.5, 50.6, 50.7, 50.8_
+
+  - [ ]* 55.2 编写 TCollapse 属性基测试
+    - **属性 81：TCollapse 手风琴模式不变量**
+    - **属性 82：TCollapse 展开状态 Round-Trip**
+    - **属性 83：TCollapse expanded_names 初始化**
+    - **属性 84：TCollapseItem disabled 屏蔽交互**
+    - **验证需求：50.2, 50.3, 50.6, 50.7, 50.8**
+
+- [x] 56. 分子组件 - TPopconfirm
+  - [x] 56.1 创建 popconfirm.qss.j2 模板并实现 TPopconfirm 组件
+    - 在 `styles/templates/popconfirm.qss.j2` 中创建 Popconfirm 样式模板
+    - 在 `src/tyto_ui_lib/components/molecules/popconfirm.py` 中实现 TPopconfirm
+    - 实现触发元素点击弹出确认窗口
+    - 实现 title、confirm_text、cancel_text、icon 属性
+    - 实现 Placement（top/bottom/left/right）定位
+    - 实现确认/取消按钮点击关闭并发射 confirmed/cancelled 信号
+    - 实现外部点击关闭
+    - 实现 150ms 淡入淡出动画
+    - _需求：51.1, 51.2, 51.3, 51.4, 51.5, 51.6, 51.7, 51.8, 51.9_
+
+  - [ ]* 56.2 编写 TPopconfirm 属性基测试
+    - **属性 85：TPopconfirm 确认/取消信号**
+    - **属性 86：TPopconfirm 位置正确性**
+    - **验证需求：51.5, 51.6, 51.8**
+
+- [x] 57. 分子组件 - TTimeline
+  - [x] 57.1 创建 timeline.qss.j2 模板并实现 TTimeline 和 TTimelineItem 组件
+    - 在 `styles/templates/timeline.qss.j2` 中创建 Timeline 样式模板
+    - 在 `src/tyto_ui_lib/components/molecules/timeline.py` 中实现 TTimelineItem 和 TTimeline
+    - 实现 TTimelineItem 的 ItemStatus（default/pending/finished/error）状态和自定义颜色
+    - 实现 title、content、time 属性
+    - 实现 set_dot() 自定义节点图标
+    - 实现 TTimeline 的 TimelineMode（left/right）布局模式
+    - 实现相邻节点间连接线绘制（paintEvent）
+    - 实现 item_clicked 信号
+    - _需求：52.1, 52.2, 52.3, 52.4, 52.5, 52.6, 52.7, 52.8_
+
+  - [ ]* 57.2 编写 TTimeline 属性基测试
+    - **属性 87：TTimeline Items Round-Trip**
+    - **属性 88：TTimelineItem 状态与颜色正确性**
+    - **属性 89：TTimeline 模式正确性**
+    - **验证需求：52.1, 52.2, 52.3, 52.6**
+
+- [x] 58. 检查点 - 分子组件验证
+  - 确保所有测试通过，如有问题请向用户确认。
+
+- [x] 59. 有机体组件 - TLayout
+  - [x] 59.1 创建 layout.qss.j2 模板并实现 TLayout 系列组件
+    - 在 `styles/templates/layout.qss.j2` 中创建 Layout 样式模板
+    - 在 `src/tyto_ui_lib/components/organisms/layout.py` 中实现 TLayout、TLayoutHeader、TLayoutSider、TLayoutContent、TLayoutFooter
+    - 实现 TLayoutSider 的 collapsed 折叠/展开（200ms 宽度过渡动画）
+    - 实现 TLayoutSider 的 width/collapsed_width 属性
+    - 实现 TLayoutSider 的 breakpoint 响应式断点自动折叠
+    - 实现 TLayoutHeader/TLayoutFooter 的 height 属性
+    - 实现 TLayout 的布局组合逻辑（QHBoxLayout + QVBoxLayout 嵌套）
+    - 实现 collapsed_changed 信号
+    - _需求：53.1, 53.2, 53.3, 53.4, 53.5, 53.6, 53.7, 53.8, 53.9, 53.10_
+
+  - [ ]* 59.2 编写 TLayout 属性基测试
+    - **属性 90：TLayoutSider 折叠状态 Round-Trip**
+    - **属性 91：TLayoutSider 响应式断点**
+    - **验证需求：53.3, 53.6, 53.7**
+
+- [x] 60. 有机体组件 - TCard
+  - [x] 60.1 创建 card.qss.j2 模板并实现 TCard 组件
+    - 在 `styles/templates/card.qss.j2` 中创建 Card 样式模板
+    - 在 `src/tyto_ui_lib/components/organisms/card.py` 中实现 TCard
+    - 实现 Header/Body/Footer 三区域布局
+    - 实现 title 属性和 set_header_extra()、set_content()、set_footer() 方法
+    - 实现 CardSize（small/medium/large）尺寸变体（padding 12/20/24px）
+    - 实现 hoverable 悬停阴影加深效果（shadows.small → shadows.medium，200ms）
+    - 实现 bordered 边框控制
+    - 实现 closable 关闭按钮和 closed 信号
+    - 混入 HoverEffectMixin
+    - _需求：54.1, 54.2, 54.3, 54.4, 54.5, 54.6, 54.7, 54.8, 54.9, 54.10_
+
+  - [ ]* 60.2 编写 TCard 属性基测试
+    - **属性 92：TCard 尺寸变体正确性**
+    - **属性 93：TCard 关闭行为**
+    - **验证需求：54.8, 54.9, 54.10**
+
+- [x] 61. 有机体组件 - TMenu
+  - [x] 61.1 创建 menu.qss.j2 模板并实现 TMenu 系列组件
+    - 在 `styles/templates/menu.qss.j2` 中创建 Menu 样式模板
+    - 在 `src/tyto_ui_lib/components/organisms/menu.py` 中实现 TMenuItem、TMenuItemGroup、TMenu
+    - 实现 TMenuItem 的 key/label/icon 属性和 active 高亮样式
+    - 实现 TMenuItemGroup 的多级嵌套（每级缩进 24px）和展开/收起动画
+    - 实现 TMenu 的 MenuMode（vertical/horizontal）布局模式
+    - 实现 active_key 设置和 item_selected 信号
+    - 实现 collapsed 折叠模式（仅显示图标，200ms 宽度过渡）
+    - 实现 route_awareness 路由联动感知
+    - 实现 disabled 禁用整个菜单
+    - _需求：55.1, 55.2, 55.3, 55.4, 55.5, 55.6, 55.7, 55.8, 55.9, 55.10, 55.11_
+
+  - [ ]* 61.2 编写 TMenu 属性基测试
+    - **属性 94：TMenu item_selected 信号**
+    - **属性 95：TMenu active_key Round-Trip**
+    - **属性 96：TMenu 路由感知**
+    - **属性 97：TMenu disabled 屏蔽交互**
+    - **验证需求：55.5, 55.6, 55.9, 55.11**
+
+- [x] 62. 检查点 - 有机体组件验证
+  - 确保所有测试通过，如有问题请向用户确认。
+
+- [x] 63. 包导出更新与 Gallery/Playground 同步
+  - [x] 63.1 更新包导出
+    - 在 `src/tyto_ui_lib/__init__.py` 中导出所有 V1.1.0 新增组件和核心 API
+    - 导出列表：EventBus、EasingEngine、ContainerQueryMixin、TSpin、TSlider、TInputNumber、TEmpty、TBackTop、TAlert、TCollapse、TCollapseItem、TPopconfirm、TTimeline、TTimelineItem、TLayout、TLayoutHeader、TLayoutSider、TLayoutContent、TLayoutFooter、TCard、TMenu、TMenuItem、TMenuItemGroup
+    - 更新 __version__ = "1.1.0"
+    - _需求：44-58_
+
+  - [x] 63.2 更新 Gallery Showcase
+    - 在 `examples/gallery/showcases/` 中为每个新增组件创建 Showcase 模块
+    - 创建 spin_showcase.py、slider_showcase.py、inputnumber_showcase.py、empty_showcase.py、backtop_showcase.py
+    - 创建 alert_showcase.py、collapse_showcase.py、popconfirm_showcase.py、timeline_showcase.py
+    - 创建 layout_showcase.py、card_showcase.py、menu_showcase.py
+    - 在 `examples/gallery/showcases/__init__.py` 的 `register_all()` 中注册所有新组件
+    - _需求：44-55_
+
+  - [x] 63.3 更新 Playground 属性定义
+    - 在 `examples/playground/definitions/` 中为每个新增组件创建属性定义文件
+    - 创建 spin_props.py、slider_props.py、inputnumber_props.py、empty_props.py、backtop_props.py
+    - 创建 alert_props.py、collapse_props.py、popconfirm_props.py、timeline_props.py
+    - 创建 layout_props.py、card_props.py、menu_props.py
+    - 在 `examples/playground/definitions/__init__.py` 的 `register_all_properties()` 中注册所有新组件属性
+    - _需求：44-55_
+
+- [x] 64. 最终检查点 - V1.1.0 全部验证
+  - 运行 `uv run pytest` 确保所有测试通过
+  - 手动运行 `uv run python examples/gallery.py` 验证所有新增组件的展示效果
+  - 手动运行 `uv run python examples/playground.py` 验证所有新增组件的属性编辑
+  - 验证 light/dark 主题下新增组件的颜色正确性
+
+## 备注
+
+- 标记 `*` 的任务为可选任务，可跳过以加速 MVP 交付
+- 任务 44-46（架构增强）为前置任务，后续组件可能依赖 EasingEngine 和 ContainerQueryMixin
+- 任务 48（Token 扩展）为所有新增组件的前置任务
+- 任务 49-52（原子组件）可按任意顺序实现，彼此无依赖
+- 任务 54-57（分子组件）可按任意顺序实现，彼此无依赖
+- 任务 59-61（有机体组件）可按任意顺序实现，彼此无依赖
+- 任务 63（Gallery/Playground 更新）依赖对应组件实现完成
+- 所有新增组件遵循现有的 Design Token + Jinja2 + QSS 架构
+- 属性基测试使用 Hypothesis 框架，每个属性至少 100 次迭代
+
+
+---
+
+# 实现计划：Tyto UI 组件库 V1.1.0 - 组件特性增强（第二批）
+
+## 概述
+
+在现有 V1.1.0 组件基础上扩展属性和交互能力，补齐与 NaiveUI 的特性差距。按组件分组实现：先增强原子组件，再增强分子组件，最后更新 Gallery/Playground 和编写测试。包含 TPopconfirm 的 Bug 修复。
+
+## 任务
+
+- [x] 65. TSpin 特性增强
+  - [x] 65.1 扩展 TSpin 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/spin.py` 中
+    - 新增 `rotate` 属性（bool，默认 True），控制自定义图标是否旋转
+    - 新增 `content_class`、`content_style` 属性，自定义嵌套模式内容区域样式
+    - 新增 `stroke_width`（默认 2）和 `stroke`（默认 None）属性，自定义加载环外观
+    - 实现 `set_icon(widget)` 方法，替换默认旋转环为自定义图标
+    - 扩展 `size` 属性支持传入 int 数字
+    - 更新 `paintEvent` 使用 stroke_width 和 stroke 绘制加载环
+    - _需求：59.1, 59.2, 59.3, 59.4, 59.5, 59.6, 59.7_
+
+  - [x] 65.2 扩展 spin.qss.j2 模板
+    - 新增 content_class 相关样式规则
+    - _需求：59.2, 59.3_
+
+
+  - [ ]* 65.3 编写 TSpin 增强特性的属性基测试
+    - **属性 107：TSpin 自定义图标旋转控制**
+    - **属性 108：TSpin 尺寸接受数字**
+    - **属性 109：TSpin stroke 自定义**
+    - **验证需求：59.1, 59.4, 59.5, 59.7**
+
+- [x] 66. TSlider 特性增强
+  - [x] 66.1 扩展 TSlider 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/slider.py` 中
+    - 新增 `reverse`（bool，默认 False）、`keyboard`（bool，默认 True）、`placement`（str，默认 "top"）属性
+    - 扩展 `step` 支持 `"mark"` 字符串，吸附到刻度标记
+    - 新增 `drag_start` 和 `drag_end` 信号
+    - 更新鼠标事件发射 drag 信号，更新键盘事件检查 keyboard 属性
+    - 更新值计算逻辑支持 reverse 模式
+    - _需求：60.1, 60.2, 60.3, 60.4, 60.5, 60.6, 60.7_
+
+  - [x] 66.2 扩展 slider.qss.j2 模板
+    - 新增 reverse 和 tooltip placement 样式规则
+    - _需求：60.1, 60.4_
+
+  - [ ]* 66.3 编写 TSlider 增强特性的属性基测试
+    - **属性 110-113**
+    - **验证需求：60.1, 60.2, 60.3, 60.5, 60.6, 60.7**
+
+
+- [x] 67. TInputNumber 特性增强
+  - [x] 67.1 扩展 TInputNumber 类 - 新增属性和枚举
+    - 在 `src/tyto_ui_lib/components/atoms/inputnumber.py` 中
+    - 扩展 `InputNumberSize` 新增 TINY；新增 `InputNumberStatus` 枚举
+    - 扩展 `__init__`：autofocus、loading、placeholder、bordered、show_button、button_placement、readonly、clearable、round、status、validator、parse、format_func、update_value_on_input、keyboard（dict）、input_props
+    - 新增 `focused`、`blurred`、`cleared` 信号
+    - 实现 set_prefix/set_suffix、set_add_icon/set_minus_icon 方法
+    - 实现 button_placement="both"、show_button=False、loading、readonly、clearable、status、validator/parse/format_func
+    - _需求：61.1 - 61.22_
+
+  - [x] 67.2 扩展 inputnumber.qss.j2 模板
+    - 新增 tiny 尺寸、bordered=false、round、status、button_placement 样式
+    - _需求：61.4, 61.6, 61.9, 61.10, 61.17_
+
+  - [ ]* 67.3 编写 TInputNumber 增强特性的属性基测试
+    - **属性 114-118**
+    - **验证需求：61.2, 61.5, 61.6, 61.7, 61.10**
+
+
+- [x] 68. TEmpty 和 TBackTop 特性增强
+  - [x] 68.1 扩展 TEmpty 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/empty.py` 中
+    - 新增 `EmptySize` 枚举（TINY/SMALL/MEDIUM/LARGE/HUGE）
+    - 新增 `size`、`show_description`（默认 True）、`show_icon`（默认 True）属性
+    - _需求：62.1, 62.2, 62.3, 62.4, 62.5_
+
+  - [x] 68.2 扩展 TBackTop 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/atoms/backtop.py` 中
+    - 新增 `show`（bool|None）、`to`（QWidget|None）、`listen_to` 属性
+    - 新增 `visibility_changed` 信号
+    - 实现受控模式和 listen_to 解析逻辑
+    - _需求：63.1, 63.2, 63.3, 63.4_
+
+  - [x] 68.3 扩展 empty.qss.j2 模板
+    - 新增尺寸变体选择器
+    - _需求：62.1_
+
+  - [ ]* 68.4 编写 TEmpty/TBackTop 增强特性的属性基测试
+    - **属性 119-121**
+    - **验证需求：62.1, 62.2, 62.4, 63.1**
+
+- [x] 69. 检查点 - 原子组件增强验证
+  - 确保所有测试通过，如有问题请向用户确认。
+
+
+- [x] 70. TAlert 特性增强
+  - [x] 70.1 扩展 TAlert 类 - 新增属性
+    - 在 `src/tyto_ui_lib/components/molecules/alert.py` 中
+    - 扩展 `AlertType` 新增 DEFAULT；新增 `show_icon`（默认 True）
+    - 实现 `set_icon(widget)` 和 show_icon=False 隐藏图标
+    - _需求：64.1, 64.2, 64.3, 64.4_
+
+  - [x] 70.2 扩展 alert.qss.j2 模板
+    - 新增 `[alertType="default"]` 选择器
+    - _需求：64.1_
+
+  - [ ]* 70.3 编写 TAlert 增强特性的属性基测试
+    - **属性 122-123**
+    - **验证需求：64.1, 64.2, 64.3**
+
+- [x] 71. TCollapse 特性增强
+  - [x] 71.1 扩展 TCollapse 和 TCollapseItem 类
+    - 在 `src/tyto_ui_lib/components/molecules/collapse.py` 中
+    - TCollapse 新增 `arrow_placement`、`trigger_areas`、`item_header_clicked` 信号
+    - TCollapseItem 实现 `set_title(widget)`、`set_header_extra(widget)`、`set_arrow(widget)`
+    - 更新点击逻辑根据 trigger_areas 判断，更新箭头位置根据 arrow_placement
+    - _需求：65.1 - 65.8_
+
+  - [x] 71.2 扩展 collapse.qss.j2 模板
+    - 新增 arrow_placement 布局样式
+    - _需求：65.1_
+
+  - [ ]* 71.3 编写 TCollapse 增强特性的属性基测试
+    - **属性 124-125**
+    - **验证需求：65.1, 65.2, 65.3, 65.4**
+
+
+- [x] 72. TPopconfirm 特性增强与 Bug 修复
+  - [x] 72.1 修复 TPopconfirm 弹窗内点击关闭 Bug
+    - 在 `src/tyto_ui_lib/components/molecules/popconfirm.py` 中
+    - 修改事件过滤器，检查点击位置是否在弹窗 geometry 内部
+    - 仅外部点击关闭弹窗，内部关闭仅通过确认/取消按钮
+    - _需求：66.12, 66.13_
+
+  - [x] 72.2 扩展 TPopconfirm 类 - 新增属性
+    - 新增 `show_icon`（默认 True）、`positive_button_props`/`negative_button_props`（dict）
+    - 新增 `TriggerMode` 枚举和 `trigger` 属性（click/hover/focus/manual）
+    - 新增 `on_positive_click`/`on_negative_click` 回调
+    - 实现 `set_icon(widget)`、hover/focus/manual 触发模式
+    - _需求：66.1 - 66.11_
+
+  - [x] 72.3 扩展 popconfirm.qss.j2 模板
+    - 新增 show_icon=false 隐藏图标样式
+    - _需求：66.1, 66.2_
+
+  - [ ]* 72.4 编写 TPopconfirm 增强特性的属性基测试
+    - **属性 126-127**
+    - **验证需求：66.5, 66.12**
+
+
+- [x] 73. TTimeline 特性增强
+  - [x] 73.1 扩展 TTimeline 和 TTimelineItem 类
+    - 在 `src/tyto_ui_lib/components/molecules/timeline.py` 中
+    - TTimeline 新增 `horizontal`、`TimelineSize`/`size`、`icon_size` 属性
+    - TTimelineItem 扩展 `ItemStatus` 新增 WARNING/INFO
+    - TTimelineItem 新增 `LineType`/`line_type`（default/dashed）
+    - TTimelineItem 实现 `set_icon`、`set_title`、`set_footer` 方法
+    - 更新布局支持 horizontal，更新 paintEvent 支持 dashed 虚线
+    - _需求：67.1 - 67.9_
+
+  - [x] 73.2 扩展 timeline.qss.j2 模板
+    - 新增 horizontal、size、warning/info 状态、dashed 连接线样式
+    - _需求：67.1, 67.2, 67.4, 67.5, 67.6_
+
+  - [ ]* 73.3 编写 TTimeline 增强特性的属性基测试
+    - **属性 128-131**
+    - **验证需求：67.1, 67.2, 67.4, 67.5, 67.6**
+
+- [x] 74. 检查点 - 分子组件增强验证
+  - 确保所有测试通过，如有问题请向用户确认。
+
+
+- [x] 75. Gallery/Playground 同步更新与包导出
+  - [x] 75.1 更新 Gallery Showcase
+    - 更新各组件 Showcase 新增增强特性展示区块
+    - spin: 自定义图标、stroke、数字尺寸
+    - slider: reverse、keyboard、mark 吸附
+    - inputnumber: button_placement、loading、clearable、status、round
+    - empty: 尺寸变体、显示控制
+    - backtop: 受控显示
+    - alert: default 类型、show_icon
+    - collapse: arrow_placement、trigger_areas、自定义标题
+    - popconfirm: trigger 模式、按钮自定义
+    - timeline: horizontal、size、dashed 连接线
+    - _需求：59-67_
+
+  - [x] 75.2 更新 Playground 属性定义
+    - 更新对应组件属性定义文件
+    - _需求：59-67_
+
+  - [x] 75.3 更新包导出
+    - 导出新增枚举和类型
+    - _需求：59-67_
+
+- [x] 76. 最终检查点 - V1.1.0 第二批增强全部验证
+  - 运行 `uv run pytest` 确保所有测试通过
+  - 手动验证 Gallery 和 Playground 增强特性展示
+  - 验证 light/dark 主题下颜色正确性
+
+## 备注
+
+- 标记 `*` 的任务为可选任务
+- 任务 65-68（原子组件）可按任意顺序实现
+- 任务 70-73（分子组件）可按任意顺序实现
+- 任务 72.1（Bug 修复）应优先于 72.2（特性增强）
+- 任务 75 依赖对应组件增强完成
+- 属性基测试使用 Hypothesis，每个属性至少 100 次迭代

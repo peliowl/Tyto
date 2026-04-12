@@ -69,7 +69,139 @@
     - 设置checkable属性不生效
     - 设置strong属性不生效
 
-- [ ] input控件：
-  - type为textarea时，在playground中设置placeholder、clearable时，未实时显示效果
+- [x] 运行playground，点击菜单项'timeline'抛出异常：
+  Failed to create component instance for 'timeline'
+  Traceback (most recent call last):
+
+  File "D:\Working\Me\Tyto\examples\playground\views\component_preview.py", line 67, in show_component
+
+    widget = factory()
+
+  File "D:\Working\Me\Tyto\examples\playground\definitions\timeline_props.py", line 18, in _make_timeline
+
+    tl.add_item(TTimelineItem(title="Step 1", content="First step"))
+
+                ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\molecules\timeline.py", line 86, in __init__
+
+    super().__init__(parent)
+
+    ~~~~~~~~~~~~~~~~^^^^^^^^
+
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\common\base.py", line 40, in __init__
+
+    self.apply_theme()
+
+    ~~~~~~~~~~~~~~~~^^
+
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\molecules\timeline.py", line 296, in apply_theme
+
+    self._apply_dot_color()
+
+    ~~~~~~~~~~~~~~~~~~~~~^^
+
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\molecules\timeline.py", line 313, in _apply_dot_color
+
+    self._dot_label.setStyleSheet(
+
+    ^^^^^^^^^^^^^^^
+
+  AttributeError: 'TTimelineItem' object has no attribute '_dot_label'
+
+- [x] 修复bug：在playground中，发现控件有以下异常：
+  - inputNumber控件：
+    - 设置size属性不生效；高度显示过大
+    - 样式显示错误1：数字输入框与'+'按钮、'-'按钮之间显示了边框，正确效果是边界交接处不显示边框
+    - 样式显示错误2：在鼠标hover或者获得焦点时，数字输入框、'+'按钮、'-'按钮分别显示了边框颜色，正确效果是只变化整个控件的外侧边框颜色
+  - Slider控件：
+    - 数字没有固定显示在滑块上方的位置：数字显示的位置随着鼠标在y轴上变化而变化了（错误）
+    - dark模式下，数字颜色显示不正确：数字颜色错误显示为黑色
+    - 设置tooltip、step属性不生效
+  - Spin控件：
+    - 设置size属性不生效
+    - 设置Animation Type属性不生效
+    - 设置description属性不生效    
+  - BackTop控件
+    - 在界面上未显示出来
+  - Alert控件
+    - 设置Type属性不生效
+    - 设置Title、Description、closable、bordered属性不生效
+  - Collapse控件
+    - 设置Accordion属性不生效
+    - 点击折叠项展开面板，只有折叠项右侧的图标发生变化，未展开显示面板
+    - 处于展开状态的折叠项的图标与未展开状态的图标，大小不一致
+  - PopConfirm控件
+    - 点击按钮后，弹出一个内容框并快速消失，无法查看效果
+  - 点击Layout菜单项后抛出异常：
+    `Failed to create component instance for 'layout'
+     Traceback (most recent call last):
+      File "D:\Working\Me\Tyto\examples\playground\views\component_preview.py", line 67, in show_component
+        widget = factory()
+         File "D:\Working\Me\Tyto\examples\playground\definitions\layout_props.py", line 16, in _make_layout
+         header = TLayoutHeader(height=50)
+       File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\organisms\layout.py", line 91, in __init__
+        super().__init__(parent)
+          ~~~~~~~~~~~~~~~~^^^^^^^^
+         File "D:\Working\Me\Tyto\src\tyto_ui_lib\common\base.py", line 40, in __init__
+        self.apply_theme()
+          ~~~~~~~~~~~~~~~~^^
+        File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\organisms\layout.py", line 143, in apply_theme
+         self._apply_height()
+         ~~~~~~~~~~~~~~~~~~^^
+        File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\organisms\layout.py", line 149, in _apply_height
+        h = self._custom_height
+            ^^^^^^^^^^^^^^^^^^^
+        AttributeError: 'TLayoutHeader' object has no attribute '_custom_height'`
+
+- 以下缺陷未成功修复：
+  - inputNumber控件的样式显示错误
+  - Slider控件在dark模式下的tooltip颜色样式显示错误
+  - BackTop控件的样式显示错误
+  - Alert控件的Bordered属性未生效（可能是边框颜色及形状显示有误）
+  - Collapse控件的样式显示错误
+  - Popconfirm演示界面中，点击按钮无反应
+
+- [x] v1.1.0版本发现的控件缺陷：
+  - [x] 在playground中，popconfirm控件的两个按钮的底部边框处都被遮挡，没有显示出来
+  - [x] popconfirm控件未固定显示在触发按钮周围，正确效果是popconfirm弹窗需固定显示在触发按钮周围（即使界面被拖动）
+  - [x] backtop控件设置visibility height属性不生效
+  - [x] timeline控件中事件的节点未与标题文本中位线水平对齐
+
+- [x] collapse控件，发现以下问题：
+  - 展开/收缩图标与标题文本的间距过大，未与naiveUI的collapse效果保持一致
+  - 展开/收缩图标的形状、大小显示有误，未与naiveUI的collapse效果保持一致
+  - 设置arrow placement属性为right时，展开/收缩图标显示的位置不正确
+  - collapse中内容项交界处，未显示出来分割线
+
+- [x] timeline控件，发现以下缺陷：
+  -设置Horizontal属性后，节点和文本等内容显示位置错误
+  - 设置Size属性不生效
+
+- [x] 修复bug：在playground中点击message菜单项，提示"No preview factory for 'message'"；点击Modal菜单项，提示"No preview factory for 'modal'"
+
+- [ ] menu控件，发现以下缺陷：
+  - 设置mode、disabled属性不生效
+  - 样式错误
+
+- [ ] 修复控件样式及功能逻辑缺陷：
+  - [ ] 点击弹出TConfirm弹窗后，在任务栏中生成了一个新的会话窗口（错误），正确做法是始终保持任务栏只有一个顶级父窗口
+  - [ ] inputNumber控件，清空按钮与'-'按钮、'+'按钮的间距过大，清空按钮图标显示模糊且有锯齿
+  - [ ] collapse控件，在展开/收缩时，会抖动重刷
+  - [ ] input控件，当type为textarea时，在playground中设置placeholder、clearable属性，未实时显示效果
+
+- [x] menu控件，边栏收缩按钮的圆形边框和背景颜色不正确。正确效果为：当light模式时，边框颜色为#efeff5，当dark模式时，无边框颜色，并且背景色为#48484e
+
+- [x] menu控件，垂直菜单的高度应该自适应为父容器的高度，垂直菜单的高度应该固定为菜单项的高度
+
+- [x] menu控件，垂直菜单在边栏收缩并恢复后，父级菜单项右侧的展开/收缩图标与右边界间距过小
+
+- [x] tag控件，设置属性size、round、Strong不生效
+
+- [x] tag控件，设置checkable，点击选中tag后，设置type属性，背景色未实时切换显示
+
+- [x] tag控件，在dark模式下，文本颜色显示错误，正确效果是显示白色（与其它控件的效果保持一致）
+
+- [x] button控件，不同尺寸的按钮，当设置loading和circle属性时，加载图标未居中显示
 
 

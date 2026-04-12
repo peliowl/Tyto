@@ -1,0 +1,88 @@
+{# timeline.qss.j2 — QSS template for TTimeline / TTimelineItem components #}
+
+TTimeline {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+TTimelineItem {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+/* Dot node */
+TTimelineItem QLabel#timeline_dot {
+    border-radius: {{ spacing.small }}px;
+    min-width: {{ spacing.medium }}px;
+    min-height: {{ spacing.medium }}px;
+    max-width: {{ spacing.medium }}px;
+    max-height: {{ spacing.medium }}px;
+}
+
+/* Title */
+TTimelineItem QLabel#timeline_title {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+    font-weight: bold;
+}
+
+/* Content */
+TTimelineItem QLabel#timeline_content {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.small }}px;
+}
+
+/* Time label */
+TTimelineItem QLabel#timeline_time {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.small }}px;
+}
+
+/* Status-based dot colors */
+TTimelineItem[itemStatus="default"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_default }};
+}
+
+TTimelineItem[itemStatus="pending"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_pending }};
+}
+
+TTimelineItem[itemStatus="finished"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_finished }};
+}
+
+TTimelineItem[itemStatus="error"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_error }};
+}
+
+TTimelineItem[itemStatus="success"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_finished }};
+}
+
+TTimelineItem[itemStatus="warning"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_warning }};
+}
+
+TTimelineItem[itemStatus="info"] QLabel#timeline_dot {
+    background-color: {{ colors.timeline_info }};
+}
+
+/* Size variants */
+TTimeline[timelineSize="large"] TTimelineItem QLabel#timeline_title {
+    font-size: {{ font_sizes.large }}px;
+}
+
+TTimeline[timelineSize="large"] TTimelineItem QLabel#timeline_content {
+    font-size: {{ font_sizes.medium }}px;
+}
+
+TTimeline[timelineSize="large"] TTimelineItem QLabel#timeline_time {
+    font-size: {{ font_sizes.medium }}px;
+}
+
+/* Horizontal mode */
+TTimeline[horizontal="true"] TTimelineItem {
+    max-width: 200px;
+}

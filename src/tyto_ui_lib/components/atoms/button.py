@@ -28,11 +28,12 @@ from tyto_ui_lib.common.traits.disabled import DisabledMixin
 from tyto_ui_lib.common.traits.focus_glow import FocusGlowMixin
 from tyto_ui_lib.common.traits.hover_effect import HoverEffectMixin
 from tyto_ui_lib.core.theme_engine import ThemeEngine
+from tyto_ui_lib.utils.color import parse_color
 
 # Simple circular-arc SVG used as the loading spinner icon.
-_SPINNER_SVG = (
+_SPINNER_SVG_TEMPLATE = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">'
-    '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor"'
+    '<circle cx="8" cy="8" r="6" fill="none" stroke="{color}"'
     ' stroke-width="2" stroke-dasharray="28 10" stroke-linecap="round"/>'
     "</svg>"
 )
@@ -43,7 +44,10 @@ class _SpinnerWidget(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._renderer = QSvgRenderer(_SPINNER_SVG.encode(), self)
+        self._color = "#333639"
+        self._renderer = QSvgRenderer(
+            _SPINNER_SVG_TEMPLATE.format(color=self._color).encode(), self,
+        )
         self._angle: float = 0.0
         self.setFixedSize(QSize(16, 16))
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -54,6 +58,18 @@ class _SpinnerWidget(QWidget):
         self._anim.setEndValue(360.0)
         self._anim.setLoopCount(-1)
         self._anim.setEasingCurve(QEasingCurve.Type.Linear)
+
+    def set_color(self, color: str) -> None:
+        """Update the spinner stroke color and reload the SVG.
+
+        Args:
+            color: CSS color string (e.g. '#ffffff', 'rgba(255,255,255,0.82)').
+        """
+        if color == self._color:
+            return
+        self._color = color
+        self._renderer.load(_SPINNER_SVG_TEMPLATE.format(color=color).encode())
+        self.update()
 
     def _get_angle(self) -> float:
         return self._angle
@@ -380,6 +396,16 @@ class TButton(
         self._text = text
         self._label.setText(text)
 
+    def set_button_type(self, button_type: ButtonType) -> None:
+        """Update the button type variant and refresh styles.
+
+        Args:
+            button_type: New button type variant.
+        """
+        self._button_type = button_type
+        self.setProperty("buttonType", button_type.value)
+        self._repolish()
+
     def set_size(self, size: ButtonSize) -> None:
         """Change the button size variant.
 
@@ -395,6 +421,7 @@ class TButton(
         """Enter or exit loading state.
 
         In loading state the spinner is shown and all clicks are blocked.
+        For circle buttons, the label is hidden so the spinner centers.
 
         Args:
             loading: True to enter loading state, False to exit.
@@ -404,9 +431,18 @@ class TButton(
         if loading:
             self._spinner.start()
             self.setCursor(Qt.CursorShape.WaitCursor)
+            # Hide label and icons in circle mode so spinner centers
+            if self._circle:
+                self._label.setVisible(False)
+                self._icon_label_left.setVisible(False)
+                self._icon_label_right.setVisible(False)
         else:
             self._spinner.stop()
             self.setCursor(Qt.CursorShape.PointingHandCursor)
+            # Restore label visibility
+            if self._circle:
+                self._label.setVisible(True)
+                self._update_icon_display()
 
     def set_disabled(self, disabled: bool) -> None:
         """Enter or exit disabled state via DisabledMixin.
@@ -428,6 +464,14 @@ class TButton(
         self._apply_circle_geometry()
         if self._color or self._text_color:
             self._apply_custom_colors()
+        # If loading is active, update label visibility for circle mode
+        if self._loading:
+            if circle:
+                self._label.setVisible(False)
+                self._icon_label_left.setVisible(False)
+                self._icon_label_right.setVisible(False)
+            else:
+                self._label.setVisible(True)
 
     def set_round(self, round_: bool) -> None:
         """Enable or disable fully rounded (capsule) corners.
@@ -564,6 +608,9 @@ class TButton(
             self._apply_circle_geometry()
         if hasattr(self, "_icon"):
             self._update_icon_display()
+        # Update spinner color from theme tokens
+        if hasattr(self, "_spinner"):
+            self._update_spinner_color()
         self._repolish()
 
     # -- Event overrides --
@@ -612,25 +659,25 @@ class TButton(
 
                     # Background
                     if bt == "primary":
-                        bg = QColor(colors["primary"])
+                        bg = parse_color(colors["primary"])
                     elif bt == "text":
                         bg = QColor(Qt.GlobalColor.transparent)
                     elif bt == "tertiary":
-                        bg = QColor(colors["bg_elevated"])
+                        bg = parse_color(colors["bg_elevated"])
                     elif bt in ("info", "success", "warning", "error"):
-                        bg = QColor(colors[bt])
+                        bg = parse_color(colors[bt])
                     else:
-                        bg = QColor(colors["bg_default"])
+                        bg = parse_color(colors["bg_default"])
 
                     # Border
                     if bt == "primary":
-                        border_color = QColor(colors["primary"])
+                        border_color = parse_color(colors["primary"])
                     elif bt == "text":
                         border_color = QColor(Qt.GlobalColor.transparent)
                     elif bt in ("info", "success", "warning", "error"):
-                        border_color = QColor(colors[bt])
+                        border_color = parse_color(colors[bt])
                     else:
-                        border_color = QColor(colors["border"])
+                        border_color = parse_color(colors["border"])
 
                     # Ghost override
                     if self._ghost:
@@ -639,25 +686,25 @@ class TButton(
                     # Hover state override
                     if self.underMouse() and self.isEnabled():
                         if bt == "primary":
-                            bg = QColor(colors["primary_hover"])
-                            border_color = QColor(colors["primary_hover"])
+                            bg = parse_color(colors["primary_hover"])
+                            border_color = parse_color(colors["primary_hover"])
                         elif bt == "dashed":
-                            border_color = QColor(colors["primary_hover"])
+                            border_color = parse_color(colors["primary_hover"])
                         elif bt == "text":
-                            bg = QColor(colors["bg_elevated"])
+                            bg = parse_color(colors["bg_elevated"])
                         elif bt == "info":
-                            bg = QColor(colors["info_hover"])
-                            border_color = QColor(colors["info_hover"])
+                            bg = parse_color(colors["info_hover"])
+                            border_color = parse_color(colors["info_hover"])
                         else:
-                            border_color = QColor(colors["primary_hover"])
+                            border_color = parse_color(colors["primary_hover"])
 
                         if self._ghost:
                             bg = QColor(Qt.GlobalColor.transparent)
 
                     # Custom color override
                     if self._color:
-                        bg = QColor(self._color)
-                        border_color = QColor(self._color)
+                        bg = parse_color(self._color)
+                        border_color = parse_color(self._color)
                         if self._ghost:
                             bg = QColor(Qt.GlobalColor.transparent)
             except Exception:
@@ -736,6 +783,30 @@ class TButton(
         self.style().polish(self)
         self.update()
 
+    def _update_spinner_color(self) -> None:
+        """Set the spinner stroke color based on the current theme and button type.
+
+        For button types with colored backgrounds (primary, info, success,
+        warning, error), the spinner uses white. For other types, it uses
+        the theme's primary color for better visibility.
+        """
+        try:
+            engine = ThemeEngine.instance()
+            tokens = engine.current_tokens()
+            if not tokens:
+                return
+            bt = self._button_type.value
+            colored_types = {"primary", "info", "success", "warning", "error"}
+            if bt in colored_types and not self._ghost:
+                color = "#ffffff"
+            else:
+                # Use primary color for the spinner — it's always a hex value
+                # and provides good contrast in both light and dark modes
+                color = str(tokens.colors.get("primary", "#18a058"))
+            self._spinner.set_color(color)
+        except Exception:
+            pass
+
     def _update_icon_display(self) -> None:
         """Update icon label visibility and pixmap based on current icon/placement."""
         icon_size = 16  # Default icon size
@@ -789,16 +860,26 @@ class TButton(
             hint = self.sizeHint()
             side = hint.height()
             self.setFixedSize(QSize(side, side))
+            # Zero out layout margins so content centers in the square
+            self._layout.setContentsMargins(0, 0, 0, 0)
+            self._layout.setSpacing(0)
+            # Scale spinner to match button size
+            spinner_size = max(12, side // 3)
+            self._spinner.setFixedSize(QSize(spinner_size, spinner_size))
         elif self._round:
             # Remove fixed size constraint but keep height from tokens
             self.setMinimumSize(QSize(0, 0))
             self.setMaximumSize(QSize(16777215, 16777215))
+            self._layout.setSpacing(6)
+            self._spinner.setFixedSize(QSize(16, 16))
             self._apply_size_from_tokens()
             self._apply_round_padding()
         else:
             # Remove fixed size constraint, apply token height + padding
             self.setMinimumSize(QSize(0, 0))
             self.setMaximumSize(QSize(16777215, 16777215))
+            self._layout.setSpacing(6)
+            self._spinner.setFixedSize(QSize(16, 16))
             self._apply_size_from_tokens()
 
 

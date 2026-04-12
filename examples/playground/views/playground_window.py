@@ -28,7 +28,7 @@ class PlaygroundWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Tyto UI Playground")
-        self.resize(1200, 720)
+        self.resize(1200, 640)
 
         # -- Core setup --
         engine = ThemeEngine.instance()

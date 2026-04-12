@@ -1,0 +1,38 @@
+{# layout.qss.j2 — QSS template for TLayout series components #}
+
+TLayout {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+}
+
+TLayoutHeader {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border-bottom: 1px solid {{ colors.border }};
+    min-height: {{ layout.header_height }}px;
+    max-height: {{ layout.header_height }}px;
+}
+
+TLayoutFooter {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+    border-top: 1px solid {{ colors.border }};
+    min-height: {{ layout.footer_height }}px;
+    max-height: {{ layout.footer_height }}px;
+}
+
+TLayoutSider {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.text_primary }};
+    border-right: 1px solid {{ colors.border }};
+}
+
+TLayoutSider[placement="right"] {
+    border-right: none;
+    border-left: 1px solid {{ colors.border }};
+}
+
+TLayoutContent {
+    background-color: {{ colors.bg_default }};
+    color: {{ colors.text_primary }};
+}

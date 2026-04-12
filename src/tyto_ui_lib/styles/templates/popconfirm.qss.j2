@@ -1,0 +1,33 @@
+{# popconfirm.qss.j2 — QSS template for TPopconfirm component #}
+
+QWidget#popconfirm_container {
+    background-color: {{ colors.popover_color }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.border }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.large }}px;
+    font-size: {{ font_sizes.medium }}px;
+}
+
+QWidget#popconfirm_container QLabel#popconfirm_icon {
+    color: {{ colors.warning }};
+    font-size: {{ font_sizes.large }}px;
+    padding-right: {{ spacing.small }}px;
+}
+
+QWidget#popconfirm_container QLabel#popconfirm_icon[showIcon="false"] {
+    max-width: 0px;
+    max-height: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+QWidget#popconfirm_container QLabel#popconfirm_title {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+}
+
+QWidget#popconfirm_container QWidget#popconfirm_btn_row {
+    background: transparent;
+    border: none;
+}

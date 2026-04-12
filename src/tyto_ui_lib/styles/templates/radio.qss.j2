@@ -9,6 +9,11 @@ TRadio {
     outline: none;
 }
 
+TRadio QLabel {
+    color: {{ colors.text_primary }};
+    background-color: transparent;
+}
+
 TRadio QWidget#radio_indicator {
     border: 2px solid {{ colors.border }};
     border-radius: 9px;
@@ -29,6 +34,10 @@ TRadio:hover QWidget#radio_indicator {
 }
 
 TRadio:disabled {
+    color: {{ colors.text_disabled }};
+}
+
+TRadio:disabled QLabel {
     color: {{ colors.text_disabled }};
 }
 

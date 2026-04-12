@@ -81,7 +81,7 @@ class ComponentPreview(QScrollArea):
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(32, 32, 32, 32)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(widget)
         layout.addStretch()
 

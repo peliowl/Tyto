@@ -1,0 +1,43 @@
+{# slider.qss.j2 — QSS template for TSlider component #}
+
+TSlider {
+    background-color: transparent;
+    padding: {{ spacing.medium }}px;
+    outline: none;
+}
+
+/* --- Track --- */
+
+TSlider QWidget#slider_track {
+    background-color: transparent;
+}
+
+/* --- Disabled --- */
+
+TSlider[disabled="true"] {
+    opacity: 0.5;
+}
+
+/* --- Reverse mode --- */
+
+TSlider[reverse="true"] {
+    /* Reverse mode: visual direction handled in paint logic */
+}
+
+/* --- Marks labels --- */
+
+TSlider QLabel.slider-mark-label {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.small }}px;
+}
+
+/* --- Tooltip --- */
+
+TSlider QLabel#slider_tooltip {
+    background-color: {{ colors.indicator_color }};
+    color: {{ colors.white }};
+    border: 1px solid {{ colors.indicator_color }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.small }}px {{ spacing.medium }}px;
+    font-size: {{ font_sizes.medium }}px;
+}

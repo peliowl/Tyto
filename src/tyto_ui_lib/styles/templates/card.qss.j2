@@ -1,0 +1,44 @@
+{# card.qss.j2 — QSS template for TCard component #}
+
+TCard {
+    background-color: {{ colors.bg_default }};
+    border-radius: {{ radius.medium }}px;
+    border: 1px solid {{ colors.border }};
+}
+
+TCard[bordered="false"] {
+    border: none;
+}
+
+TCard QWidget#card_header {
+    background-color: transparent;
+}
+
+TCard QLabel#card_title {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+    font-weight: 600;
+}
+
+TCard QPushButton#card_close_btn {
+    background-color: transparent;
+    border: none;
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.medium }}px;
+    padding: {{ spacing.small }}px;
+    min-width: 20px;
+    max-width: 20px;
+}
+
+TCard QPushButton#card_close_btn:hover {
+    color: {{ colors.text_primary }};
+}
+
+TCard QWidget#card_body {
+    background-color: transparent;
+}
+
+TCard QWidget#card_footer {
+    background-color: transparent;
+    border-top: 1px solid {{ colors.border }};
+}

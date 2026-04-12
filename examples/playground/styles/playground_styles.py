@@ -28,6 +28,7 @@ class PlaygroundStyles:
         return {
             "bg_default": t.colors.get("bg_default", "#ffffff"),
             "bg_elevated": t.colors.get("bg_elevated", "#f8f8fa"),
+            "body_color": t.colors.get("body_color", t.colors.get("bg_default", "#ffffff")),
             "text_primary": t.colors.get("text_primary", "#333639"),
             "text_secondary": t.colors.get("text_secondary", "#667085"),
             "border": t.colors.get("border", "#e0e0e6"),
@@ -57,6 +58,13 @@ class PlaygroundStyles:
             f"QWidget#nav_menu {{"
             f"  background-color: {tk['bg_elevated']};"
             f"  border-right: 1px solid {tk['border']};"
+            f"}}"
+            f"QScrollArea#nav_scroll_area {{"
+            f"  background-color: {tk['bg_elevated']};"
+            f"  border: none;"
+            f"}}"
+            f"QWidget#nav_scroll_content {{"
+            f"  background-color: {tk['bg_elevated']};"
             f"}}"
             f"QPushButton.nav_item {{"
             f"  text-align: left;"
@@ -158,11 +166,15 @@ class PlaygroundStyles:
             return ""
         return (
             f"QScrollArea#preview_panel {{"
-            f"  background-color: {tk['bg_default']};"
+            f"  background-color: {tk.get('body_color', tk['bg_default'])};"
             f"  border: none;"
             f"}}"
             f"QScrollArea#preview_panel > QWidget > QWidget {{"
-            f"  background-color: {tk['bg_default']};"
+            f"  background-color: {tk.get('body_color', tk['bg_default'])};"
+            f"}}"
+            f"QWidget#collapse_toggle_btn {{"
+            f"  background: transparent;"
+            f"  border: none;"
             f"}}"
         )
 

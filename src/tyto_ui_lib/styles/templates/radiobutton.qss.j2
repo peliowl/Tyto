@@ -9,14 +9,27 @@ TRadioButton {
     outline: none;
 }
 
+TRadioButton QLabel {
+    color: {{ colors.text_primary }};
+    background-color: transparent;
+}
+
 TRadioButton[checked="true"] {
     background-color: {{ colors.primary }};
     color: {{ colors.white }};
     border-color: {{ colors.primary }};
 }
 
+TRadioButton[checked="true"] QLabel {
+    color: {{ colors.white }};
+}
+
 TRadioButton:hover {
     border-color: {{ colors.primary_hover }};
+    color: {{ colors.primary_hover }};
+}
+
+TRadioButton:hover QLabel {
     color: {{ colors.primary_hover }};
 }
 
@@ -26,10 +39,18 @@ TRadioButton[checked="true"]:hover {
     border-color: {{ colors.primary_hover }};
 }
 
+TRadioButton[checked="true"]:hover QLabel {
+    color: {{ colors.white }};
+}
+
 TRadioButton:disabled {
     color: {{ colors.text_disabled }};
     background-color: {{ colors.bg_elevated }};
     border-color: {{ colors.border }};
+}
+
+TRadioButton:disabled QLabel {
+    color: {{ colors.text_disabled }};
 }
 
 /* Size variants */

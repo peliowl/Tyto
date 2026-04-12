@@ -2536,3 +2536,1968 @@ Playground 的测试聚焦于 Model 和 ViewModel 层的纯逻辑验证：
 - **属性 67**：属性变更信号传播链（单元测试）
 
 View 层通过手动运行 `uv run python examples/playground.py` 验证。
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.1.0 - 新增组件与架构增强
+
+## 概述
+
+V1.1.0 在现有组件库基础上新增 12 个 UI 组件（5 个原子、4 个分子、3 个有机体）和 3 项架构增强（全局事件总线、贝塞尔曲线动画引擎、容器查询系统）。所有新增组件遵循现有的 Design Token + Jinja2 + QSS 架构，继承 BaseWidget 基类，通过 Mixin 注入交互行为。架构增强模块位于 `core/` 层，为上层组件提供通讯、动画和响应式能力。
+
+## 架构
+
+### V1.1.0 整体架构扩展
+
+```mermaid
+graph TB
+    subgraph Application["应用层"]
+        Gallery["Gallery 预览画廊"]
+        Playground["Playground 调试应用"]
+    end
+
+    subgraph Components["组件层"]
+        subgraph Organisms["Organisms"]
+            OldOrg["Message, Modal"]
+            NewOrg["Layout, Card, Menu"]
+        end
+        subgraph Molecules["Molecules"]
+            OldMol["SearchBar, Breadcrumb, InputGroup"]
+            NewMol["Alert, Collapse, Popconfirm, Timeline"]
+        end
+        subgraph Atoms["Atoms"]
+            OldAtom["Button, Checkbox, Radio,<br/>Input, Switch, Tag"]
+            NewAtom["Spin, Slider, InputNumber,<br/>Empty, BackTop"]
+        end
+    end
+
+    subgraph Foundation["基础层"]
+        BaseWidget["Base Widget"]
+        Mixins["Mixins<br/>HoverEffect, ClickRipple,<br/>FocusGlow, ContainerQuery"]
+        ThemeEngine["Theme Engine"]
+        EventBus["EventBus<br/>全局事件总线"]
+        EasingEngine["EasingEngine<br/>贝塞尔曲线引擎"]
+        Tokens["Design Tokens"]
+        Templates["Jinja2 QSS Templates"]
+    end
+
+    Gallery --> Components
+    Playground --> Components
+    Organisms --> Molecules
+    Organisms --> Atoms
+    Molecules --> Atoms
+    Atoms --> BaseWidget
+    BaseWidget --> Mixins
+    BaseWidget --> ThemeEngine
+    BaseWidget --> EventBus
+    ThemeEngine --> Tokens
+    ThemeEngine --> Templates
+    Components -.-> EasingEngine
+```
+
+### 新增组件分层
+
+| 层级 | 组件 | 职责 |
+|------|------|------|
+| Atom | TSpin | 加载指示器，独立/嵌套模式 |
+| Atom | TSlider | 数值/范围选择滑动条 |
+| Atom | TInputNumber | 精确数值输入 |
+| Atom | TEmpty | 空状态占位符 |
+| Atom | TBackTop | 滚动回顶按钮 |
+| Molecule | TAlert | 常驻式语义提示 |
+| Molecule | TCollapse / TCollapseItem | 折叠面板 |
+| Molecule | TPopconfirm | 气泡确认框 |
+| Molecule | TTimeline / TTimelineItem | 时间线 |
+| Organism | TLayout / TLayoutHeader / TLayoutSider / TLayoutContent / TLayoutFooter | 标准布局容器 |
+| Organism | TCard | 卡片容器 |
+| Organism | TMenu / TMenuItem / TMenuItemGroup | 导航菜单 |
+
+## 组件与接口
+
+### 1. 架构增强模块 (`core/`)
+
+#### EventBus（单例）
+
+```python
+class EventBus(QObject):
+    """Global event bus for cross-component communication.
+
+    Provides publish/subscribe mechanism for non-parent-child
+    component communication, reducing signal-slot coupling complexity.
+
+    Example:
+        >>> bus = EventBus.instance()
+        >>> bus.on("user_login", lambda name: print(f"Welcome {name}"))
+        >>> bus.emit("user_login", "Alice")
+        Welcome Alice
+    """
+
+    @classmethod
+    def instance(cls) -> "EventBus":
+        """Return the singleton EventBus instance."""
+
+    def emit(self, event_name: str, *args: Any, **kwargs: Any) -> None:
+        """Publish an event, invoking all registered callbacks in order."""
+
+    def on(self, event_name: str, callback: Callable[..., Any]) -> None:
+        """Subscribe to an event."""
+
+    def off(self, event_name: str, callback: Callable[..., Any]) -> None:
+        """Unsubscribe from an event."""
+
+    def once(self, event_name: str, callback: Callable[..., Any]) -> None:
+        """Subscribe to an event for a single invocation."""
+
+    def clear(self, event_name: str) -> None:
+        """Remove all subscribers for a specific event."""
+
+    def clear_all(self) -> None:
+        """Remove all subscribers for all events."""
+```
+
+#### EasingEngine
+
+```python
+class EasingEngine:
+    """Bezier curve easing functions for UI animations.
+
+    Provides standard easing functions and custom bezier curve support.
+    All functions accept normalized time t in [0.0, 1.0] and return
+    normalized progress in [0.0, 1.0].
+
+    Example:
+        >>> progress = EasingEngine.ease_in_out_cubic(0.5)
+        >>> assert 0.0 <= progress <= 1.0
+    """
+
+    @staticmethod
+    def ease_in_cubic(t: float) -> float:
+        """Cubic ease-in: f(t) = t³"""
+
+    @staticmethod
+    def ease_out_cubic(t: float) -> float:
+        """Cubic ease-out: f(t) = 1 - (1-t)³"""
+
+    @staticmethod
+    def ease_in_out_cubic(t: float) -> float:
+        """Cubic ease-in-out: smooth acceleration and deceleration."""
+
+    @staticmethod
+    def ease_in_quad(t: float) -> float:
+        """Quadratic ease-in: f(t) = t²"""
+
+    @staticmethod
+    def ease_out_quad(t: float) -> float:
+        """Quadratic ease-out: f(t) = 1 - (1-t)²"""
+
+    @staticmethod
+    def ease_in_out_quad(t: float) -> float:
+        """Quadratic ease-in-out."""
+
+    @staticmethod
+    def custom_bezier(p1x: float, p1y: float, p2x: float, p2y: float) -> Callable[[float], float]:
+        """Create a custom cubic bezier easing function.
+
+        Args:
+            p1x, p1y: First control point coordinates.
+            p2x, p2y: Second control point coordinates.
+
+        Returns:
+            Easing function accepting t in [0, 1] and returning progress in [0, 1].
+        """
+```
+
+#### ContainerQueryMixin
+
+```python
+class ContainerQueryMixin:
+    """Mixin enabling container query responsive behavior.
+
+    Components mixing in this class can register breakpoints and
+    receive callbacks when their parent container crosses breakpoint
+    boundaries. Uses QResizeEvent, no polling.
+
+    Example:
+        >>> class MyWidget(ContainerQueryMixin, BaseWidget):
+        ...     def __init__(self):
+        ...         super().__init__()
+        ...         self.add_breakpoint("compact", 0, 400)
+        ...         self.add_breakpoint("normal", 401, 800)
+        ...         self.breakpoint_changed.connect(self._on_bp)
+    """
+
+    breakpoint_changed = Signal(str)  # current breakpoint name
+
+    def add_breakpoint(self, name: str, min_width: int, max_width: int) -> None:
+        """Register a named breakpoint rule."""
+
+    def current_breakpoint(self) -> str | None:
+        """Return the name of the currently matched breakpoint."""
+
+    def container_resized(self, width: int, height: int) -> None:
+        """Called when parent container size changes. Override for custom logic."""
+
+    def _install_resize_filter(self) -> None:
+        """Install event filter on parent to capture QResizeEvent."""
+```
+
+### 2. 新增原子组件 (`components/atoms/`)
+
+#### TSpin
+
+```python
+class TSpin(BaseWidget):
+    """Loading spinner with standalone and nested (overlay) modes.
+
+    Supports three animation types: ring, dots, pulse.
+    In nested mode, overlays child content with a semi-transparent mask.
+
+    Signals:
+        spinning_changed: Emitted when spinning state changes.
+    """
+
+    class SpinMode(str, Enum):
+        STANDALONE = "standalone"
+        NESTED = "nested"
+
+    class AnimationType(str, Enum):
+        RING = "ring"
+        DOTS = "dots"
+        PULSE = "pulse"
+
+    class SpinSize(str, Enum):
+        SMALL = "small"      # 20px
+        MEDIUM = "medium"    # 28px
+        LARGE = "large"      # 36px
+
+    spinning_changed = Signal(bool)
+
+    def __init__(
+        self,
+        spinning: bool = True,
+        mode: SpinMode = SpinMode.STANDALONE,
+        animation_type: AnimationType = AnimationType.RING,
+        size: SpinSize = SpinSize.MEDIUM,
+        description: str = "",
+        delay: int = 0,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_spinning(self, spinning: bool) -> None: ...
+    def is_spinning(self) -> bool: ...
+    def set_content(self, widget: QWidget) -> None:
+        """Set child content for nested mode."""
+```
+
+#### TSlider
+
+```python
+class TSlider(BaseWidget, HoverEffectMixin):
+    """Slider component supporting single and range selection.
+
+    Signals:
+        value_changed: Emitted with current value (number or tuple for range).
+    """
+
+    value_changed = Signal(object)
+
+    def __init__(
+        self,
+        value: int | float | tuple[int | float, int | float] = 0,
+        min: int | float = 0,
+        max: int | float = 100,
+        step: int | float = 1,
+        range: bool = False,
+        marks: dict[int | float, str] | None = None,
+        tooltip: bool = True,
+        disabled: bool = False,
+        vertical: bool = False,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def get_value(self) -> int | float | tuple[int | float, int | float]: ...
+    def set_value(self, value: int | float | tuple[int | float, int | float]) -> None: ...
+    def set_disabled(self, disabled: bool) -> None: ...
+```
+
+#### TInputNumber
+
+```python
+class TInputNumber(BaseWidget, FocusGlowMixin):
+    """Numeric input with step control, range limits, and precision.
+
+    Signals:
+        value_changed: Emitted with current numeric value.
+    """
+
+    class InputNumberSize(str, Enum):
+        SMALL = "small"
+        MEDIUM = "medium"
+        LARGE = "large"
+
+    value_changed = Signal(object)
+
+    def __init__(
+        self,
+        value: int | float = 0,
+        min: int | float | None = None,
+        max: int | float | None = None,
+        step: int | float = 1,
+        precision: int = 0,
+        size: InputNumberSize = InputNumberSize.MEDIUM,
+        disabled: bool = False,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def get_value(self) -> int | float: ...
+    def set_value(self, value: int | float) -> None: ...
+    def set_disabled(self, disabled: bool) -> None: ...
+```
+
+#### TEmpty
+
+```python
+class TEmpty(BaseWidget):
+    """Empty state placeholder with customizable icon, text, and action area.
+
+    Displays a centered layout of icon, description text, and optional
+    extra content when no data is available.
+    """
+
+    def __init__(
+        self,
+        description: str = "暂无数据",
+        image: QIcon | QPixmap | None = None,
+        image_size: int = 96,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_description(self, description: str) -> None: ...
+    def set_image(self, image: QIcon | QPixmap | None) -> None: ...
+    def set_extra(self, widget: QWidget) -> None:
+        """Set custom action area below description."""
+```
+
+#### TBackTop
+
+```python
+class TBackTop(BaseWidget):
+    """Back-to-top button that appears when scroll exceeds threshold.
+
+    Monitors a target QScrollArea and provides smooth linear scroll
+    animation back to top.
+
+    Signals:
+        clicked: Emitted when the back-to-top button is clicked.
+    """
+
+    clicked = Signal()
+
+    def __init__(
+        self,
+        target: QAbstractScrollArea | None = None,
+        visibility_height: int = 200,
+        right: int = 40,
+        bottom: int = 40,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_target(self, target: QAbstractScrollArea) -> None: ...
+    def set_content(self, widget: QWidget) -> None:
+        """Set custom button content, replacing default arrow icon."""
+```
+
+### 3. 新增分子组件 (`components/molecules/`)
+
+#### TAlert
+
+```python
+class TAlert(BaseWidget):
+    """Inline alert component for persistent semantic notifications.
+
+    Unlike TMessage (floating), TAlert is embedded in page layout.
+    Supports four semantic types with distinct icons and colors.
+
+    Signals:
+        closed: Emitted when the alert is closed via close button.
+    """
+
+    class AlertType(str, Enum):
+        SUCCESS = "success"
+        INFO = "info"
+        WARNING = "warning"
+        ERROR = "error"
+
+    closed = Signal()
+
+    def __init__(
+        self,
+        title: str = "",
+        description: str = "",
+        alert_type: AlertType = AlertType.INFO,
+        closable: bool = False,
+        bordered: bool = True,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_action(self, widget: QWidget) -> None:
+        """Embed action widget below description."""
+```
+
+#### TCollapse / TCollapseItem
+
+```python
+class TCollapseItem(BaseWidget):
+    """Single collapsible panel item with header and content area.
+
+    Signals:
+        expanded_changed: Emitted with (name, is_expanded) on toggle.
+    """
+
+    expanded_changed = Signal(str, bool)
+
+    def __init__(
+        self,
+        name: str,
+        title: str = "",
+        expanded: bool = False,
+        disabled: bool = False,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_content(self, widget: QWidget) -> None: ...
+    def is_expanded(self) -> bool: ...
+    def set_expanded(self, expanded: bool) -> None: ...
+    def set_disabled(self, disabled: bool) -> None: ...
+
+
+class TCollapse(BaseWidget):
+    """Collapse panel managing multiple TCollapseItem instances.
+
+    Supports accordion mode where only one item can be expanded at a time.
+
+    Signals:
+        item_expanded: Emitted with (item_name, is_expanded) on any item toggle.
+    """
+
+    item_expanded = Signal(str, bool)
+
+    def __init__(
+        self,
+        accordion: bool = False,
+        expanded_names: list[str] | None = None,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def add_item(self, item: TCollapseItem) -> None: ...
+    def get_expanded_names(self) -> list[str]: ...
+```
+
+#### TPopconfirm
+
+```python
+class TPopconfirm(BaseWidget):
+    """Lightweight popover confirmation dialog.
+
+    Appears near the trigger element, providing confirm/cancel actions
+    as a lighter alternative to modal dialogs.
+
+    Signals:
+        confirmed: Emitted when user clicks confirm button.
+        cancelled: Emitted when user clicks cancel button.
+    """
+
+    class Placement(str, Enum):
+        TOP = "top"
+        BOTTOM = "bottom"
+        LEFT = "left"
+        RIGHT = "right"
+
+    confirmed = Signal()
+    cancelled = Signal()
+
+    def __init__(
+        self,
+        trigger: QWidget | None = None,
+        title: str = "确认操作？",
+        confirm_text: str = "确认",
+        cancel_text: str = "取消",
+        icon: QIcon | None = None,
+        placement: Placement = Placement.TOP,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_trigger(self, trigger: QWidget) -> None: ...
+    def show_popup(self) -> None: ...
+    def hide_popup(self) -> None: ...
+```
+
+#### TTimeline / TTimelineItem
+
+```python
+class TTimelineItem(BaseWidget):
+    """Single timeline node with status, title, content, and time label.
+
+    Supports custom dot widget and color override.
+    """
+
+    class ItemStatus(str, Enum):
+        DEFAULT = "default"
+        PENDING = "pending"
+        FINISHED = "finished"
+        ERROR = "error"
+
+    def __init__(
+        self,
+        title: str = "",
+        content: str = "",
+        time: str = "",
+        status: ItemStatus = ItemStatus.DEFAULT,
+        color: str | None = None,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_dot(self, widget: QWidget) -> None:
+        """Replace default dot with custom widget."""
+
+
+class TTimeline(BaseWidget):
+    """Timeline component displaying a sequence of TTimelineItem nodes.
+
+    Draws connecting lines between nodes with colors following
+    the upper node's color.
+
+    Signals:
+        item_clicked: Emitted with item index when a timeline item is clicked.
+    """
+
+    class TimelineMode(str, Enum):
+        LEFT = "left"
+        RIGHT = "right"
+
+    item_clicked = Signal(int)
+
+    def __init__(
+        self,
+        mode: TimelineMode = TimelineMode.LEFT,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def add_item(self, item: TTimelineItem) -> None: ...
+    def get_items(self) -> list[TTimelineItem]: ...
+```
+
+### 4. 新增有机体组件 (`components/organisms/`)
+
+#### TLayout 系列
+
+```python
+class TLayoutHeader(BaseWidget):
+    """Layout header section with configurable height."""
+
+    def __init__(self, height: int = 64, parent: QWidget | None = None) -> None: ...
+    def set_content(self, widget: QWidget) -> None: ...
+
+
+class TLayoutFooter(BaseWidget):
+    """Layout footer section with configurable height."""
+
+    def __init__(self, height: int = 64, parent: QWidget | None = None) -> None: ...
+    def set_content(self, widget: QWidget) -> None: ...
+
+
+class TLayoutContent(BaseWidget):
+    """Layout main content area, fills remaining space."""
+
+    def __init__(self, parent: QWidget | None = None) -> None: ...
+    def set_content(self, widget: QWidget) -> None: ...
+
+
+class TLayoutSider(BaseWidget):
+    """Layout sidebar with collapse/expand animation and responsive breakpoints.
+
+    Signals:
+        collapsed_changed: Emitted with current collapsed state.
+    """
+
+    class Breakpoint(str, Enum):
+        SM = "sm"    # 640px
+        MD = "md"    # 768px
+        LG = "lg"    # 1024px
+        XL = "xl"    # 1280px
+
+    collapsed_changed = Signal(bool)
+
+    def __init__(
+        self,
+        width: int = 240,
+        collapsed_width: int = 48,
+        collapsed: bool = False,
+        breakpoint: Breakpoint | None = None,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_collapsed(self, collapsed: bool) -> None: ...
+    def is_collapsed(self) -> bool: ...
+    def set_content(self, widget: QWidget) -> None: ...
+
+
+class TLayout(BaseWidget):
+    """Standard layout container composing Header, Sider, Content, Footer.
+
+    Supports classic layout combinations:
+    - Header + Content + Footer
+    - Header + Sider + Content + Footer
+    - Sider + Content
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None: ...
+
+    def set_header(self, header: TLayoutHeader) -> None: ...
+    def set_sider(self, sider: TLayoutSider) -> None: ...
+    def set_content(self, content: TLayoutContent) -> None: ...
+    def set_footer(self, footer: TLayoutFooter) -> None: ...
+```
+
+#### TCard
+
+```python
+class TCard(BaseWidget, HoverEffectMixin):
+    """Card container with header, body, and footer sections.
+
+    Supports hover shadow deepening effect and closable behavior.
+
+    Signals:
+        closed: Emitted when close button is clicked.
+    """
+
+    class CardSize(str, Enum):
+        SMALL = "small"      # padding 12px
+        MEDIUM = "medium"    # padding 20px
+        LARGE = "large"      # padding 24px
+
+    closed = Signal()
+
+    def __init__(
+        self,
+        title: str = "",
+        size: CardSize = CardSize.MEDIUM,
+        hoverable: bool = False,
+        bordered: bool = True,
+        closable: bool = False,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_header_extra(self, widget: QWidget) -> None: ...
+    def set_content(self, widget: QWidget) -> None: ...
+    def set_footer(self, widget: QWidget) -> None: ...
+```
+
+#### TMenu 系列
+
+```python
+class TMenuItem(BaseWidget):
+    """Single menu item with key, label, and optional icon."""
+
+    clicked = Signal(str)  # item key
+
+    def __init__(
+        self,
+        key: str,
+        label: str = "",
+        icon: QIcon | None = None,
+        disabled: bool = False,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_active(self, active: bool) -> None: ...
+    def is_active(self) -> bool: ...
+
+
+class TMenuItemGroup(BaseWidget):
+    """Submenu group supporting multi-level nesting with 24px indentation.
+
+    Signals:
+        expanded_changed: Emitted with expanded state on toggle.
+    """
+
+    expanded_changed = Signal(bool)
+
+    def __init__(
+        self,
+        key: str,
+        label: str = "",
+        icon: QIcon | None = None,
+        expanded: bool = True,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def add_item(self, item: TMenuItem | "TMenuItemGroup") -> None: ...
+    def set_expanded(self, expanded: bool) -> None: ...
+    def is_expanded(self) -> bool: ...
+
+
+class TMenu(BaseWidget):
+    """Navigation menu supporting vertical/horizontal mode and multi-level nesting.
+
+    Features route awareness for automatic active item highlighting.
+
+    Signals:
+        item_selected: Emitted with the selected item's key.
+    """
+
+    class MenuMode(str, Enum):
+        VERTICAL = "vertical"
+        HORIZONTAL = "horizontal"
+
+    item_selected = Signal(str)
+
+    def __init__(
+        self,
+        mode: MenuMode = MenuMode.VERTICAL,
+        active_key: str = "",
+        collapsed: bool = False,
+        route_awareness: bool = False,
+        disabled: bool = False,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def add_item(self, item: TMenuItem | TMenuItemGroup) -> None: ...
+    def set_active_key(self, key: str) -> None: ...
+    def get_active_key(self) -> str: ...
+    def set_collapsed(self, collapsed: bool) -> None: ...
+    def set_route(self, path: str) -> None:
+        """Set current route path for automatic active item matching."""
+```
+
+### 5. 样式模块扩展 (`styles/`)
+
+新增 QSS 模板文件：
+
+```
+styles/templates/
+├── spin.qss.j2              # TSpin 样式
+├── slider.qss.j2            # TSlider 样式
+├── inputnumber.qss.j2       # TInputNumber 样式
+├── empty.qss.j2             # TEmpty 样式
+├── backtop.qss.j2           # TBackTop 样式
+├── alert.qss.j2             # TAlert 样式
+├── collapse.qss.j2          # TCollapse / TCollapseItem 样式
+├── popconfirm.qss.j2        # TPopconfirm 样式
+├── timeline.qss.j2          # TTimeline / TTimelineItem 样式
+├── layout.qss.j2            # TLayout 系列样式
+├── card.qss.j2              # TCard 样式
+└── menu.qss.j2              # TMenu 系列样式
+```
+
+## 数据模型
+
+### 新增 Design Token 扩展
+
+在 `light.json` 和 `dark.json` 中新增以下 Token 节点：
+
+```json
+{
+  "spin_sizes": {
+    "small": {"size": 20},
+    "medium": {"size": 28},
+    "large": {"size": 36}
+  },
+  "slider": {
+    "track_height": 4,
+    "thumb_size": 14,
+    "thumb_border_size": 2
+  },
+  "layout": {
+    "header_height": 64,
+    "footer_height": 64,
+    "sider_width": 240,
+    "sider_collapsed_width": 48,
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024,
+      "xl": 1280
+    }
+  },
+  "card": {
+    "padding_small": 12,
+    "padding_medium": 20,
+    "padding_large": 24
+  },
+  "menu": {
+    "indent": 24,
+    "item_height": 40,
+    "collapsed_width": 48
+  },
+  "colors": {
+    "spin_mask": "rgba(255, 255, 255, 0.38)",
+    "spin_mask_dark": "rgba(0, 0, 0, 0.38)",
+    "alert_success_bg": "rgba(24, 160, 88, 0.1)",
+    "alert_info_bg": "rgba(32, 128, 240, 0.1)",
+    "alert_warning_bg": "rgba(240, 160, 32, 0.1)",
+    "alert_error_bg": "rgba(208, 48, 80, 0.1)",
+    "timeline_pending": "#d4d7de",
+    "timeline_finished": "#18a058",
+    "timeline_error": "#d03050"
+  }
+}
+```
+
+### 组件状态枚举汇总
+
+```python
+# TSpin
+class SpinMode(str, Enum): STANDALONE, NESTED
+class AnimationType(str, Enum): RING, DOTS, PULSE
+class SpinSize(str, Enum): SMALL, MEDIUM, LARGE
+
+# TSlider - 无额外枚举，使用 range: bool 切换模式
+
+# TInputNumber
+class InputNumberSize(str, Enum): SMALL, MEDIUM, LARGE
+
+# TAlert
+class AlertType(str, Enum): SUCCESS, INFO, WARNING, ERROR
+
+# TTimelineItem
+class ItemStatus(str, Enum): DEFAULT, PENDING, FINISHED, ERROR
+
+# TTimeline
+class TimelineMode(str, Enum): LEFT, RIGHT
+
+# TLayoutSider
+class Breakpoint(str, Enum): SM, MD, LG, XL
+
+# TCard
+class CardSize(str, Enum): SMALL, MEDIUM, LARGE
+
+# TMenu
+class MenuMode(str, Enum): VERTICAL, HORIZONTAL
+
+# TPopconfirm
+class Placement(str, Enum): TOP, BOTTOM, LEFT, RIGHT
+```
+
+
+## 正确性属性
+
+*属性（Property）是一种在系统所有有效执行中都应成立的特征或行为——本质上是关于系统应该做什么的形式化陈述。属性是人类可读规范与机器可验证正确性保证之间的桥梁。*
+
+以下属性基于 V1.1.0 需求文档中的验收标准推导而来，每个属性都包含明确的"对于任意"全称量化声明，可直接转化为 Hypothesis 属性基测试。
+
+### 属性 68：TSpin 配置正确性
+
+*对于任意* SpinMode、AnimationType 和 SpinSize 枚举值组合，创建 TSpin 后其 `mode`、`animation_type` 和 `size` 属性应分别等于传入值。
+
+**验证需求：44.1, 44.3, 44.4**
+
+### 属性 69：TSpin spinning 状态 Round-Trip
+
+*对于任意* TSpin 和任意布尔值序列，每次调用 `set_spinning(v)` 后 `is_spinning()` 应返回 v，且 `spinning_changed` 信号应携带 v。
+
+**验证需求：44.5**
+
+### 属性 70：TSlider 范围模式不变量
+
+*对于任意* `range=True` 的 TSlider 和任意 tuple 值 (a, b)，调用 `set_value((a, b))` 后 `get_value()` 返回的 tuple 应满足 result[0] ≤ result[1]。
+
+**验证需求：45.3**
+
+### 属性 71：TSlider 值域约束不变量
+
+*对于任意* TSlider（min=m, max=M）和任意数值 v，调用 `set_value(v)` 后 `get_value()` 返回的值应满足 m ≤ result ≤ M。
+
+**验证需求：45.4**
+
+### 属性 72：TSlider 步长吸附
+
+*对于任意* TSlider（min=m, step=s）和任意数值 v，调用 `set_value(v)` 后 `get_value()` 返回的值应为 m + k*s 形式（k 为非负整数），即吸附到最近的步长刻度。
+
+**验证需求：45.5**
+
+### 属性 73：TSlider value_changed 信号
+
+*对于任意* TSlider 和任意有效数值，调用 `set_value(v)` 后 `value_changed` 信号应被发射并携带与 `get_value()` 一致的值。
+
+**验证需求：45.8**
+
+### 属性 74：TInputNumber 步进正确性
+
+*对于任意* TInputNumber（step=s, min=m, max=M）和任意初始值 v，模拟键盘上箭头后 `get_value()` 应返回 min(v + s, M)，模拟下箭头后应返回 max(v - s, m)。
+
+**验证需求：46.1, 46.4, 46.5**
+
+### 属性 75：TInputNumber 值域约束不变量
+
+*对于任意* TInputNumber（min=m, max=M）和任意数值 v，调用 `set_value(v)` 后 `get_value()` 返回的值应满足 m ≤ result ≤ M。
+
+**验证需求：46.2**
+
+### 属性 76：TInputNumber 精度格式化
+
+*对于任意* TInputNumber（precision=p）和任意数值 v，`get_value()` 返回的值乘以 10^p 后应为整数（即精度正确）。
+
+**验证需求：46.3**
+
+### 属性 77：TInputNumber 非数字输入拒绝
+
+*对于任意*包含非数字字符的字符串，TInputNumber 的输入验证器 SHALL 拒绝该输入，`get_value()` 应保持不变。
+
+**验证需求：46.10**
+
+### 属性 78：TInputNumber 尺寸变体正确性
+
+*对于任意* InputNumberSize 枚举值，创建 TInputNumber 时传入该尺寸后，组件的 `size` 属性应等于传入值。
+
+**验证需求：46.9**
+
+### 属性 79：TAlert 类型正确性
+
+*对于任意* AlertType 枚举值，创建 TAlert 后其 `alert_type` 属性应等于传入值。
+
+**验证需求：49.1**
+
+### 属性 80：TAlert 关闭行为
+
+*对于任意* closable=True 的 TAlert，模拟点击关闭按钮后，TAlert 应变为不可见（`isVisible() == False`），且 `closed` 信号应被发射。
+
+**验证需求：49.5, 49.6**
+
+### 属性 81：TCollapse 手风琴模式不变量
+
+*对于任意* `accordion=True` 的 TCollapse 和其中任意数量（≥2）的 TCollapseItem，展开其中一个 item 后，该 TCollapse 中有且仅有一个 item 处于展开状态。
+
+**验证需求：50.3**
+
+### 属性 82：TCollapse 展开状态 Round-Trip
+
+*对于任意* TCollapseItem，调用 `set_expanded(True)` 后 `is_expanded()` 应返回 True，调用 `set_expanded(False)` 后应返回 False，且 `item_expanded` 信号应携带正确的名称和状态。
+
+**验证需求：50.2, 50.7**
+
+### 属性 83：TCollapse expanded_names 初始化
+
+*对于任意* TCollapse 和 expanded_names 列表，创建后 `get_expanded_names()` 应返回与传入列表一致的结果。
+
+**验证需求：50.6**
+
+### 属性 84：TCollapseItem disabled 屏蔽交互
+
+*对于任意* `disabled=True` 的 TCollapseItem，模拟点击标题栏不应改变展开状态。
+
+**验证需求：50.8**
+
+### 属性 85：TPopconfirm 确认/取消信号
+
+*对于任意* TPopconfirm，模拟点击确认按钮应发射 `confirmed` 信号，模拟点击取消按钮应发射 `cancelled` 信号。
+
+**验证需求：51.5, 51.6**
+
+### 属性 86：TPopconfirm 位置正确性
+
+*对于任意* Placement 枚举值，创建 TPopconfirm 后其 `placement` 属性应等于传入值。
+
+**验证需求：51.8**
+
+### 属性 87：TTimeline Items Round-Trip
+
+*对于任意* TTimelineItem 列表，依次调用 `add_item()` 后 `get_items()` 应返回与添加顺序一致的列表。
+
+**验证需求：52.1**
+
+### 属性 88：TTimelineItem 状态与颜色正确性
+
+*对于任意* ItemStatus 枚举值和可选的自定义颜色，创建 TTimelineItem 后其 `status` 属性应等于传入值；当 `color` 被设置时，自定义颜色应覆盖 status 预设。
+
+**验证需求：52.2, 52.3**
+
+### 属性 89：TTimeline 模式正确性
+
+*对于任意* TimelineMode 枚举值，创建 TTimeline 后其 `mode` 属性应等于传入值。
+
+**验证需求：52.6**
+
+### 属性 90：TLayoutSider 折叠状态 Round-Trip
+
+*对于任意* TLayoutSider，调用 `set_collapsed(True)` 后 `is_collapsed()` 应返回 True，调用 `set_collapsed(False)` 后应返回 False，且 `collapsed_changed` 信号应携带正确的布尔值。
+
+**验证需求：53.3, 53.7**
+
+### 属性 91：TLayoutSider 响应式断点
+
+*对于任意* TLayoutSider（breakpoint=bp）和任意窗口宽度，当窗口宽度低于断点阈值时 `is_collapsed()` 应返回 True，高于时应返回 False。
+
+**验证需求：53.6**
+
+### 属性 92：TCard 尺寸变体正确性
+
+*对于任意* CardSize 枚举值，创建 TCard 后其 `size` 属性应等于传入值。
+
+**验证需求：54.8**
+
+### 属性 93：TCard 关闭行为
+
+*对于任意* closable=True 的 TCard，模拟点击关闭按钮后 `closed` 信号应被发射。
+
+**验证需求：54.9, 54.10**
+
+### 属性 94：TMenu item_selected 信号
+
+*对于任意* TMenu 和其中任意 TMenuItem，模拟点击该 item 后 `item_selected` 信号应携带该 item 的 key。
+
+**验证需求：55.5**
+
+### 属性 95：TMenu active_key Round-Trip
+
+*对于任意* TMenu 和任意已注册的 item key，调用 `set_active_key(key)` 后 `get_active_key()` 应返回该 key。
+
+**验证需求：55.6**
+
+### 属性 96：TMenu 路由感知
+
+*对于任意* `route_awareness=True` 的 TMenu 和任意路径字符串，调用 `set_route(path)` 后 `get_active_key()` 应返回与路径匹配的 TMenuItem 的 key。
+
+**验证需求：55.9**
+
+### 属性 97：TMenu disabled 屏蔽交互
+
+*对于任意* `disabled=True` 的 TMenu，模拟点击任意 TMenuItem 不应发射 `item_selected` 信号。
+
+**验证需求：55.11**
+
+### 属性 98：EventBus 发布/订阅 Round-Trip
+
+*对于任意*事件名称和回调函数列表，依次调用 `on()` 订阅后，调用 `emit()` 应按订阅顺序依次调用所有回调，且回调接收到的参数与 emit 传入的参数一致。
+
+**验证需求：56.2, 56.3, 56.6**
+
+### 属性 99：EventBus 取消订阅
+
+*对于任意*已订阅的回调，调用 `off()` 后再次 `emit()` 不应调用该回调；调用 `clear(event)` 后该事件的所有回调不应被调用；调用 `clear_all()` 后所有事件的回调不应被调用。
+
+**验证需求：56.4, 56.8**
+
+### 属性 100：EventBus once 单次触发
+
+*对于任意*通过 `once()` 订阅的回调，第一次 `emit()` 应调用该回调，第二次 `emit()` 不应调用该回调。
+
+**验证需求：56.5**
+
+### 属性 101：EventBus 异常隔离
+
+*对于任意*包含抛出异常的回调的订阅列表，`emit()` 应捕获异常并继续调用后续回调，所有非异常回调均应被正常调用。
+
+**验证需求：56.7**
+
+### 属性 102：EasingEngine 值域不变量
+
+*对于任意*标准缓动函数和任意 t ∈ [0.0, 1.0]，函数返回值应满足 0.0 ≤ result ≤ 1.0。
+
+**验证需求：57.2**
+
+### 属性 103：EasingEngine 边界条件
+
+*对于任意*标准缓动函数，f(0.0) 应等于 0.0，f(1.0) 应等于 1.0。
+
+**验证需求：57.3**
+
+### 属性 104：EasingEngine 自定义贝塞尔边界条件
+
+*对于任意*有效的控制点 (p1x, p1y, p2x, p2y)（其中 0 ≤ p1x, p2x ≤ 1），`custom_bezier()` 返回的函数应满足 f(0.0) = 0.0 且 f(1.0) = 1.0。
+
+**验证需求：57.4**
+
+### 属性 105：ContainerQuery 断点匹配
+
+*对于任意*已注册的断点规则集合和任意父容器宽度，`current_breakpoint()` 应返回宽度所在范围对应的断点名称；当宽度跨越断点边界时，`breakpoint_changed` 信号应被发射。
+
+**验证需求：58.3, 58.4, 58.5**
+
+### 属性 106：ContainerQuery resize 回调
+
+*对于任意*应用了 ContainerQueryMixin 的组件，当父容器尺寸变化时，`container_resized` 回调应被调用并携带正确的宽度和高度值。
+
+**验证需求：58.2**
+
+## 错误处理
+
+### 新增组件错误处理
+
+| 错误场景 | 处理方式 |
+|---------|---------|
+| TSpin delay 为负数 | 忽略 delay，立即显示动画 |
+| TSlider range 模式下 value 不是 tuple | 自动转换为 (value, value) |
+| TSlider value 超出 [min, max] 范围 | 自动 clamp 到有效范围 |
+| TInputNumber value 超出 [min, max] 范围 | 自动 clamp 到有效范围 |
+| TInputNumber precision 为负数 | 回退到 precision=0 |
+| TInputNumber 非数字输入 | 拒绝输入，保持当前值 |
+| TBackTop target 未设置 | 不显示按钮，记录警告日志 |
+| TCollapse expanded_names 包含不存在的 item 名称 | 忽略不存在的名称 |
+| TPopconfirm trigger 未设置 | 不响应点击，记录警告日志 |
+| TLayoutSider breakpoint 无效 | 忽略断点设置，不自动折叠 |
+| TMenu set_route 路径无匹配项 | 保持当前 active_key 不变 |
+| EventBus off 传入未订阅的回调 | 静默忽略，不抛出异常 |
+| EventBus 回调执行异常 | 捕获异常并记录日志，继续执行后续回调 |
+| EasingEngine t 超出 [0, 1] 范围 | 自动 clamp 到 [0, 1] |
+| ContainerQueryMixin 父容器为 None | 不安装事件过滤器，记录警告日志 |
+
+## 测试策略
+
+### 双轨测试方法
+
+V1.1.0 延续单元测试与属性基测试互补的双轨策略：
+
+- **单元测试（pytest + pytest-qt）**：验证具体示例、边界情况和错误条件
+- **属性基测试（Hypothesis）**：验证跨所有输入的通用属性，每个属性至少 100 次迭代
+
+### 属性基测试配置
+
+- **测试库**：Hypothesis
+- **最小迭代次数**：每个属性测试至少 100 次迭代
+- **标注格式**：`# Feature: tyto-ui-lib-v1, Property N: 属性名称`
+- **每个正确性属性对应一个独立的属性基测试函数**
+
+### Hypothesis 自定义策略扩展
+
+```python
+# 生成任意 SpinMode / AnimationType / SpinSize 组合
+spin_configs = st.tuples(
+    st.sampled_from(list(TSpin.SpinMode)),
+    st.sampled_from(list(TSpin.AnimationType)),
+    st.sampled_from(list(TSpin.SpinSize)),
+)
+
+# 生成任意 Slider 值（单值或范围）
+slider_single_values = st.floats(min_value=0, max_value=100)
+slider_range_values = st.tuples(
+    st.floats(min_value=0, max_value=100),
+    st.floats(min_value=0, max_value=100),
+).map(lambda t: (min(t), max(t)))
+
+# 生成任意 InputNumber 配置
+inputnumber_configs = st.fixed_dictionaries({
+    "value": st.floats(min_value=-1000, max_value=1000),
+    "min": st.floats(min_value=-1000, max_value=0),
+    "max": st.floats(min_value=0, max_value=1000),
+    "step": st.floats(min_value=0.01, max_value=100),
+    "precision": st.integers(min_value=0, max_value=6),
+})
+
+# 生成任意 AlertType
+alert_types = st.sampled_from(list(TAlert.AlertType))
+
+# 生成任意 CardSize
+card_sizes = st.sampled_from(list(TCard.CardSize))
+
+# 生成任意 MenuMode
+menu_modes = st.sampled_from(list(TMenu.MenuMode))
+
+# 生成任意事件名称和参数
+event_names = st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("L", "N")))
+
+# 生成任意归一化时间 t
+normalized_t = st.floats(min_value=0.0, max_value=1.0)
+
+# 生成任意贝塞尔控制点
+bezier_control_points = st.tuples(
+    st.floats(min_value=0.0, max_value=1.0),  # p1x
+    st.floats(min_value=0.0, max_value=1.0),  # p1y
+    st.floats(min_value=0.0, max_value=1.0),  # p2x
+    st.floats(min_value=0.0, max_value=1.0),  # p2y
+)
+```
+
+### 测试目录扩展
+
+```
+tests/
+├── test_core/
+│   ├── test_event_bus.py          # 属性 98-101 的属性基测试
+│   ├── test_easing_engine.py      # 属性 102-104 的属性基测试
+│   └── test_container_query.py    # 属性 105-106 的属性基测试
+├── test_atoms/
+│   ├── test_spin.py               # 属性 68-69 的属性基测试
+│   ├── test_slider.py             # 属性 70-73 的属性基测试
+│   ├── test_inputnumber.py        # 属性 74-78 的属性基测试
+│   ├── test_empty.py              # 单元测试
+│   └── test_backtop.py            # 单元测试
+├── test_molecules/
+│   ├── test_alert.py              # 属性 79-80 的属性基测试
+│   ├── test_collapse.py           # 属性 81-84 的属性基测试
+│   ├── test_popconfirm.py         # 属性 85-86 的属性基测试
+│   └── test_timeline.py           # 属性 87-89 的属性基测试
+└── test_organisms/
+    ├── test_layout.py             # 属性 90-91 的属性基测试
+    ├── test_card.py               # 属性 92-93 的属性基测试
+    └── test_menu.py               # 属性 94-97 的属性基测试
+```
+
+### 单元测试覆盖重点
+
+- TSpin：delay 行为、嵌套模式遮罩层存在性
+- TSlider：marks 渲染、tooltip 显示、disabled 状态
+- TInputNumber：长按连续增减、非数字输入拒绝
+- TEmpty：默认图标和描述文本、自定义 image 和 extra
+- TBackTop：滚动阈值触发显示/隐藏
+- TAlert：各类型图标和配色、action 嵌入
+- TCollapse：动画性能（手动验证）
+- TPopconfirm：弹窗定位、外部点击关闭
+- TTimeline：连接线绘制（手动验证）
+- TLayout：布局组合正确性
+- TCard：hover 阴影效果（手动验证）
+- TMenu：多级嵌套缩进、折叠模式
+- EventBus：并发安全性
+- ContainerQuery：事件过滤器安装
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.1.0 - 组件特性增强（第二批）
+
+## 概述
+
+V1.1.0 特性增强（第二批）在现有 V1.1.0 组件基础上扩展属性和交互能力，补齐与 NaiveUI 的特性差距。所有增强遵循现有的 Design Token + Jinja2 + QSS 架构，通过扩展组件属性、QSS 模板和信号实现。涉及 5 个原子组件和 4 个分子组件的属性扩展，以及 TPopconfirm 的 Bug 修复。
+
+## 架构
+
+### 组件扩展策略
+
+V1.1.0 第二批增强遵循以下原则：
+1. 在现有组件类上新增属性和方法，不改变类继承结构
+2. 通过 QSS 动态属性选择器驱动样式变体
+3. 新增信号遵循 snake_case 命名规范
+4. 自定义内容通过 `set_xxx(widget)` 方法注入，保持 API 一致性
+5. QSS 模板扩展新增选择器规则，不修改已有规则
+
+
+## 组件与接口
+
+### 1. TSpin 扩展
+
+```python
+class TSpin(BaseWidget):
+    """Spin component with extended customization.
+
+    New in V1.1.0 enhancement:
+    - rotate: Control whether custom icon rotates (default True)
+    - content_class / content_style: Custom styling for nested content area
+    - stroke_width / stroke: Custom loading ring appearance
+    - set_icon(): Replace default animation with custom icon widget
+    - size accepts int for precise pixel control
+    """
+
+    # Extended __init__ parameters (additions only)
+    def __init__(
+        self,
+        # ... existing params ...
+        rotate: bool = True,
+        content_class: str = "",
+        content_style: dict[str, str] | None = None,
+        stroke_width: int | float = 2,
+        stroke: str | None = None,  # None = use colors.primary
+        size: SpinSize | int = SpinSize.MEDIUM,  # Now accepts int
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_icon(self, widget: QWidget | None) -> None:
+        """Set custom icon widget, replacing default animation."""
+
+    def set_rotate(self, rotate: bool) -> None:
+        """Control whether custom icon rotates."""
+
+    def set_stroke_width(self, width: int | float) -> None:
+        """Set loading ring stroke width."""
+
+    def set_stroke(self, color: str | None) -> None:
+        """Set loading ring color. None restores default."""
+
+    def set_content_class(self, class_name: str) -> None:
+        """Set CSS class for nested content area."""
+
+    def set_content_style(self, style: dict[str, str] | None) -> None:
+        """Set inline style dict for nested content area."""
+```
+
+
+### 2. TSlider 扩展
+
+```python
+class TSlider(BaseWidget, HoverEffectMixin):
+    """Slider with reverse, keyboard control, tooltip placement, mark snap."""
+
+    drag_start = Signal()
+    drag_end = Signal()
+
+    def __init__(
+        self,
+        # ... existing params ...
+        reverse: bool = False,
+        keyboard: bool = True,
+        placement: str = "top",  # "top"|"bottom"|"left"|"right"
+        step: int | float | str = 1,  # accepts "mark" string
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_reverse(self, reverse: bool) -> None: ...
+    def set_keyboard(self, enabled: bool) -> None: ...
+    def set_placement(self, placement: str) -> None: ...
+```
+
+### 3. TInputNumber 扩展
+
+```python
+class TInputNumber(BaseWidget, FocusGlowMixin):
+    """InputNumber with extended controls and customization."""
+
+    class InputNumberSize(str, Enum):
+        TINY = "tiny"
+        SMALL = "small"
+        MEDIUM = "medium"
+        LARGE = "large"
+
+    class InputNumberStatus(str, Enum):
+        SUCCESS = "success"
+        WARNING = "warning"
+        ERROR = "error"
+
+    focused = Signal()
+    blurred = Signal()
+    cleared = Signal()
+
+    def __init__(
+        self,
+        # ... existing params ...
+        autofocus: bool = False,
+        loading: bool = False,
+        placeholder: str = "",
+        bordered: bool = True,
+        show_button: bool = True,
+        button_placement: str = "right",  # "right"|"both"
+        readonly: bool = False,
+        clearable: bool = False,
+        round: bool = False,
+        status: InputNumberStatus | None = None,
+        validator: Callable[[int | float], bool] | None = None,
+        parse: Callable[[str], int | float | None] | None = None,
+        format_func: Callable[[int | float], str] | None = None,
+        update_value_on_input: bool = True,
+        keyboard: dict[str, bool] | None = None,
+        input_props: dict[str, Any] | None = None,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_loading(self, loading: bool) -> None: ...
+    def set_readonly(self, readonly: bool) -> None: ...
+    def set_status(self, status: InputNumberStatus | None) -> None: ...
+    def set_show_button(self, show: bool) -> None: ...
+    def set_button_placement(self, placement: str) -> None: ...
+    def set_bordered(self, bordered: bool) -> None: ...
+    def set_round(self, round: bool) -> None: ...
+    def set_prefix(self, widget: QWidget | None) -> None: ...
+    def set_suffix(self, widget: QWidget | None) -> None: ...
+    def set_add_icon(self, icon: QIcon | None) -> None: ...
+    def set_minus_icon(self, icon: QIcon | None) -> None: ...
+```
+
+
+### 4. TEmpty 扩展
+
+```python
+class TEmpty(BaseWidget):
+    """Empty state with size variants and display control."""
+
+    class EmptySize(str, Enum):
+        TINY = "tiny"
+        SMALL = "small"
+        MEDIUM = "medium"
+        LARGE = "large"
+        HUGE = "huge"
+
+    def __init__(
+        self,
+        size: EmptySize = EmptySize.MEDIUM,
+        show_description: bool = True,
+        show_icon: bool = True,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_size(self, size: EmptySize) -> None: ...
+    def set_show_description(self, show: bool) -> None: ...
+    def set_show_icon(self, show: bool) -> None: ...
+```
+
+### 5. TBackTop 扩展
+
+```python
+class TBackTop(BaseWidget):
+    """BackTop with controlled visibility, teleport, and listen target."""
+
+    visibility_changed = Signal(bool)
+
+    def __init__(
+        self,
+        show: bool | None = None,
+        to: QWidget | None = None,
+        listen_to: str | QWidget | Callable[[], QWidget] | None = None,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_show(self, show: bool | None) -> None: ...
+    def set_listen_to(self, target: str | QWidget | Callable) -> None: ...
+```
+
+### 6. TAlert 扩展
+
+```python
+class TAlert(BaseWidget):
+    """Alert with default type, icon control, and custom icon."""
+
+    class AlertType(str, Enum):
+        DEFAULT = "default"  # NEW
+        SUCCESS = "success"
+        INFO = "info"
+        WARNING = "warning"
+        ERROR = "error"
+
+    def __init__(
+        self,
+        show_icon: bool = True,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_show_icon(self, show: bool) -> None: ...
+    def set_icon(self, widget: QWidget | None) -> None:
+        """Set custom icon widget, replacing default type icon."""
+```
+
+
+### 7. TCollapse 扩展
+
+```python
+class TCollapse(BaseWidget):
+    """Collapse with arrow placement, trigger areas, header customization."""
+
+    item_header_clicked = Signal(str)  # item name
+
+    def __init__(
+        self,
+        arrow_placement: str = "left",  # "left"|"right"
+        trigger_areas: list[str] | None = None,  # ["main","extra","arrow"]
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_arrow_placement(self, placement: str) -> None: ...
+    def set_trigger_areas(self, areas: list[str]) -> None: ...
+
+
+class TCollapseItem(BaseWidget):
+    """CollapseItem with custom title, header-extra, and arrow."""
+
+    def set_title(self, widget: QWidget | None) -> None: ...
+    def set_header_extra(self, widget: QWidget | None) -> None: ...
+    def set_arrow(self, widget: QWidget | None) -> None: ...
+```
+
+### 8. TPopconfirm 扩展与 Bug 修复
+
+```python
+class TPopconfirm(BaseWidget):
+    """Popconfirm with icon control, button props, trigger modes."""
+
+    class TriggerMode(str, Enum):
+        CLICK = "click"
+        HOVER = "hover"
+        FOCUS = "focus"
+        MANUAL = "manual"
+
+    def __init__(
+        self,
+        show_icon: bool = True,
+        positive_button_props: dict[str, Any] | None = None,
+        negative_button_props: dict[str, Any] | None = None,
+        trigger: str = "click",
+        on_positive_click: Callable[[], None] | None = None,
+        on_negative_click: Callable[[], None] | None = None,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_show_icon(self, show: bool) -> None: ...
+    def set_icon(self, widget: QWidget | None) -> None: ...
+    def set_trigger(self, trigger: str) -> None: ...
+    def set_positive_button_props(self, props: dict) -> None: ...
+    def set_negative_button_props(self, props: dict) -> None: ...
+```
+
+#### TPopconfirm Bug 修复
+
+**现象**：点击弹窗内非按钮区域，弹窗被关闭。
+**根因**：事件过滤器未区分点击位置在弹窗内部还是外部。
+**修复**：关闭逻辑中检查鼠标点击位置是否在弹窗 geometry 内部，
+仅外部点击关闭弹窗，内部关闭仅通过确认/取消按钮触发。
+
+
+### 9. TTimeline 扩展
+
+```python
+class TTimeline(BaseWidget):
+    """Timeline with horizontal mode, size variants, icon size."""
+
+    class TimelineSize(str, Enum):
+        MEDIUM = "medium"
+        LARGE = "large"
+
+    def __init__(
+        self,
+        horizontal: bool = False,
+        size: TimelineSize = TimelineSize.MEDIUM,
+        icon_size: int = 12,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_horizontal(self, horizontal: bool) -> None: ...
+    def set_size(self, size: TimelineSize) -> None: ...
+    def set_icon_size(self, size: int) -> None: ...
+
+
+class TTimelineItem(BaseWidget):
+    """TimelineItem with extended status, line type, custom content."""
+
+    class ItemStatus(str, Enum):
+        DEFAULT = "default"
+        SUCCESS = "success"
+        ERROR = "error"
+        WARNING = "warning"  # NEW
+        INFO = "info"        # NEW
+
+    class LineType(str, Enum):
+        DEFAULT = "default"
+        DASHED = "dashed"
+
+    def __init__(
+        self,
+        line_type: LineType = LineType.DEFAULT,
+        parent: QWidget | None = None,
+    ) -> None: ...
+
+    def set_line_type(self, line_type: LineType) -> None: ...
+    def set_icon(self, widget: QWidget | None) -> None: ...
+    def set_title(self, widget: QWidget | None) -> None: ...
+    def set_footer(self, widget: QWidget | None) -> None: ...
+```
+
+
+## 正确性属性
+
+### 属性 107：TSpin 自定义图标旋转控制
+
+*对于任意* TSpin 和任意 rotate 布尔值，设置 `rotate` 后自定义图标的旋转动画状态应与 `rotate` 值一致。当 `rotate=False` 时自定义图标应静态显示。
+
+**验证需求：59.1**
+
+### 属性 108：TSpin 尺寸接受数字
+
+*对于任意*正整数 n，创建 TSpin(size=n) 后动画元素的尺寸应为 n 像素。
+
+**验证需求：59.7**
+
+### 属性 109：TSpin stroke 自定义
+
+*对于任意*有效颜色字符串 c 和正数 w，设置 `stroke=c, stroke_width=w` 后加载环应使用颜色 c 和宽度 w 绘制。
+
+**验证需求：59.4, 59.5**
+
+### 属性 110：TSlider reverse 方向反转
+
+*对于任意* `reverse=True` 的 TSlider 和任意有效值 v，滑块的视觉位置应与 `reverse=False` 时相反。
+
+**验证需求：60.1**
+
+### 属性 111：TSlider keyboard 控制
+
+*对于任意* `keyboard=False` 的 TSlider，模拟键盘箭头键事件后值不应变化。
+
+**验证需求：60.2, 60.3**
+
+
+### 属性 112：TSlider step="mark" 吸附
+
+*对于任意*设置了 marks 的 TSlider（step="mark"），滑块位置应始终吸附到最近的 mark 位置。
+
+**验证需求：60.5**
+
+### 属性 113：TSlider drag 信号
+
+*对于任意* TSlider，开始拖拽时应发射 `drag_start`，结束拖拽时应发射 `drag_end`。
+
+**验证需求：60.6, 60.7**
+
+### 属性 114：TInputNumber loading 屏蔽操作
+
+*对于任意* `loading=True` 的 TInputNumber，增减按钮和键盘操作不应改变值。
+
+**验证需求：61.2**
+
+### 属性 115：TInputNumber button_placement 布局
+
+*对于任意* TInputNumber，`button_placement="both"` 时减号在左加号在右，`"right"` 时均在右侧。
+
+**验证需求：61.6**
+
+### 属性 116：TInputNumber show_button 控制
+
+*对于任意* `show_button=False` 的 TInputNumber，增减按钮应不可见。
+
+**验证需求：61.5**
+
+### 属性 117：TInputNumber readonly 屏蔽编辑
+
+*对于任意* `readonly=True` 的 TInputNumber，输入框不可编辑，增减按钮不响应。
+
+**验证需求：61.7**
+
+### 属性 118：TInputNumber status 边框颜色
+
+*对于任意* InputNumberStatus 枚举值，设置 status 后 QSS 动态属性 `[status]` 应匹配。
+
+**验证需求：61.10**
+
+
+### 属性 119：TEmpty 尺寸变体正确性
+
+*对于任意* EmptySize 枚举值，创建 TEmpty 后 `size` 属性应等于传入值。
+
+**验证需求：62.1**
+
+### 属性 120：TEmpty 显示控制
+
+*对于任意* TEmpty，`show_description=False` 时描述不可见，`show_icon=False` 时图标不可见。
+
+**验证需求：62.2, 62.3, 62.4, 62.5**
+
+### 属性 121：TBackTop 受控显示模式
+
+*对于任意* TBackTop，`show=True` 时可见，`show=False` 时不可见，`show=None` 时自动控制。
+
+**验证需求：63.1**
+
+### 属性 122：TAlert default 类型正确性
+
+*对于任意* AlertType（含 default），创建 TAlert 后 `alert_type` 应等于传入值。
+
+**验证需求：64.1**
+
+### 属性 123：TAlert show_icon 控制
+
+*对于任意* `show_icon=False` 的 TAlert，左侧类型图标应不可见。
+
+**验证需求：64.2, 64.3**
+
+### 属性 124：TCollapse arrow_placement 正确性
+
+*对于任意* arrow_placement 值，箭头图标应显示在对应位置。
+
+**验证需求：65.1**
+
+### 属性 125：TCollapse trigger_areas 控制
+
+*对于任意* trigger_areas 配置，仅包含的区域点击应触发展开/收起。
+
+**验证需求：65.2, 65.3, 65.4**
+
+
+### 属性 126：TPopconfirm 弹窗内点击不关闭
+
+*对于任意*已显示的 TPopconfirm，点击弹窗内非按钮区域不应关闭弹窗。
+
+**验证需求：66.12**
+
+### 属性 127：TPopconfirm trigger 模式正确性
+
+*对于任意* TriggerMode，TPopconfirm 应仅在对应触发方式下显示弹窗。
+
+**验证需求：66.5, 66.6, 66.7, 66.8**
+
+### 属性 128：TTimeline horizontal 布局
+
+*对于任意* `horizontal=True` 的 TTimeline，节点应水平排列。
+
+**验证需求：67.1**
+
+### 属性 129：TTimeline size 变体正确性
+
+*对于任意* TimelineSize，创建 TTimeline 后 `size` 应等于传入值。
+
+**验证需求：67.2**
+
+### 属性 130：TTimelineItem line_type 正确性
+
+*对于任意* LineType，连接线样式应与 line_type 一致。
+
+**验证需求：67.5, 67.6**
+
+### 属性 131：TTimelineItem 扩展状态正确性
+
+*对于任意* ItemStatus（含 warning/info），`status` 应等于传入值。
+
+**验证需求：67.4**
+
+## 错误处理
+
+| 错误场景 | 处理方式 |
+|---------|---------|
+| TSpin stroke_width 为负数 | 回退到默认值 2 |
+| TSpin stroke 无效颜色 | 使用 colors.primary |
+| TSpin size 为负数 | 回退到 SpinSize.MEDIUM |
+| TSlider step="mark" 无 marks | 回退到 step=1 |
+| TSlider placement 无效 | 回退到 "top" |
+| TInputNumber validator 返回 False | 拒绝输入 |
+| TInputNumber parse 返回 None | 拒绝输入 |
+| TInputNumber button_placement 无效 | 回退到 "right" |
+| TEmpty size 无效 | 回退到 MEDIUM |
+| TBackTop listen_to 无匹配 | 记录警告 |
+| TCollapse trigger_areas 空列表 | 使用默认值 |
+| TPopconfirm trigger 无效 | 回退到 "click" |
+| TTimeline icon_size 负数 | 回退到 12 |
+
+## 测试策略
+
+- **属性 107-109**：TSpin 自定义图标、尺寸数字、stroke
+- **属性 110-113**：TSlider reverse、keyboard、mark 吸附、drag 信号
+- **属性 114-118**：TInputNumber loading、button_placement、show_button、readonly、status
+- **属性 119-120**：TEmpty 尺寸变体、显示控制
+- **属性 121**：TBackTop 受控显示模式
+- **属性 122-123**：TAlert default 类型、show_icon
+- **属性 124-125**：TCollapse arrow_placement、trigger_areas
+- **属性 126-127**：TPopconfirm 弹窗内点击、trigger 模式
+- **属性 128-131**：TTimeline horizontal、size、line_type、扩展状态
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.1.0 - Gallery/Playground 同步更新与工具模块
+
+## 概述
+
+V1.1.0 Gallery/Playground 同步更新确保 Gallery 预览画廊和 Playground 交互式调试应用覆盖所有 V1.1.0 新增组件。Gallery 新增 12 个 Showcase 展示模块，Playground 新增 12 个属性定义模块。同时新增 `utils/color.py` 颜色解析工具模块，解决 Qt 原生 QColor 不支持 CSS `rgba()` 格式的问题。
+
+## 架构
+
+### Gallery Showcase 扩展
+
+V1.1.0 在 Gallery 的 `showcases/` 目录下新增以下展示模块，每个模块继承 `BaseShowcase` 并通过 `add_section()` 添加特性区块：
+
+```
+examples/gallery/showcases/
+├── alert_showcase.py             # TAlert 展示
+├── backtop_showcase.py           # TBackTop 展示
+├── card_showcase.py              # TCard 展示
+├── collapse_showcase.py          # TCollapse 展示
+├── empty_showcase.py             # TEmpty 展示
+├── inputnumber_showcase.py       # TInputNumber 展示
+├── layout_showcase.py            # TLayout 展示
+├── menu_showcase.py              # TMenu 展示
+├── popconfirm_showcase.py        # TPopconfirm 展示
+├── slider_showcase.py            # TSlider 展示
+├── spin_showcase.py              # TSpin 展示
+└── timeline_showcase.py          # TTimeline 展示
+```
+
+所有新增 Showcase 在 `showcases/__init__.py` 的 `register_all()` 函数中注册到 `ComponentRegistry`。
+
+### Playground 属性定义扩展
+
+V1.1.0 在 Playground 的 `definitions/` 目录下新增以下属性定义模块：
+
+```
+examples/playground/definitions/
+├── alert_props.py                # TAlert 属性定义
+├── backtop_props.py              # TBackTop 属性定义
+├── card_props.py                 # TCard 属性定义
+├── collapse_props.py             # TCollapse 属性定义
+├── empty_props.py                # TEmpty 属性定义
+├── inputnumber_props.py          # TInputNumber 属性定义
+├── layout_props.py               # TLayout 属性定义
+├── menu_props.py                 # TMenu 属性定义
+├── message_props.py              # TMessage 属性定义
+├── modal_props.py                # TModal 属性定义
+├── popconfirm_props.py           # TPopconfirm 属性定义
+├── slider_props.py               # TSlider 属性定义
+├── spin_props.py                 # TSpin 属性定义
+└── timeline_props.py             # TTimeline 属性定义
+```
+
+所有新增属性定义在 `definitions/__init__.py` 的 `register_all_properties()` 函数中注册到 `PropertyRegistry`。
+
+### 颜色解析工具模块
+
+```
+src/tyto_ui_lib/utils/
+└── color.py                      # CSS 颜色字符串解析工具
+```
+
+## 组件与接口
+
+### 1. 颜色解析工具 (`utils/color.py`)
+
+```python
+def parse_color(value: str, fallback: str = "#000000") -> QColor:
+    """Parse a CSS color string into a QColor.
+
+    Supports hex (#RGB, #RRGGBB, #AARRGGBB), named colors, and
+    rgba(r, g, b, a) / rgb(r, g, b) format where a is a float in [0, 1].
+
+    Args:
+        value: CSS color string.
+        fallback: Fallback color if parsing fails.
+
+    Returns:
+        Parsed QColor instance.
+    """
+```
+
+#### 设计决策
+
+Qt 原生的 `QColor` 构造函数不支持 CSS `rgba(r, g, b, a)` 语法（其中 alpha 为 0-1 浮点数）。Design Token 的 JSON 文件中使用了大量 `rgba()` 格式的颜色值（如 `"rgba(0, 0, 0, 0.38)"`），组件在自定义绘制（`paintEvent`）中需要将这些字符串转换为 `QColor`。
+
+`parse_color` 通过正则表达式匹配 `rgba()` 和 `rgb()` 格式，手动提取 RGBA 分量并构造 `QColor`，同时保持对 hex 和命名颜色的兼容。
+
+### 2. Gallery 组件注册
+
+V1.1.0 的 `register_all()` 函数注册以下组件（含 V1.0.x 已有组件）：
+
+**原子组件（Atoms）**：Button、Checkbox、Radio、Input、InputNumber、Switch、Tag、Slider、Spin、Empty、BackTop
+
+**分子组件（Molecules）**：SearchBar、Breadcrumb、InputGroup、Alert、Collapse、Popconfirm、Timeline
+
+**有机体组件（Organisms）**：Message、Modal、Layout、Card、Menu
+
+### 3. Playground 属性注册
+
+V1.1.0 的 `register_all_properties()` 函数注册以下组件的属性定义（含 V1.0.x 已有组件）：
+
+**原子组件**：Button、Checkbox、Radio、Input、InputNumber、Switch、Tag、Slider、Spin、Empty、BackTop
+
+**分子组件**：SearchBar、Breadcrumb、Alert、Collapse、Popconfirm、Timeline
+
+**有机体组件**：Layout、Card、Menu、Message、Modal
+
+## 样式模块更新
+
+### QSS 模板完整列表
+
+V1.1.0 的 `styles/templates/` 目录包含以下所有 QSS 模板文件：
+
+```
+styles/templates/
+├── alert.qss.j2
+├── backtop.qss.j2
+├── breadcrumb.qss.j2
+├── button.qss.j2
+├── card.qss.j2
+├── checkbox.qss.j2
+├── collapse.qss.j2
+├── empty.qss.j2
+├── input.qss.j2
+├── inputgroup.qss.j2
+├── inputnumber.qss.j2
+├── layout.qss.j2
+├── menu.qss.j2
+├── message.qss.j2
+├── modal.qss.j2
+├── popconfirm.qss.j2
+├── radio.qss.j2
+├── radiobutton.qss.j2
+├── searchbar.qss.j2
+├── slider.qss.j2
+├── spin.qss.j2
+├── switch.qss.j2
+├── tag.qss.j2
+└── timeline.qss.j2
+```
+
+## 正确性属性
+
+### 属性 132：parse_color hex 格式解析
+
+*对于任意*有效的 hex 颜色字符串（#RGB、#RRGGBB、#AARRGGBB），`parse_color()` 返回的 QColor 应为有效颜色且 RGB 分量与输入一致。
+
+**验证需求：70.1**
+
+### 属性 133：parse_color rgba 格式解析
+
+*对于任意*有效的 `rgba(r, g, b, a)` 格式字符串（r, g, b ∈ [0, 255]，a ∈ [0.0, 1.0]），`parse_color()` 返回的 QColor 的 RGB 分量和 alpha 值应与输入一致。
+
+**验证需求：70.2**
+
+### 属性 134：parse_color 无效输入回退
+
+*对于任意*无效颜色字符串和任意 fallback 颜色，`parse_color()` 返回的 QColor 应等于 fallback 指定的颜色。
+
+**验证需求：70.5**
+
+## 测试策略
+
+### 测试目录完整结构
+
+V1.1.0 的完整测试目录结构如下：
+
+```
+tests/
+├── conftest.py                        # pytest-qt fixtures, QApplication 初始化
+├── test_core/
+│   ├── test_theme_engine.py           # 属性 1-4 的属性基测试 + 单元测试
+│   ├── test_design_tokens.py          # Token 加载和验证测试
+│   ├── test_dark_mode.py              # Dark 模式颜色一致性测试
+│   ├── test_easing_engine.py          # 属性 102-104 的属性基测试
+│   └── test_event_bus.py              # 属性 98-101 的属性基测试
+├── test_common/
+│   ├── test_base_widget.py            # 属性 5 的属性基测试
+│   ├── test_mixins.py                 # 属性 6-8 的属性基测试
+│   └── test_container_query.py        # 属性 105-106 的属性基测试
+├── test_atoms/
+│   ├── test_button.py                 # 属性 9-11, 43-46 的属性基测试
+│   ├── test_checkbox.py               # 属性 12, 51-52 的属性基测试
+│   ├── test_checkbox_group.py         # 属性 53-54 的属性基测试
+│   ├── test_radio.py                  # 属性 13-14, 55-56 的属性基测试
+│   ├── test_radio_enhanced.py         # 属性 57 的属性基测试（RadioButton 互斥）
+│   ├── test_input.py                  # 属性 15-17, 47-50 的属性基测试
+│   ├── test_switch.py                 # 属性 18, 58-60 的属性基测试
+│   ├── test_tag.py                    # 属性 19-20, 61-64 的属性基测试
+│   ├── test_spin.py                   # 属性 68-69 的属性基测试
+│   ├── test_slider.py                 # 属性 70-73 的属性基测试
+│   ├── test_inputnumber.py            # 属性 74-78 的属性基测试
+│   ├── test_empty.py                  # 单元测试
+│   └── test_backtop.py               # 单元测试
+├── test_molecules/
+│   ├── test_searchbar.py              # 属性 21-22 的属性基测试
+│   ├── test_breadcrumb.py             # 属性 23-25 的属性基测试
+│   ├── test_inputgroup.py             # 属性 26 的属性基测试
+│   ├── test_alert.py                  # 属性 79-80 的属性基测试
+│   └── test_collapse.py              # 属性 81-84 的属性基测试
+└── test_organisms/
+    ├── test_message.py                # 属性 27-28 的属性基测试
+    ├── test_modal.py                  # 属性 29-30 的属性基测试
+    ├── test_layout.py                 # 属性 90-91 的属性基测试
+    ├── test_card.py                   # 属性 92-93 的属性基测试
+    ├── test_menu.py                   # 属性 94-97 的属性基测试
+    └── test_menu_collapse_toggle.py   # TMenu 折叠切换回归测试
+```
+
+### 待补充测试文件
+
+以下测试文件在设计文档中规划但尚未创建：
+
+- `tests/test_molecules/test_popconfirm.py`：属性 85-86, 126-127 的属性基测试
+- `tests/test_molecules/test_timeline.py`：属性 87-89, 128-131 的属性基测试
+
+## 错误处理
+
+| 错误场景 | 处理方式 |
+|---------|---------|
+| parse_color 传入空字符串 | 返回 fallback 颜色 |
+| parse_color 传入无效 rgba 格式 | 返回 fallback 颜色 |
+| parse_color alpha 值超出 [0, 1] 范围 | 自动 clamp 到 [0, 1] |
+| Gallery Showcase 工厂创建失败 | ComponentShowcase 显示错误提示文字 |
+| Playground 属性定义 apply 回调异常 | 捕获异常并记录日志 |

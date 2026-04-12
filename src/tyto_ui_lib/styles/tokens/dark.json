@@ -4,21 +4,59 @@
     "primary": "#63e2b7",
     "primary_hover": "#7fe7c4",
     "primary_pressed": "#5acea7",
+    "primary_suppl": "rgb(42, 148, 125)",
     "success": "#63e2b7",
+    "success_suppl": "rgb(42, 148, 125)",
     "warning": "#f2c97d",
+    "warning_suppl": "rgb(240, 138, 0)",
     "error": "#e88080",
+    "error_suppl": "rgb(208, 58, 82)",
     "info": "#70c0e8",
     "info_hover": "#8acbee",
     "info_pressed": "#66afd3",
+    "info_suppl": "rgb(56, 137, 197)",
     "bg_default": "#18181c",
     "bg_elevated": "#26262a",
+    "body_color": "#101014",
+    "input_color": "rgba(255, 255, 255, 0.1)",
+    "input_color_disabled": "rgba(255, 255, 255, 0.06)",
     "text_primary": "rgba(255, 255, 255, 0.82)",
-    "text_secondary": "rgba(255, 255, 255, 0.50)",
-    "text_disabled": "rgba(255, 255, 255, 0.24)",
-    "border": "rgba(255, 255, 255, 0.12)",
+    "text_title": "rgba(255, 255, 255, 0.9)",
+    "text_secondary": "rgba(255, 255, 255, 0.52)",
+    "text_disabled": "rgba(255, 255, 255, 0.38)",
+    "text_placeholder": "rgba(255, 255, 255, 0.38)",
+    "border": "rgba(255, 255, 255, 0.24)",
     "border_focus": "#63e2b7",
+    "divider": "rgba(255, 255, 255, 0.09)",
+    "rail_color": "rgba(255, 255, 255, 0.2)",
     "white": "#ffffff",
-    "mask": "rgba(0, 0, 0, 0.6)"
+    "mask": "rgba(0, 0, 0, 0.6)",
+    "close_icon": "rgba(255, 255, 255, 0.52)",
+    "close_hover_bg": "rgba(255, 255, 255, 0.12)",
+    "close_pressed_bg": "rgba(255, 255, 255, 0.08)",
+    "alert_default_bg": "rgba(255, 255, 255, 0.1)",
+    "alert_default_border": "rgba(255, 255, 255, 0.09)",
+    "alert_success_bg": "rgba(42, 148, 125, 0.25)",
+    "alert_success_border": "rgba(42, 148, 125, 0.35)",
+    "alert_info_bg": "rgba(56, 137, 197, 0.25)",
+    "alert_info_border": "rgba(56, 137, 197, 0.35)",
+    "alert_warning_bg": "rgba(240, 138, 0, 0.25)",
+    "alert_warning_border": "rgba(240, 138, 0, 0.35)",
+    "alert_error_bg": "rgba(208, 58, 82, 0.25)",
+    "alert_error_border": "rgba(208, 58, 82, 0.35)",
+    "timeline_default": "rgba(255, 255, 255, 0.2)",
+    "timeline_pending": "#70c0e8",
+    "timeline_finished": "#63e2b7",
+    "timeline_error": "#e88080",
+    "timeline_warning": "#f2c97d",
+    "timeline_info": "#70c0e8",
+    "spin_mask": "rgba(24, 24, 28, 0.75)",
+    "popover_color": "rgb(72, 72, 78)",
+    "indicator_color": "rgb(72, 72, 78)",
+    "hover_color": "rgba(255, 255, 255, 0.09)",
+    "pressed_color": "rgba(255, 255, 255, 0.05)",
+    "collapse_toggle_bg": "#48484e",
+    "collapse_toggle_border": "transparent"
   },
   "spacing": {
     "small": 4,
@@ -84,5 +122,38 @@
       "height": 26,
       "thumb": 22
     }
+  },
+  "spin_sizes": {
+    "small": { "size": 20 },
+    "medium": { "size": 28 },
+    "large": { "size": 36 }
+  },
+  "slider": {
+    "track_height": 4,
+    "thumb_size": 14,
+    "thumb_border_size": 2
+  },
+  "layout": {
+    "header_height": 64,
+    "footer_height": 64,
+    "sider_width": 240,
+    "sider_collapsed_width": 48,
+    "breakpoints": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024,
+      "xl": 1280
+    }
+  },
+  "card": {
+    "padding_small": 12,
+    "padding_medium": 20,
+    "padding_large": 24
+  },
+  "menu": {
+    "indent": 24,
+    "item_height": 40,
+    "item_padding_h": 20,
+    "collapsed_width": 48
   }
 }

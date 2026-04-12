@@ -33,10 +33,7 @@ def _to_enum(enum_cls: type[Enum], v: Any) -> Enum:
 def _apply_button_type(w: Any, v: Any) -> None:
     """Apply button type change, converting str back to enum."""
     bt = _to_enum(TButton.ButtonType, v)
-    w._button_type = bt  # noqa: SLF001
-    w.setProperty("buttonType", bt.value)
-    w._repolish()  # noqa: SLF001
-    w.apply_theme()
+    w.set_button_type(bt)
 
 
 def _apply_icon(w: Any, v: Any) -> None:

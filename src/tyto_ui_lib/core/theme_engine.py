@@ -188,6 +188,11 @@ class ThemeEngine(QObject):
             "shadows": tokens.shadows,
             "component_sizes": tokens.component_sizes,
             "switch_sizes": tokens.switch_sizes,
+            "spin_sizes": tokens.spin_sizes,
+            "slider": tokens.slider,
+            "layout": tokens.layout,
+            "card": tokens.card,
+            "menu": tokens.menu,
             "theme": tokens.name,
             **extra_context,
         }

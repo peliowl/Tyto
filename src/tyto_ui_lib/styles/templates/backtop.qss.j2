@@ -1,0 +1,19 @@
+{# backtop.qss.j2 — QSS template for TBackTop component #}
+
+TBackTop {
+    background-color: {{ colors.bg_default }};
+    border: 1px solid {{ colors.border }};
+    border-radius: 20px;
+    outline: none;
+}
+
+TBackTop:hover {
+    background-color: {{ colors.bg_elevated }};
+    border-color: {{ colors.primary_hover }};
+}
+
+TBackTop QLabel#backtop_icon {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.xlarge }}px;
+    background-color: transparent;
+}

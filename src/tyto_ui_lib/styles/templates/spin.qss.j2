@@ -1,0 +1,55 @@
+{# spin.qss.j2 — QSS template for TSpin component #}
+
+TSpin {
+    background-color: transparent;
+    outline: none;
+}
+
+/* --- Standalone mode: center the spinner --- */
+
+TSpin[spinMode="standalone"] {
+    background-color: transparent;
+}
+
+/* --- Nested mode: container for overlay --- */
+
+TSpin[spinMode="nested"] {
+    background-color: transparent;
+}
+
+/* --- Overlay mask --- */
+
+TSpin QWidget#spin_overlay {
+    background-color: {{ colors.mask }};
+}
+
+/* --- Nested content area --- */
+
+TSpin QWidget#spin_content {
+    background-color: transparent;
+}
+
+/* --- Description text --- */
+
+TSpin QLabel#spin_description {
+    color: {{ colors.primary }};
+    font-size: {{ font_sizes.small }}px;
+    background-color: transparent;
+}
+
+/* --- Size variants (informational, actual sizes driven by paintEvent) --- */
+
+TSpin[spinSize="small"] {
+    min-width: {{ spin_sizes.small.size }}px;
+    min-height: {{ spin_sizes.small.size }}px;
+}
+
+TSpin[spinSize="medium"] {
+    min-width: {{ spin_sizes.medium.size }}px;
+    min-height: {{ spin_sizes.medium.size }}px;
+}
+
+TSpin[spinSize="large"] {
+    min-width: {{ spin_sizes.large.size }}px;
+    min-height: {{ spin_sizes.large.size }}px;
+}

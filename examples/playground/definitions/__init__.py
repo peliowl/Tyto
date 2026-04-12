@@ -20,14 +20,28 @@ def register_all_properties(registry: PropertyRegistry) -> None:
         registry: The PropertyRegistry to populate.
     """
     from examples.playground.definitions import (
+        alert_props,
+        backtop_props,
         breadcrumb_props,
         button_props,
+        card_props,
         checkbox_props,
+        collapse_props,
+        empty_props,
         input_props,
+        inputnumber_props,
+        layout_props,
+        menu_props,
+        message_props,
+        modal_props,
+        popconfirm_props,
         radio_props,
         searchbar_props,
+        slider_props,
+        spin_props,
         switch_props,
         tag_props,
+        timeline_props,
     )
 
     # Atoms
@@ -35,9 +49,25 @@ def register_all_properties(registry: PropertyRegistry) -> None:
     checkbox_props.register(registry)
     radio_props.register(registry)
     input_props.register(registry)
+    inputnumber_props.register(registry)
     switch_props.register(registry)
     tag_props.register(registry)
+    slider_props.register(registry)
+    spin_props.register(registry)
+    empty_props.register(registry)
+    backtop_props.register(registry)
 
     # Molecules
     searchbar_props.register(registry)
     breadcrumb_props.register(registry)
+    alert_props.register(registry)
+    collapse_props.register(registry)
+    popconfirm_props.register(registry)
+    timeline_props.register(registry)
+
+    # Organisms
+    layout_props.register(registry)
+    card_props.register(registry)
+    menu_props.register(registry)
+    message_props.register(registry)
+    modal_props.register(registry)

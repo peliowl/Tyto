@@ -192,6 +192,28 @@ class TTag(BaseWidget):
 
     # -- Public setters --
 
+    def set_tag_type(self, tag_type: TagType) -> None:
+        """Update the tag color type and refresh styles.
+
+        Args:
+            tag_type: New color type variant.
+        """
+        self._tag_type = tag_type
+        self.setProperty("tagType", tag_type.value)
+        self._repolish()
+
+    def set_size(self, size: TagSize) -> None:
+        """Update the tag size variant and refresh styles.
+
+        Args:
+            size: New size variant.
+        """
+        self._size = size
+        self.setProperty("tagSize", size.value)
+        self._update_layout_margins()
+        self._repolish()
+        self.updateGeometry()
+
     def set_text(self, text: str) -> None:
         """Update the tag label text.
 
@@ -200,6 +222,17 @@ class TTag(BaseWidget):
         """
         self._text = text
         self._label.setText(text)
+    def set_tag_type(self, tag_type: TagType) -> None:
+        """Update the tag color type and refresh styles.
+
+        Args:
+            tag_type: New color type variant.
+        """
+        self._tag_type = tag_type
+        self.setProperty("tagType", tag_type.value)
+        self._repolish()
+
+
 
     def set_round(self, round_: bool) -> None:
         """Enable or disable fully rounded corners.
@@ -209,7 +242,7 @@ class TTag(BaseWidget):
         """
         self._round = round_
         self.setProperty("round", str(round_).lower())
-        self._repolish()
+        self.apply_theme()
 
     def set_disabled(self, disabled: bool) -> None:
         """Enable or disable the tag.
@@ -285,6 +318,23 @@ class TTag(BaseWidget):
         """
         self._strong = strong
         self.setProperty("strong", str(strong).lower())
+        self._repolish()
+
+    def set_checkable(self, checkable: bool) -> None:
+        """Enable or disable checkable toggle mode.
+
+        Args:
+            checkable: True to allow click-to-toggle checked state.
+        """
+        self._checkable = checkable
+        if not checkable:
+            self._checked = False
+        self.setProperty("checkable", str(checkable).lower())
+        self.setProperty("checked", str(self._checked).lower())
+        if checkable and not self._disabled:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+        elif not self._disabled:
+            self.unsetCursor()
         self._repolish()
 
     # -- Event handling --
@@ -380,7 +430,17 @@ class TTag(BaseWidget):
             self._apply_custom_color(self._color)
         self._update_layout_margins()
         self._repolish()
+        self.updateGeometry()
 
     def sizeHint(self) -> QSize:  # noqa: N802
-        """Provide a reasonable default size."""
+        """Provide a reasonable default size based on the current size variant."""
+        engine = ThemeEngine.instance()
+        tokens = engine.current_tokens()
+        if tokens is not None and hasattr(tokens, "component_sizes"):
+            sizes = tokens.component_sizes
+            size_key = self._size.value
+            if isinstance(sizes, dict) and size_key in sizes:
+                entry = sizes[size_key]
+                h = entry.get("height", 24) if isinstance(entry, dict) else 24
+                return QSize(60, h)
         return QSize(60, 24)

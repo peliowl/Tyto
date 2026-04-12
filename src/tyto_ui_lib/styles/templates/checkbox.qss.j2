@@ -11,6 +11,11 @@ TCheckbox {
     outline: none;
 }
 
+TCheckbox QLabel {
+    color: {{ colors.text_primary }};
+    background-color: transparent;
+}
+
 TCheckbox QWidget#checkbox_indicator {
     border: 2px solid {{ colors.border }};
     border-radius: {{ radius.small }}px;
@@ -77,6 +82,10 @@ TCheckbox[checkboxSize="large"] QWidget#checkbox_indicator {
 /* ===== Disabled state ===== */
 
 TCheckbox:disabled {
+    color: {{ colors.text_disabled }};
+}
+
+TCheckbox:disabled QLabel {
     color: {{ colors.text_disabled }};
 }
 

@@ -143,7 +143,7 @@
     - 案例应用支持设置light/dark模式，参考gallery案例
     - 该案例应用目标是使开发人员方便调试控件效果及用户能够快速体验Tyto
 
-- [ ] 修改specs中的requirement、task、design文档及其它相关文档，增加V1.1.0版本需求：
+- [x] 修改specs中的requirement、task、design文档及其它相关文档，增加V1.1.0版本需求：
   - 增加以下原子控件，需要严格遵循naiveUI的标准并且在文档中明确指出其指标数据：
     - Spin (加载中)：
       - 支持嵌套模式（作为容器遮罩）与独立模式。
@@ -182,3 +182,110 @@
     - Menu (垂直/水平菜单)：
       - 支持多级嵌套缩进逻辑（Indentation）。
       - 核心升级：内置路由联动感知（感知当前 Active 路径）。
+  - 新特性与交互效果
+    - 架构增强：全局事件总线 (Global Event Bus)
+      - 引入非父子组件间的通讯机制，降低跨层级信号槽连接的复杂度。
+    - 动画引擎：贝塞尔曲线调优 (Easing Functions)
+      - 全量引入 Ease-in-out-cubic 曲线，使 UI 元素的位移与缩放更具“肉感”与弹性。
+    - 响应式系统：适配容器查询 (Container Queries)
+      - 组件不仅根据窗口大小变化，还能根据其父容器（Layout Slot）的大小自动调整尺寸与展示等级。
+
+- [x] 更新playground界面，适当减小界面高度，左侧菜单栏使用滚动的方式显示所有菜单项
+
+- [x] 仔细阅读naiveUI的源码，更新specs中的requirement、task、design文档及其它相关文档，严格按照naiveUI的样式更新控件：
+  - [x] 更新inputNumber控件在dark模式下的样式效果（包括hover、pressed、disabled等状态样式）
+  - [x] 更新slider控件在dark模式下的样式效果（包括hover、pressed、disabled等状态样式）
+  - [x] 更新Alert控件在light/dark模式下的样式效果（包括hover、pressed、disabled等状态样式）
+  - [x] 更新collapse控件在light/dark模式下的样式效果（包括hover、pressed、disabled等状态样式）
+
+- [x] 修改specs中的requirement、task、design文档及其它相关文档，修改timeline控件，移除alternate模式
+
+- [x] 查看naiveUI控件特性及效果，比对Tyto版本v1.1.0中实现的原子、分子、有机体组件，列举还未实现的特性及效果到user_task.md文档
+
+- [x] 修改specs中的requirement、task、design文档及其它相关文档，严格参照naiveUI，修改原有V1.1.0版本的requirement、design，新增task，添加以下内容：
+  - 新增/更新原子组件特性及效果
+    - TSpin
+      - `rotate`：是否旋转自定义图标（NaiveUI 支持 `rotate` 属性，默认 true）
+      - `contentClass` / `contentStyle`：自定义内容区域的样式
+      - `strokeWidth`：自定义加载环的线条宽度
+      - `stroke`：自定义加载环的颜色
+      - 自定义图标：NaiveUI 支持通过 icon 插槽替换默认旋转环
+      - 自定义数字尺寸：NaiveUI 的 `size` 支持传入具体数字
+    - TSlider
+      - `reverse`：反向滑动条
+      - `keyboard`：是否支持键盘操作（NaiveUI 默认 true）
+      - `placement`：tooltip 弹出位置
+      - `step="mark"`：步长吸附到刻度标记（NaiveUI 支持 `step` 设为 `"mark"` 字符串）
+      - `onDragstart` / `onDragend`：拖拽开始/结束事件回调
+    - TInputNumber
+      - `autofocus`：自动聚焦
+      - `loading`：加载状态
+      - `placeholder`：占位符文本
+      - `bordered`：是否显示边框
+      - `showButton`：是否显示增减按钮（NaiveUI 默认 true，可设为 false 隐藏）
+      - `buttonPlacement`：按钮位置（`"right"` | `"both"`，默认 `"right"`）
+      - `readonly`：只读模式
+      - `clearable`：可清空
+      - `round`：圆角输入框
+      - `status`：验证状态（success / warning / error）
+      - `validator`：自定义验证函数
+      - `parse` / `format`：自定义解析和格式化函数
+      - `updateValueOnInput`：是否在输入时实时更新值
+      - `keyboard`：键盘操作配置对象（`{ ArrowUp?: boolean, ArrowDown?: boolean }`）
+      - `inputProps`：透传给内部 input 元素的原生属性
+      - `size`：尺寸变体（NaiveUI 支持 tiny / small / medium / large）
+      - 前缀/后缀自定义内容
+      - 自定义增减按钮图标
+      - `onFocus` / `onBlur` / `onClear`：事件回调
+    - TEmpty
+      - `size`：尺寸变体（NaiveUI 支持 tiny / small / medium / large / huge）
+      - `showDescription`：是否显示描述文本（NaiveUI 默认 true）
+      - `showIcon`：是否显示图标（NaiveUI 默认 true）
+    - TBackTop
+      - `show`：受控显示/隐藏模式
+      - `to`：渲染目标容器（NaiveUI 支持 teleport 目标）
+      - `listenTo`：监听目标（支持字符串选择器、id选择器、函数）
+      - `onUpdate`：显示状态变化回调
+  - 新增/更新分子组件特性及效果
+    - TAlert
+      - `type` 缺少 `default` 变体：NaiveUI 支持 `"default"` 类型
+      - `showIcon`：是否显示图标（NaiveUI 默认 true）
+      - 自定义图标内容
+    - TCollapse
+      - `arrowPlacement`：箭头位置（`"left"` | `"right"`，默认 `"left"`）
+      - `triggerAreas`：触发区域（`["main", "extra", "arrow"]`，控制哪些区域点击可触发展开）
+      - `onItemHeaderClick`：标题栏点击回调
+      - CollapseItem 增强：
+        - 自定义标题内容
+        - 标题栏右侧额外内容（header-extra）
+        - 自定义箭头图标
+    - TPopconfirm
+      - `showIcon`：是否显示图标（NaiveUI 默认 true）
+      - `positiveButtonProps` / `negativeButtonProps`：自定义确认/取消按钮（TButton）属性
+      - `trigger`：触发方式（NaiveUI 支持 click / hover / focus / manual）
+      onPositiveClick / onNegativeClick：取消/确认按钮事件回调
+      - 自定义提示图标
+      - 修复bug：点击非按钮区域，TPopconfirm弹窗被关闭了，正确效果是只能通过点击取消/确认按钮来关闭TPopconfirm弹窗
+    - TTimeline
+      - `horizontal`：水平时间线模式
+      - `size`：尺寸变体（`"medium"` | `"large"`）
+      - `iconSize`：自定义节点图标尺寸
+      - TimelineItem 增强：
+        - `type` NaiveUI 包含（default/success/error/warning/info）
+        - `lineType`：连接线类型（`"default"` | `"dashed"`）
+        - 自定义节点图标
+        - 自定义标题内容
+        - 自定义底部内容
+
+- [x] 修改playground案例应用，在inputNumber中，增加宽度属性，能够设置inputNumber的宽度并实时查看效果
+
+- [x] 按照naiveUI的menu控件效果，重新实现Tyto的menu控件，要求：
+  - 能够支持多级菜单
+  - 菜单项标题前，需要支持设置图标
+  - 支持水平方向、垂直方向布局
+  - 设置为水平方向时，自动折叠子菜单
+  - 设置为垂直方向时，父子菜单需要有递进的缩进
+  - 设置为垂直方向时，菜单能够展开和收缩
+  - 效果图
+
+

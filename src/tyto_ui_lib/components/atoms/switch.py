@@ -28,6 +28,7 @@ from PySide6.QtWidgets import QHBoxLayout, QWidget
 from tyto_ui_lib.common.base import BaseWidget
 from tyto_ui_lib.common.traits.hover_effect import HoverEffectMixin
 from tyto_ui_lib.core.theme_engine import ThemeEngine
+from tyto_ui_lib.utils.color import parse_color
 
 
 # Default dimensions per size when tokens are unavailable
@@ -215,12 +216,12 @@ class _SwitchTrack(QWidget):
         engine = ThemeEngine.instance()
         if self._checked:
             try:
-                track_color = QColor(str(engine.get_token("colors", "primary")))
+                track_color = parse_color(str(engine.get_token("colors", "primary")))
             except (RuntimeError, KeyError):
                 track_color = QColor("#18a058")
         else:
             try:
-                track_color = QColor(str(engine.get_token("colors", "border")))
+                track_color = parse_color(str(engine.get_token("colors", "border")))
             except (RuntimeError, KeyError):
                 track_color = QColor("#e0e0e6")
 
@@ -237,7 +238,7 @@ class _SwitchTrack(QWidget):
         text = self._checked_text if self._checked else self._unchecked_text
         if text:
             try:
-                text_color = QColor(str(engine.get_token("colors", "white")))
+                text_color = parse_color(str(engine.get_token("colors", "white")))
             except (RuntimeError, KeyError):
                 text_color = QColor("#ffffff")
             painter.setPen(text_color)

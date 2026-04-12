@@ -1,0 +1,118 @@
+{# alert.qss.j2 — QSS template for TAlert component #}
+
+TAlert {
+    background-color: {{ colors.alert_default_bg }};
+    color: {{ colors.text_primary }};
+    border: 1px solid {{ colors.divider }};
+    border-radius: {{ radius.medium }}px;
+    padding: {{ spacing.large }}px;
+    font-size: {{ font_sizes.medium }}px;
+    outline: none;
+}
+
+/* Bordered variants — uniform border + left accent painted in paintEvent */
+TAlert[bordered="true"][alertType="default"] {
+    background-color: {{ colors.alert_default_bg }};
+    border: 1px solid {{ colors.alert_default_border }};
+}
+
+TAlert[bordered="true"][alertType="success"] {
+    background-color: {{ colors.alert_success_bg }};
+    border: 1px solid {{ colors.alert_success_border }};
+}
+
+TAlert[bordered="true"][alertType="info"] {
+    background-color: {{ colors.alert_info_bg }};
+    border: 1px solid {{ colors.alert_info_border }};
+}
+
+TAlert[bordered="true"][alertType="warning"] {
+    background-color: {{ colors.alert_warning_bg }};
+    border: 1px solid {{ colors.alert_warning_border }};
+}
+
+TAlert[bordered="true"][alertType="error"] {
+    background-color: {{ colors.alert_error_bg }};
+    border: 1px solid {{ colors.alert_error_border }};
+}
+
+/* Non-bordered variants — type-colored border all around */
+TAlert[bordered="false"][alertType="default"] {
+    background-color: {{ colors.alert_default_bg }};
+    border: 1px solid {{ colors.alert_default_border }};
+}
+
+TAlert[bordered="false"][alertType="success"] {
+    background-color: {{ colors.alert_success_bg }};
+    border: 1px solid {{ colors.alert_success_border }};
+}
+
+TAlert[bordered="false"][alertType="info"] {
+    background-color: {{ colors.alert_info_bg }};
+    border: 1px solid {{ colors.alert_info_border }};
+}
+
+TAlert[bordered="false"][alertType="warning"] {
+    background-color: {{ colors.alert_warning_bg }};
+    border: 1px solid {{ colors.alert_warning_border }};
+}
+
+TAlert[bordered="false"][alertType="error"] {
+    background-color: {{ colors.alert_error_bg }};
+    border: 1px solid {{ colors.alert_error_border }};
+}
+
+/* Icon colors per type */
+TAlert[alertType="default"] QLabel#alert_icon {
+    color: {{ colors.text_secondary }};
+}
+
+TAlert[alertType="success"] QLabel#alert_icon {
+    color: {{ colors.success }};
+}
+
+TAlert[alertType="info"] QLabel#alert_icon {
+    color: {{ colors.info }};
+}
+
+TAlert[alertType="warning"] QLabel#alert_icon {
+    color: {{ colors.warning }};
+}
+
+TAlert[alertType="error"] QLabel#alert_icon {
+    color: {{ colors.error }};
+}
+
+TAlert QLabel#alert_icon {
+    font-size: {{ font_sizes.large }}px;
+    padding-right: {{ spacing.small }}px;
+}
+
+TAlert QLabel#alert_title {
+    color: {{ colors.text_title }};
+    font-size: {{ font_sizes.large }}px;
+    font-weight: bold;
+}
+
+TAlert QLabel#alert_description {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+}
+
+TAlert QToolButton#alert_close_btn {
+    border: none;
+    background: transparent;
+    color: {{ colors.close_icon }};
+    font-size: {{ font_sizes.medium }}px;
+    padding: {{ spacing.small }}px;
+    border-radius: {{ radius.medium }}px;
+}
+
+TAlert QToolButton#alert_close_btn:hover {
+    color: {{ colors.text_primary }};
+    background-color: {{ colors.close_hover_bg }};
+}
+
+TAlert QToolButton#alert_close_btn:pressed {
+    background-color: {{ colors.close_pressed_bg }};
+}

@@ -25,19 +25,13 @@ def _to_enum(enum_cls: type[Enum], v: Any) -> Enum:
 def _apply_tag_type(w: Any, v: Any) -> None:
     """Apply tag type change, converting str back to enum."""
     tt = _to_enum(TTag.TagType, v)
-    w._tag_type = tt  # noqa: SLF001
-    w.setProperty("tagType", tt.value)
-    w._repolish()  # noqa: SLF001
-    w.apply_theme()
+    w.set_tag_type(tt)
 
 
 def _apply_tag_size(w: Any, v: Any) -> None:
     """Apply tag size change, converting str back to enum."""
     ts = _to_enum(TTag.TagSize, v)
-    w._size = ts  # noqa: SLF001
-    w.setProperty("tagSize", ts.value)
-    w._repolish()  # noqa: SLF001
-    w.apply_theme()
+    w.set_size(ts)
 
 
 def _apply_closable(w: Any, v: Any) -> None:
@@ -62,17 +56,7 @@ def _apply_closable(w: Any, v: Any) -> None:
 
 def _apply_checkable(w: Any, v: Any) -> None:
     """Toggle checkable mode at runtime."""
-    from PySide6.QtCore import Qt
-
-    w._checkable = bool(v)
-    if bool(v):
-        w.setCursor(Qt.CursorShape.PointingHandCursor)
-    else:
-        w.setCursor(Qt.CursorShape.ArrowCursor)
-        w._checked = False
-    w.setProperty("checkable", str(bool(v)).lower())
-    w.setProperty("checked", str(w._checked).lower())
-    w._repolish()
+    w.set_checkable(bool(v))
 
 
 def register(registry: PropertyRegistry) -> None:

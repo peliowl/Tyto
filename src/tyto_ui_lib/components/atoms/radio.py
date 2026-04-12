@@ -28,6 +28,7 @@ from tyto_ui_lib.common.traits.disabled import DisabledMixin
 from tyto_ui_lib.common.traits.focus_glow import FocusGlowMixin
 from tyto_ui_lib.common.traits.hover_effect import HoverEffectMixin
 from tyto_ui_lib.core.theme_engine import ThemeEngine
+from tyto_ui_lib.utils.color import parse_color
 
 
 # Indicator pixel sizes per RadioSize variant.
@@ -104,9 +105,9 @@ class _RadioIndicator(QWidget):
             border_color: Border color for unchecked state.
             checked_color: Border and inner dot color for checked state.
         """
-        self._bg_color = QColor(bg_color)
-        self._border_color = QColor(border_color)
-        self._checked_color = QColor(checked_color)
+        self._bg_color = parse_color(bg_color)
+        self._border_color = parse_color(border_color)
+        self._checked_color = parse_color(checked_color)
         self.update()
 
     def paintEvent(self, _event: object) -> None:  # noqa: N802

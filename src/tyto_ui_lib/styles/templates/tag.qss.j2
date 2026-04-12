@@ -7,23 +7,37 @@ TTag {
     border-radius: {{ radius.small }}px;
     padding: 0px;
     font-size: {{ font_sizes.medium }}px;
+    min-height: {{ component_sizes.medium.height }}px;
+    max-height: {{ component_sizes.medium.height }}px;
     outline: none;
+}
+
+TTag QLabel {
+    background-color: transparent;
+    border: none;
+    color: {{ colors.text_primary }};
 }
 
 /* Size variants */
 TTag[tagSize="tiny"] {
     padding: 0px;
     font-size: {{ component_sizes.tiny.font_size }}px;
+    min-height: {{ component_sizes.tiny.height }}px;
+    max-height: {{ component_sizes.tiny.height }}px;
 }
 
 TTag[tagSize="small"] {
     padding: 0px;
     font-size: {{ font_sizes.small }}px;
+    min-height: {{ component_sizes.small.height }}px;
+    max-height: {{ component_sizes.small.height }}px;
 }
 
 TTag[tagSize="large"] {
     padding: 0px;
     font-size: {{ font_sizes.large }}px;
+    min-height: {{ component_sizes.large.height }}px;
+    max-height: {{ component_sizes.large.height }}px;
 }
 
 /* Color type variants */
@@ -32,46 +46,51 @@ TTag[tagType="primary"] {
     color: {{ colors.white }};
     border-color: {{ colors.primary }};
 }
+TTag[tagType="primary"] QLabel { color: {{ colors.white }}; }
 
 TTag[tagType="success"] {
     background-color: {{ colors.success }};
     color: {{ colors.white }};
     border-color: {{ colors.success }};
 }
+TTag[tagType="success"] QLabel { color: {{ colors.white }}; }
 
 TTag[tagType="info"] {
     background-color: {{ colors.info }};
     color: {{ colors.white }};
     border-color: {{ colors.info }};
 }
+TTag[tagType="info"] QLabel { color: {{ colors.white }}; }
 
 TTag[tagType="warning"] {
     background-color: {{ colors.warning }};
     color: {{ colors.white }};
     border-color: {{ colors.warning }};
 }
+TTag[tagType="warning"] QLabel { color: {{ colors.white }}; }
 
 TTag[tagType="error"] {
     background-color: {{ colors.error }};
     color: {{ colors.white }};
     border-color: {{ colors.error }};
 }
+TTag[tagType="error"] QLabel { color: {{ colors.white }}; }
 
 /* Round variant */
 TTag[round="true"] {
-    border-radius: {{ component_sizes.medium.height }}px;
+    border-radius: {{ (component_sizes.medium.height / 2)|int }}px;
 }
 
 TTag[round="true"][tagSize="tiny"] {
-    border-radius: {{ component_sizes.tiny.height }}px;
+    border-radius: {{ (component_sizes.tiny.height / 2)|int }}px;
 }
 
 TTag[round="true"][tagSize="small"] {
-    border-radius: {{ component_sizes.small.height }}px;
+    border-radius: {{ (component_sizes.small.height / 2)|int }}px;
 }
 
 TTag[round="true"][tagSize="large"] {
-    border-radius: {{ component_sizes.large.height }}px;
+    border-radius: {{ (component_sizes.large.height / 2)|int }}px;
 }
 
 /* Bordered=false variant */
@@ -84,18 +103,86 @@ TTag[strong="true"] {
     font-weight: bold;
 }
 
-/* Checkable checked state */
+TTag[strong="true"] QLabel {
+    font-weight: bold;
+}
+
+/* Checkable checked state — default type */
 TTag[checkable="true"][checked="true"] {
     background-color: {{ colors.primary }};
     color: {{ colors.white }};
     border-color: {{ colors.primary }};
 }
+TTag[checkable="true"][checked="true"] QLabel { color: {{ colors.white }}; }
 
 TTag[checkable="true"][checked="false"] {
     background-color: {{ colors.bg_elevated }};
     color: {{ colors.text_primary }};
     border-color: {{ colors.border }};
 }
+TTag[checkable="true"][checked="false"] QLabel { color: {{ colors.text_primary }}; }
+
+/* Checkable checked state — type-specific overrides */
+TTag[checkable="true"][checked="true"][tagType="primary"] {
+    background-color: {{ colors.primary }};
+    border-color: {{ colors.primary }};
+}
+
+TTag[checkable="true"][checked="true"][tagType="success"] {
+    background-color: {{ colors.success }};
+    border-color: {{ colors.success }};
+}
+
+TTag[checkable="true"][checked="true"][tagType="info"] {
+    background-color: {{ colors.info }};
+    border-color: {{ colors.info }};
+}
+
+TTag[checkable="true"][checked="true"][tagType="warning"] {
+    background-color: {{ colors.warning }};
+    border-color: {{ colors.warning }};
+}
+
+TTag[checkable="true"][checked="true"][tagType="error"] {
+    background-color: {{ colors.error }};
+    border-color: {{ colors.error }};
+}
+
+/* Checkable unchecked state — type-specific overrides */
+TTag[checkable="true"][checked="false"][tagType="primary"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.primary }};
+    border-color: {{ colors.primary }};
+}
+TTag[checkable="true"][checked="false"][tagType="primary"] QLabel { color: {{ colors.primary }}; }
+
+TTag[checkable="true"][checked="false"][tagType="success"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.success }};
+    border-color: {{ colors.success }};
+}
+TTag[checkable="true"][checked="false"][tagType="success"] QLabel { color: {{ colors.success }}; }
+
+TTag[checkable="true"][checked="false"][tagType="info"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.info }};
+    border-color: {{ colors.info }};
+}
+TTag[checkable="true"][checked="false"][tagType="info"] QLabel { color: {{ colors.info }}; }
+
+TTag[checkable="true"][checked="false"][tagType="warning"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.warning }};
+    border-color: {{ colors.warning }};
+}
+TTag[checkable="true"][checked="false"][tagType="warning"] QLabel { color: {{ colors.warning }}; }
+
+TTag[checkable="true"][checked="false"][tagType="error"] {
+    background-color: {{ colors.bg_elevated }};
+    color: {{ colors.error }};
+    border-color: {{ colors.error }};
+}
+TTag[checkable="true"][checked="false"][tagType="error"] QLabel { color: {{ colors.error }}; }
 
 /* Disabled state */
 TTag[disabled="true"] {

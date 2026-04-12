@@ -1,0 +1,203 @@
+{# menu.qss.j2 — QSS template for TMenu / TMenuItem / TMenuItemGroup #}
+{# Styled to match NaiveUI Menu visual behavior #}
+
+/* ===== TMenu container ===== */
+
+TMenu {
+    background-color: {{ colors.popover_color }};
+    border: none;
+    outline: none;
+}
+
+/* ===== TMenuItem (common) ===== */
+
+TMenuItem {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+TMenuItem QLabel#menu_item_label {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+    background-color: transparent;
+    border: none;
+}
+
+TMenuItem QLabel#menu_item_icon {
+    color: {{ colors.text_title }};
+    background-color: transparent;
+    border: none;
+}
+
+/* ===== Vertical mode TMenuItem ===== */
+
+TMenuItem QWidget#menu_item_row {
+    background-color: transparent;
+    border: none;
+    border-radius: {{ radius.medium }}px;
+}
+
+TMenuItem QWidget#menu_item_row:hover {
+    background-color: {{ colors.hover_color }};
+    border: none;
+}
+
+/* ===== Horizontal mode TMenuItem ===== */
+/* border-bottom on TMenuItem itself, NOT on the inner row */
+
+TMenu[mode="horizontal"] TMenuItem {
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding-bottom: 0px;
+}
+
+TMenu[mode="horizontal"] TMenuItem QWidget#menu_item_row {
+    border-radius: 0px;
+    border: none;
+    margin: 0px;
+    background-color: transparent;
+}
+
+TMenu[mode="horizontal"] TMenuItem QWidget#menu_item_row:hover {
+    background-color: transparent;
+    border: none;
+}
+
+TMenu[mode="horizontal"] TMenuItem QLabel#menu_item_label {
+    color: {{ colors.text_primary }};
+}
+
+TMenu[mode="horizontal"] TMenuItem QLabel#menu_item_icon {
+    color: {{ colors.text_title }};
+}
+
+/* Horizontal hover: bottom border appears, text turns primary_hover */
+TMenu[mode="horizontal"] TMenuItem:hover {
+    border-bottom: 2px solid {{ colors.primary }};
+}
+
+TMenu[mode="horizontal"] TMenuItem:hover QLabel#menu_item_label {
+    color: {{ colors.primary_hover }};
+}
+
+TMenu[mode="horizontal"] TMenuItem:hover QLabel#menu_item_icon {
+    color: {{ colors.primary_hover }};
+}
+
+/* Horizontal active: border handled in code via _apply_active_colors */
+TMenu[mode="horizontal"] TMenuItem[active="true"] {
+    border-bottom: 2px solid {{ colors.primary }};
+}
+
+/* ===== Disabled item ===== */
+
+TMenuItem[itemDisabled="true"] QWidget#menu_item_row {
+    background-color: transparent;
+    border: none;
+}
+
+TMenuItem[itemDisabled="true"] QWidget#menu_item_row:hover {
+    background-color: transparent;
+    border: none;
+}
+
+TMenuItem[itemDisabled="true"] QLabel#menu_item_label {
+    color: {{ colors.text_disabled }};
+}
+
+TMenuItem[itemDisabled="true"] QLabel#menu_item_icon {
+    color: {{ colors.text_disabled }};
+}
+
+/* ===== TMenuItemGroup ===== */
+
+TMenuItemGroup {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+TMenuItemGroup QWidget#menu_group_header {
+    background-color: transparent;
+    border: none;
+    min-height: {{ menu.item_height }}px;
+    max-height: {{ menu.item_height }}px;
+    border-radius: {{ radius.medium }}px;
+}
+
+TMenuItemGroup QWidget#menu_group_header:hover {
+    background-color: {{ colors.hover_color }};
+    border: none;
+}
+
+TMenuItemGroup QLabel#menu_group_label {
+    color: {{ colors.text_primary }};
+    font-size: {{ font_sizes.medium }}px;
+    background-color: transparent;
+    border: none;
+}
+
+TMenuItemGroup QLabel#menu_group_icon {
+    color: {{ colors.text_title }};
+    background-color: transparent;
+    border: none;
+}
+
+TMenuItemGroup QLabel#menu_group_arrow {
+    color: {{ colors.text_secondary }};
+    font-size: {{ font_sizes.small }}px;
+    background-color: transparent;
+    border: none;
+}
+
+/* Disabled group */
+TMenuItemGroup[groupDisabled="true"] QWidget#menu_group_header:hover {
+    background-color: transparent;
+}
+
+TMenuItemGroup[groupDisabled="true"] QLabel#menu_group_label {
+    color: {{ colors.text_disabled }};
+}
+
+TMenuItemGroup[groupDisabled="true"] QLabel#menu_group_icon {
+    color: {{ colors.text_disabled }};
+}
+
+TMenuItemGroup[groupDisabled="true"] QLabel#menu_group_arrow {
+    color: {{ colors.text_disabled }};
+}
+
+/* ===== Popup container (horizontal mode sub-menus) ===== */
+/* Background and border are self-painted by _MenuPopupContainer via QPainter,
+   so no QSS background/border rules are needed on the container itself. */
+
+QWidget#menu_popup {
+    background-color: transparent;
+    border: none;
+}
+
+QWidget#menu_popup_container {
+    background-color: transparent;
+    border: none;
+}
+
+QWidget#menu_popup_container TMenuItem QWidget#menu_item_row {
+    background-color: transparent;
+    border: none;
+    border-radius: {{ radius.medium }}px;
+}
+
+QWidget#menu_popup_container TMenuItem QWidget#menu_item_row:hover {
+    background-color: {{ colors.hover_color }};
+}
+
+QWidget#menu_popup_container TMenuItemGroup QWidget#menu_group_header {
+    background-color: transparent;
+    border: none;
+    border-radius: {{ radius.medium }}px;
+}
+
+QWidget#menu_popup_container TMenuItemGroup QWidget#menu_group_header:hover {
+    background-color: {{ colors.hover_color }};
+}

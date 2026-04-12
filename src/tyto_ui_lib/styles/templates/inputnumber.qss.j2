@@ -1,0 +1,215 @@
+{# inputnumber.qss.j2 — QSS template for TInputNumber component #}
+
+/* ===== Base styles (border painted in paintEvent) ===== */
+
+TInputNumber {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    outline: none;
+}
+
+TInputNumber QLineEdit {
+    background-color: transparent;
+    color: {{ colors.text_primary }};
+    border: none;
+    border-radius: 0px;
+    padding: 0px;
+    padding-left: {{ spacing.small }}px;
+    font-size: {{ font_sizes.medium }}px;
+    selection-background-color: {{ colors.primary }};
+    selection-color: {{ colors.white }};
+}
+
+TInputNumber QLineEdit:focus {
+    border: none;
+}
+
+TInputNumber QLineEdit:hover {
+    border: none;
+}
+
+TInputNumber QLineEdit:disabled {
+    color: {{ colors.text_disabled }};
+    background-color: transparent;
+}
+
+/* ===== Buttons ===== */
+
+TInputNumber > QToolButton {
+    background-color: transparent;
+    color: {{ colors.text_primary }};
+    border: none;
+    font-size: {{ font_sizes.medium }}px;
+    padding: 0px;
+}
+
+TInputNumber > QToolButton:hover {
+    color: {{ colors.primary }};
+}
+
+TInputNumber > QToolButton:pressed {
+    color: {{ colors.primary_pressed }};
+}
+
+TInputNumber > QToolButton:disabled {
+    color: {{ colors.text_disabled }};
+    background-color: transparent;
+}
+
+/* Action buttons (clear icon) */
+TInputNumber > QToolButton#btn_clear {
+    background-color: transparent;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: {{ colors.text_secondary }};
+}
+
+TInputNumber > QToolButton#btn_clear:hover {
+    color: {{ colors.text_primary }};
+}
+
+/* ===== Size: tiny ===== */
+
+TInputNumber[inputNumberSize="tiny"] {
+    min-height: {{ component_sizes.tiny.height }}px;
+    max-height: {{ component_sizes.tiny.height }}px;
+}
+
+TInputNumber[inputNumberSize="tiny"] QLineEdit {
+    min-height: {{ component_sizes.tiny.height }}px;
+    max-height: {{ component_sizes.tiny.height }}px;
+    font-size: {{ component_sizes.tiny.font_size }}px;
+}
+
+TInputNumber[inputNumberSize="tiny"] QToolButton#btn_minus,
+TInputNumber[inputNumberSize="tiny"] QToolButton#btn_plus,
+TInputNumber[inputNumberSize="tiny"] QToolButton#btn_clear {
+    min-height: {{ component_sizes.tiny.height }}px;
+    max-height: {{ component_sizes.tiny.height }}px;
+    min-width: {{ component_sizes.tiny.icon_size }}px;
+    max-width: {{ component_sizes.tiny.icon_size }}px;
+    font-size: {{ component_sizes.tiny.icon_size }}px;
+}
+
+/* ===== Size: small ===== */
+
+TInputNumber[inputNumberSize="small"] {
+    min-height: {{ component_sizes.small.height }}px;
+    max-height: {{ component_sizes.small.height }}px;
+}
+
+TInputNumber[inputNumberSize="small"] QLineEdit {
+    min-height: {{ component_sizes.small.height }}px;
+    max-height: {{ component_sizes.small.height }}px;
+    font-size: {{ component_sizes.small.font_size }}px;
+}
+
+TInputNumber[inputNumberSize="small"] QToolButton#btn_minus,
+TInputNumber[inputNumberSize="small"] QToolButton#btn_plus,
+TInputNumber[inputNumberSize="small"] QToolButton#btn_clear {
+    min-height: {{ component_sizes.small.height }}px;
+    max-height: {{ component_sizes.small.height }}px;
+    min-width: {{ component_sizes.small.icon_size }}px;
+    max-width: {{ component_sizes.small.icon_size }}px;
+    font-size: {{ component_sizes.small.icon_size }}px;
+}
+
+/* ===== Size: medium ===== */
+
+TInputNumber[inputNumberSize="medium"] {
+    min-height: {{ component_sizes.medium.height }}px;
+    max-height: {{ component_sizes.medium.height }}px;
+}
+
+TInputNumber[inputNumberSize="medium"] QLineEdit {
+    min-height: {{ component_sizes.medium.height }}px;
+    max-height: {{ component_sizes.medium.height }}px;
+    font-size: {{ component_sizes.medium.font_size }}px;
+}
+
+TInputNumber[inputNumberSize="medium"] QToolButton#btn_minus,
+TInputNumber[inputNumberSize="medium"] QToolButton#btn_plus,
+TInputNumber[inputNumberSize="medium"] QToolButton#btn_clear {
+    min-height: {{ component_sizes.medium.height }}px;
+    max-height: {{ component_sizes.medium.height }}px;
+    min-width: {{ component_sizes.medium.icon_size }}px;
+    max-width: {{ component_sizes.medium.icon_size }}px;
+    font-size: {{ component_sizes.medium.icon_size }}px;
+}
+
+/* ===== Size: large ===== */
+
+TInputNumber[inputNumberSize="large"] {
+    min-height: {{ component_sizes.large.height }}px;
+    max-height: {{ component_sizes.large.height }}px;
+}
+
+TInputNumber[inputNumberSize="large"] QLineEdit {
+    min-height: {{ component_sizes.large.height }}px;
+    max-height: {{ component_sizes.large.height }}px;
+    font-size: {{ component_sizes.large.font_size }}px;
+}
+
+TInputNumber[inputNumberSize="large"] QToolButton#btn_minus,
+TInputNumber[inputNumberSize="large"] QToolButton#btn_plus,
+TInputNumber[inputNumberSize="large"] QToolButton#btn_clear {
+    min-height: {{ component_sizes.large.height }}px;
+    max-height: {{ component_sizes.large.height }}px;
+    min-width: {{ component_sizes.large.icon_size }}px;
+    max-width: {{ component_sizes.large.icon_size }}px;
+    font-size: {{ component_sizes.large.icon_size }}px;
+}
+
+/* ===== Disabled ===== */
+
+TInputNumber[disabled="true"] {
+    opacity: 0.5;
+}
+
+/* ===== Bordered false ===== */
+
+TInputNumber[bordered="false"] {
+    border: none;
+}
+
+/* ===== Round ===== */
+
+TInputNumber[round="true"] QToolButton {
+    border-radius: 50%;
+}
+
+/* ===== Status variants ===== */
+
+TInputNumber[status="success"] QToolButton:hover {
+    color: {{ colors.success }};
+}
+
+TInputNumber[status="warning"] QToolButton:hover {
+    color: {{ colors.warning }};
+}
+
+TInputNumber[status="error"] QToolButton:hover {
+    color: {{ colors.error }};
+}
+
+/* ===== Button placement: both ===== */
+
+TInputNumber[buttonPlacement="both"] QToolButton#btn_minus {
+    border: none;
+}
+
+TInputNumber[buttonPlacement="both"] QToolButton#btn_plus {
+    border: none;
+}
+
+/* ===== Button placement: right (default) ===== */
+
+TInputNumber[buttonPlacement="right"] QToolButton#btn_minus {
+    border: none;
+}
+
+TInputNumber[buttonPlacement="right"] QToolButton#btn_plus {
+    border: none;
+}

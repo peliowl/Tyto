@@ -1,0 +1,80 @@
+{# collapse.qss.j2 — QSS template for TCollapse / TCollapseItem components #}
+
+TCollapse {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+TCollapseItem {
+    background-color: transparent;
+    border: none;
+    border-radius: 0px;
+    outline: none;
+}
+
+TCollapseItem[firstItem="false"] {
+    border-top: 1px solid {{ colors.divider }};
+}
+
+/* Header bar */
+TCollapseItem QWidget#collapse_header {
+    background-color: transparent;
+    border: none;
+    padding: {{ spacing.large }}px 0px;
+    min-height: 32px;
+}
+
+TCollapseItem QWidget#collapse_header:hover {
+    background-color: transparent;
+}
+
+TCollapseItem QLabel#collapse_title {
+    color: {{ colors.text_title }};
+    font-size: {{ font_sizes.medium }}px;
+    font-weight: normal;
+}
+
+TCollapseItem QWidget#collapse_arrow {
+    color: {{ colors.text_primary }};
+    font-size: {{ component_sizes.medium.icon_size }}px;
+    min-width: {{ component_sizes.medium.icon_size }}px;
+    max-width: {{ component_sizes.medium.icon_size }}px;
+    min-height: {{ component_sizes.medium.icon_size }}px;
+    max-height: {{ component_sizes.medium.icon_size }}px;
+}
+
+/* Arrow placement: right — add left margin to separate from title */
+TCollapseItem[arrowPlacement="right"] QWidget#collapse_arrow {
+    margin-left: {{ spacing.small }}px;
+}
+
+/* Arrow placement: left — add right margin to separate from title */
+TCollapseItem[arrowPlacement="left"] QWidget#collapse_arrow {
+    margin-right: {{ spacing.small }}px;
+}
+
+/* Content area */
+TCollapseItem QWidget#collapse_content_wrapper {
+    background-color: transparent;
+    border: none;
+    color: {{ colors.text_primary }};
+    padding: {{ spacing.large }}px 0px 0px 0px;
+}
+
+TCollapseItem QWidget#collapse_content_wrapper QLabel {
+    color: {{ colors.text_primary }};
+}
+
+/* Disabled state */
+TCollapseItem[disabled="true"] QWidget#collapse_header {
+    background-color: transparent;
+}
+
+TCollapseItem[disabled="true"] QLabel#collapse_title {
+    color: {{ colors.text_disabled }};
+}
+
+TCollapseItem[disabled="true"] QWidget#collapse_arrow {
+    color: {{ colors.text_disabled }};
+}

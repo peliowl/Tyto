@@ -74,6 +74,11 @@ class DesignTokenSet:
         shadows: Box-shadow tokens mapping name to CSS shadow string.
         component_sizes: Per-size-variant dimensions (height, padding_h, font_size, icon_size).
         switch_sizes: Per-size-variant switch dimensions (width, height, thumb).
+        spin_sizes: Per-size-variant spin animation element sizes.
+        slider: Slider track and thumb dimension tokens.
+        layout: Layout container dimension tokens (header/footer height, sider width, breakpoints).
+        card: Card padding tokens per size variant.
+        menu: Menu indent, item height, and collapsed width tokens.
     """
 
     name: str = ""
@@ -84,6 +89,11 @@ class DesignTokenSet:
     shadows: dict[str, str] = field(default_factory=dict)
     component_sizes: dict[str, dict[str, int]] = field(default_factory=dict)
     switch_sizes: dict[str, dict[str, int]] = field(default_factory=dict)
+    spin_sizes: dict[str, dict[str, int]] = field(default_factory=dict)
+    slider: dict[str, int] = field(default_factory=dict)
+    layout: dict[str, Any] = field(default_factory=dict)
+    card: dict[str, int] = field(default_factory=dict)
+    menu: dict[str, int] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize the token set to a plain dictionary (JSON-compatible)."""
@@ -99,6 +109,18 @@ class DesignTokenSet:
             result["component_sizes"] = {k: dict(v) for k, v in self.component_sizes.items()}
         if self.switch_sizes:
             result["switch_sizes"] = {k: dict(v) for k, v in self.switch_sizes.items()}
+        if self.spin_sizes:
+            result["spin_sizes"] = {k: dict(v) for k, v in self.spin_sizes.items()}
+        if self.slider:
+            result["slider"] = dict(self.slider)
+        if self.layout:
+            result["layout"] = {
+                k: (dict(v) if isinstance(v, dict) else v) for k, v in self.layout.items()
+            }
+        if self.card:
+            result["card"] = dict(self.card)
+        if self.menu:
+            result["menu"] = dict(self.menu)
         return result
 
 
@@ -158,6 +180,11 @@ def _parse_token_set(data: dict[str, Any]) -> DesignTokenSet:
         shadows=data["shadows"],
         component_sizes=data.get("component_sizes", {}),
         switch_sizes=data.get("switch_sizes", {}),
+        spin_sizes=data.get("spin_sizes", {}),
+        slider=data.get("slider", {}),
+        layout=data.get("layout", {}),
+        card=data.get("card", {}),
+        menu=data.get("menu", {}),
     )
 
 
