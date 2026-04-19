@@ -107,13 +107,13 @@ TTag[strong="true"] QLabel {
     font-weight: bold;
 }
 
-/* Checkable checked state — default type */
+/* Checkable checked state — default type (NaiveUI style: light tinted bg + type color text) */
 TTag[checkable="true"][checked="true"] {
-    background-color: {{ colors.primary }};
-    color: {{ colors.white }};
+    background-color: {{ colors.tag_checkable_primary_bg }};
+    color: {{ colors.primary }};
     border-color: {{ colors.primary }};
 }
-TTag[checkable="true"][checked="true"] QLabel { color: {{ colors.white }}; }
+TTag[checkable="true"][checked="true"] QLabel { color: {{ colors.primary }}; }
 
 TTag[checkable="true"][checked="false"] {
     background-color: {{ colors.bg_elevated }};
@@ -122,31 +122,41 @@ TTag[checkable="true"][checked="false"] {
 }
 TTag[checkable="true"][checked="false"] QLabel { color: {{ colors.text_primary }}; }
 
-/* Checkable checked state — type-specific overrides */
+/* Checkable checked state — type-specific overrides (light tinted bg + type color text) */
 TTag[checkable="true"][checked="true"][tagType="primary"] {
-    background-color: {{ colors.primary }};
+    background-color: {{ colors.tag_checkable_primary_bg }};
+    color: {{ colors.primary }};
     border-color: {{ colors.primary }};
 }
+TTag[checkable="true"][checked="true"][tagType="primary"] QLabel { color: {{ colors.primary }}; }
 
 TTag[checkable="true"][checked="true"][tagType="success"] {
-    background-color: {{ colors.success }};
+    background-color: {{ colors.tag_checkable_success_bg }};
+    color: {{ colors.success }};
     border-color: {{ colors.success }};
 }
+TTag[checkable="true"][checked="true"][tagType="success"] QLabel { color: {{ colors.success }}; }
 
 TTag[checkable="true"][checked="true"][tagType="info"] {
-    background-color: {{ colors.info }};
+    background-color: {{ colors.tag_checkable_info_bg }};
+    color: {{ colors.info }};
     border-color: {{ colors.info }};
 }
+TTag[checkable="true"][checked="true"][tagType="info"] QLabel { color: {{ colors.info }}; }
 
 TTag[checkable="true"][checked="true"][tagType="warning"] {
-    background-color: {{ colors.warning }};
+    background-color: {{ colors.tag_checkable_warning_bg }};
+    color: {{ colors.warning }};
     border-color: {{ colors.warning }};
 }
+TTag[checkable="true"][checked="true"][tagType="warning"] QLabel { color: {{ colors.warning }}; }
 
 TTag[checkable="true"][checked="true"][tagType="error"] {
-    background-color: {{ colors.error }};
+    background-color: {{ colors.tag_checkable_error_bg }};
+    color: {{ colors.error }};
     border-color: {{ colors.error }};
 }
+TTag[checkable="true"][checked="true"][tagType="error"] QLabel { color: {{ colors.error }}; }
 
 /* Checkable unchecked state — type-specific overrides */
 TTag[checkable="true"][checked="false"][tagType="primary"] {

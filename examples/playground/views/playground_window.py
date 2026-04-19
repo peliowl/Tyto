@@ -14,6 +14,54 @@ from examples.playground.views.navigation_menu import NavigationMenu
 from examples.playground.views.property_panel import PropertyPanel
 from examples.playground.views.top_bar import TopBar
 from tyto_ui_lib import ThemeEngine
+from tyto_ui_lib.core.event_bus import EventBus
+
+# All known component event names for EventBus subscription
+_ALL_COMPONENT_EVENTS: list[str] = [
+    # Atoms
+    "TButton:clicked",
+    "TButton:focus_in", "TButton:focus_out",
+    "TInput:text_changed", "TInput:cleared", "TInput:input", "TInput:focus", "TInput:blur",
+    "TInput:click", "TInput:mousedown", "TInput:keydown", "TInput:keyup",
+    "TCheckbox:state_changed",
+    "TCheckbox:focus_in", "TCheckbox:focus_out",
+    "TCheckboxGroup:value_changed",
+    "TRadio:toggled",
+    "TRadio:focus_in", "TRadio:focus_out",
+    "TRadioButton:toggled",
+    "TRadioGroup:selection_changed",
+    "TSwitch:toggled",
+    "TSwitch:focus_in", "TSwitch:focus_out",
+    "TTag:closed", "TTag:checked_changed", "TTag:mouse_enter", "TTag:mouse_leave",
+    "TInputNumber:value_changed", "TInputNumber:focused", "TInputNumber:blurred", "TInputNumber:cleared",
+    "TInputNumber:wheel",
+    "TSlider:value_changed", "TSlider:drag_start", "TSlider:drag_end",
+    "TSlider:focus_in", "TSlider:focus_out", "TSlider:wheel",
+    "TSpin:spinning_changed",
+    "TBackTop:clicked", "TBackTop:visibility_changed", "TBackTop:shown", "TBackTop:hidden",
+    # Molecules
+    "TSearchBar:search_changed", "TSearchBar:search_submitted",
+    "TBreadcrumb:item_clicked",
+    "TAlert:closed", "TAlert:after_leave",
+    "TCollapse:item_expanded", "TCollapse:item_header_clicked", "TCollapse:expanded_names_changed",
+    "TPopconfirm:confirmed", "TPopconfirm:cancelled",
+    "TTimeline:item_clicked",
+    "TTimelineItem:clicked",
+    # Organisms
+    "TMessage:closed", "TMessage:leave",
+    "TMessage:show", "TMessage:hide",
+    "TModal:closed", "TModal:esc_pressed", "TModal:mask_clicked",
+    "TModal:after_enter", "TModal:before_leave", "TModal:after_leave",
+    "TModal:positive_clicked", "TModal:negative_clicked",
+    "TModal:show", "TModal:hide",
+    "TCard:closed",
+    "TLayout:scrolled",
+    "TLayoutSider:collapsed_changed", "TLayoutSider:after_enter", "TLayoutSider:after_leave", "TLayoutSider:scrolled",
+    "TMenu:item_selected", "TMenu:expanded_keys_changed",
+    "TMenuItem:clicked",
+    "TMenuItem:mouse_enter", "TMenuItem:mouse_leave",
+    "TMenuItemGroup:expanded_changed",
+]
 
 
 class PlaygroundWindow(QWidget):
@@ -29,6 +77,7 @@ class PlaygroundWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Tyto UI Playground")
         self.resize(1200, 640)
+        self.setMinimumSize(800, 400)
 
         # -- Core setup --
         engine = ThemeEngine.instance()
@@ -88,6 +137,27 @@ class PlaygroundWindow(QWidget):
         # Theme change → update main window background
         engine.theme_changed.connect(self._on_theme_changed)
         self._apply_style()
+
+        # EventBus logging for event verification
+        self._setup_event_bus_logging()
+
+    def _setup_event_bus_logging(self) -> None:
+        """Subscribe to all known component events on the EventBus and log to console."""
+        bus = EventBus.instance()
+        for event_name in _ALL_COMPONENT_EVENTS:
+            bus.on(event_name, lambda *args, name=event_name: self._log_bus_event(name, *args))
+
+    @staticmethod
+    def _log_bus_event(event_name: str, source: object = None, *args: object) -> None:
+        """Print event info to console for debugging.
+
+        Args:
+            event_name: The full event name (e.g. "TButton:clicked").
+            source: The widget instance that emitted the event.
+            *args: Additional signal arguments.
+        """
+        class_name = type(source).__name__ if source else "Unknown"
+        print(f"[EventBus] {event_name} from {class_name} args={args}")
 
     def _on_theme_changed(self, _theme_name: str) -> None:
         """Slot: refresh main window background when the theme switches."""

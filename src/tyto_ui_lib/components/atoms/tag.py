@@ -63,8 +63,10 @@ class TTag(BaseWidget):
         WARNING = "warning"
         ERROR = "error"
 
-    closed = Signal()
+    closed = Signal(object)
     checked_changed = Signal(bool)
+    mouse_enter = Signal(object)
+    mouse_leave = Signal(object)
 
     def __init__(
         self,
@@ -301,6 +303,7 @@ class TTag(BaseWidget):
         self._repolish()
         if old != checked:
             self.checked_changed.emit(checked)
+            self._emit_bus_event("checked_changed", checked)
 
     def is_checked(self) -> bool:
         """Return the current checked state.
@@ -345,11 +348,35 @@ class TTag(BaseWidget):
             self.set_checked(not self._checked)
         super().mousePressEvent(event)
 
+    def enterEvent(self, event: Any) -> None:  # noqa: N802
+        """Emit mouse_enter when the mouse enters the tag area."""
+        self.mouse_enter.emit(event)
+        self._emit_bus_event("mouse_enter", event)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event: Any) -> None:  # noqa: N802
+        """Emit mouse_leave when the mouse leaves the tag area."""
+        self.mouse_leave.emit(event)
+        self._emit_bus_event("mouse_leave", event)
+        super().leaveEvent(event)
+
     # -- Private helpers --
 
     def _on_close_clicked(self) -> None:
         """Handle close button click: emit closed signal then hide the tag."""
-        self.closed.emit()
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QMouseEvent
+
+        synthetic = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(0, 0),
+            QPointF(0, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.closed.emit(synthetic)
+        self._emit_bus_event("closed", synthetic)
         self.setVisible(False)
 
 

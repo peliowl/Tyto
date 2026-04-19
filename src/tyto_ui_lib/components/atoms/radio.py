@@ -13,6 +13,7 @@ from enum import Enum
 from typing import Any
 
 from PySide6.QtCore import (
+    QRectF,
     Property,
     QEasingCurve,
     QPropertyAnimation,
@@ -132,12 +133,13 @@ class _RadioIndicator(QWidget):
         else:
             border = self._border_color
 
-        # Draw outer border ring
+        # Draw outer border ring (use QRectF for sub-pixel precision centering)
         pen_width = 2.0
         painter.setPen(QPen(border, pen_width))
         painter.setBrush(QBrush(self._bg_color))
         radius = (min(w, h) - pen_width) / 2.0
-        painter.drawEllipse(int(cx - radius), int(cy - radius), int(radius * 2), int(radius * 2))
+        outer_rect = QRectF(cx - radius, cy - radius, radius * 2, radius * 2)
+        painter.drawEllipse(outer_rect)
 
         # Draw inner filled dot when checked (scaled by progress)
         if p > 0.01:
@@ -145,7 +147,8 @@ class _RadioIndicator(QWidget):
             painter.setBrush(self._checked_color)
             max_radius = min(w, h) / 4.5
             r = max_radius * p
-            painter.drawEllipse(int(cx - r), int(cy - r), int(r * 2), int(r * 2))
+            inner_rect = QRectF(cx - r, cy - r, r * 2, r * 2)
+            painter.drawEllipse(inner_rect)
 
         painter.end()
 
@@ -284,6 +287,7 @@ class TRadio(
         self.style().unpolish(self)
         self.style().polish(self)
         self.toggled.emit(checked)
+        self._emit_bus_event("toggled", checked)
 
     def set_size(self, size: RadioSize) -> None:
         """Change the radio size variant.
@@ -392,6 +396,17 @@ class TRadio(
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()
+
+    def focusInEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-in event to the global EventBus."""
+        super().focusInEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_in", event)
+
+    def focusOutEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-out event to the global EventBus."""
+        super().focusOutEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_out", event)
+
 
 
 class TRadioButton(
@@ -505,6 +520,7 @@ class TRadioButton(
         self.setProperty("checked", checked)
         self._repolish()
         self.toggled.emit(checked)
+        self._emit_bus_event("toggled", checked)
 
     def set_size(self, size: TRadio.RadioSize) -> None:
         """Change the radio button size variant.
@@ -567,10 +583,18 @@ class TRadioButton(
     # -- Private --
 
     def _repolish(self) -> None:
-        """Force Qt to re-evaluate QSS property selectors."""
+        """Force Qt to re-evaluate QSS property selectors.
+
+        Must also re-polish child QLabel so that QSS rules using parent
+        property selectors (e.g. ``TRadioButton[checked="true"] QLabel``)
+        are re-evaluated when the dynamic ``checked`` property changes.
+        """
         self.style().unpolish(self)
+        self.style().unpolish(self._label)
         self.style().polish(self)
+        self.style().polish(self._label)
         self.update()
+
 
 
 class TRadioGroup(BaseWidget):
@@ -726,3 +750,4 @@ class TRadioGroup(BaseWidget):
                 radio.set_checked(False)
 
         self.selection_changed.emit(source.value)
+        self._emit_bus_event("selection_changed", source.value)

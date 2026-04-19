@@ -438,6 +438,7 @@ class TSpin(BaseWidget):
             self._hide_spinner()
 
         self.spinning_changed.emit(spinning)
+        self._emit_bus_event("spinning_changed", spinning)
 
     def is_spinning(self) -> bool:
         """Return the current spinning state.

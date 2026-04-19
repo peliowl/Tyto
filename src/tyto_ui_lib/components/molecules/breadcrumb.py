@@ -34,16 +34,16 @@ class BreadcrumbItem:
 class _ClickableLabel(QLabel):
     """Internal label that emits a signal on click."""
 
-    clicked = Signal()
+    clicked = Signal(object)  # QMouseEvent
 
     def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Emit clicked on left-button press."""
+        """Emit clicked on left-button press, carrying the QMouseEvent."""
         if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit()
+            self.clicked.emit(event)
         super().mousePressEvent(event)
 
 
@@ -60,17 +60,17 @@ class TBreadcrumb(BaseWidget):
         parent: Optional parent widget.
 
     Signals:
-        item_clicked: Emitted with (index, data) when a non-last item is clicked.
+        item_clicked: Emitted with (index, data, event) when a non-last item is clicked.
 
     Example:
         >>> bc = TBreadcrumb(items=[
         ...     BreadcrumbItem("Home", "/"),
         ...     BreadcrumbItem("Settings", "/settings"),
         ... ])
-        >>> bc.item_clicked.connect(lambda i, d: print(f"Clicked {i}: {d}"))
+        >>> bc.item_clicked.connect(lambda i, d, e: print(f"Clicked {i}: {d}"))
     """
 
-    item_clicked = Signal(int, object)
+    item_clicked = Signal(int, object, object)  # (index, data, QMouseEvent)
 
     def __init__(
         self,
@@ -132,6 +132,17 @@ class TBreadcrumb(BaseWidget):
 
     # -- Private --
 
+    def _on_item_clicked(self, index: int, data: Any, event: QMouseEvent) -> None:
+        """Handle breadcrumb item click: emit signal and bus event.
+
+        Args:
+            index: Index of the clicked item.
+            data: Data associated with the clicked item.
+            event: The originating mouse event.
+        """
+        self.item_clicked.emit(index, data, event)
+        self._emit_bus_event("item_clicked", index, data, event)
+
     def _rebuild(self) -> None:
         """Clear and recreate all child labels from the items list."""
         # Remove existing widgets
@@ -153,7 +164,9 @@ class TBreadcrumb(BaseWidget):
                 label.setProperty("clickable", "true")
                 idx = i
                 data = item.data
-                label.clicked.connect(lambda _idx=idx, _data=data: self.item_clicked.emit(_idx, _data))
+                label.clicked.connect(
+                    lambda evt, _idx=idx, _data=data: self._on_item_clicked(_idx, _data, evt)
+                )
 
             self._layout.addWidget(label)
 

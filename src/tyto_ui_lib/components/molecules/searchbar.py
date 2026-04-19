@@ -133,7 +133,10 @@ class TSearchBar(BaseWidget):
             text: The new text value.
         """
         self.search_changed.emit(text)
+        self._emit_bus_event("search_changed", text)
 
     def _on_submit(self) -> None:
         """Emit search_submitted with the current text."""
-        self.search_submitted.emit(self._input.get_text())
+        text = self._input.get_text()
+        self.search_submitted.emit(text)
+        self._emit_bus_event("search_submitted", text)

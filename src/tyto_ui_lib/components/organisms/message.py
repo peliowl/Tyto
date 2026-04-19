@@ -77,6 +77,7 @@ class TMessage(BaseWidget):
     """
 
     closed = Signal()
+    leave = Signal()
 
     def __init__(
         self,
@@ -167,6 +168,8 @@ class TMessage(BaseWidget):
     def close_message(self) -> None:
         """Close the message with a fade-up animation and emit ``closed``."""
         self._timer.stop()
+        self.leave.emit()
+        self._emit_bus_event("leave")
 
         anim = QPropertyAnimation(self, b"pos", self)
         anim.setDuration(200)
@@ -201,7 +204,18 @@ class TMessage(BaseWidget):
         """Handle animation completion: hide, emit closed, schedule deletion."""
         self.hide()
         self.closed.emit()
+        self._emit_bus_event("closed")
         self.deleteLater()
+
+    def showEvent(self, event: object) -> None:  # noqa: N802
+        """Forward show event to the global EventBus."""
+        super().showEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("show", event)
+
+    def hideEvent(self, event: object) -> None:  # noqa: N802
+        """Forward hide event to the global EventBus."""
+        super().hideEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("hide", event)
 
 
 

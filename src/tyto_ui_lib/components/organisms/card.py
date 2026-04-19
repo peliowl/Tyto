@@ -291,3 +291,4 @@ class TCard(BaseWidget, HoverEffectMixin):
     def _on_close_clicked(self) -> None:
         """Handle close button click: emit closed signal."""
         self.closed.emit()
+        self._emit_bus_event("closed")

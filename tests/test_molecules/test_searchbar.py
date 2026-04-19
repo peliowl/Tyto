@@ -43,7 +43,7 @@ class TestTSearchBarSignals:
         received: list[str] = []
         bar.search_submitted.connect(received.append)
         bar._input.set_text("query")
-        bar._button.clicked.emit()
+        bar._button.clicked.emit(None)
         assert received == ["query"]
 
     def test_clear(self, qapp: QApplication) -> None:

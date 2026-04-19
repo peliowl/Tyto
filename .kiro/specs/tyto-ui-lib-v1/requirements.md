@@ -1138,3 +1138,202 @@ V1.1.0 Gallery/Playground 同步更新版本确保 Gallery 预览画廊和 Playg
 4. THE `parse_color` 函数 SHALL 支持解析 Qt 命名颜色（如 "red"、"blue"）
 5. WHEN 传入无效颜色字符串时，THE `parse_color` 函数 SHALL 返回 fallback 参数指定的默认颜色（默认为 "#000000"）
 6. THE `parse_color` 函数 SHALL 位于 `src/tyto_ui_lib/utils/color.py` 模块中
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.1.0 - 事件补齐与事件总线集成
+
+## 简介
+
+V1.1.0 事件补齐版本聚焦于对齐 NaiveUI 的事件体系，补齐 Tyto 组件中完全缺失的事件、补充参数不完整的事件参数、修复语义不完整的事件，并将所有组件事件集成到全局事件总线（EventBus），使事件携带控件实例作为发布源上下文信息。同时在 Playground 中订阅事件总线验证机制正确性。
+
+## 术语表
+
+- **EventBus**：全局事件总线，非父子组件间的通讯机制
+- **事件发布源**：触发事件的控件实例，作为事件上下文信息通过 EventBus 传递
+
+## 需求
+
+### 需求 71：补齐完全缺失的事件
+
+**用户故事：** 作为一名开发者，我希望 Tyto 组件提供与 NaiveUI 对等的事件回调，以便在业务逻辑中响应所有用户交互。
+
+#### 验收标准
+
+1. THE TInput SHALL 新增 `input` 信号（str），在每次输入时触发（含 IME 中间态）
+2. THE TInput SHALL 新增 `focus` 信号（QFocusEvent），在输入框获得焦点时触发
+3. THE TInput SHALL 新增 `blur` 信号（QFocusEvent），在输入框失去焦点时触发
+4. THE TInput SHALL 新增 `click` 信号（QMouseEvent），在点击输入框区域时触发
+5. THE TInput SHALL 新增 `mousedown` 信号（QMouseEvent），在鼠标按下时触发
+6. THE TInput SHALL 新增 `keydown` 信号（QKeyEvent），在键盘按下时触发
+7. THE TInput SHALL 新增 `keyup` 信号（QKeyEvent），在键盘释放时触发
+8. THE TTag SHALL 新增 `mouse_enter` 信号（QMouseEvent），在鼠标进入标签区域时触发
+9. THE TTag SHALL 新增 `mouse_leave` 信号（QMouseEvent），在鼠标离开标签区域时触发
+10. THE TBackTop SHALL 新增 `shown` 信号，在按钮显示时触发
+11. THE TBackTop SHALL 新增 `hidden` 信号，在按钮隐藏时触发
+12. THE TAlert SHALL 新增 `after_leave` 信号，在关闭动画完成后触发
+13. THE TCollapse SHALL 新增 `expanded_names_changed` 信号（list[str]），在展开项列表变化时一次性返回所有展开项名称
+14. THE TMessage SHALL 新增 `leave` 信号，在关闭动画开始时触发
+15. THE TModal SHALL 新增 `esc_pressed` 信号，在按下 Esc 键时触发
+16. THE TModal SHALL 新增 `mask_clicked` 信号（QMouseEvent），在点击遮罩层时触发
+17. THE TModal SHALL 新增 `after_enter` 信号，在打开动画完成后触发
+18. THE TModal SHALL 新增 `before_leave` 信号，在关闭动画开始前触发
+19. THE TModal SHALL 新增 `after_leave` 信号，在关闭动画完成后触发
+20. THE TModal SHALL 新增 `positive_clicked` 信号，在确认按钮点击时触发
+21. THE TModal SHALL 新增 `negative_clicked` 信号，在取消按钮点击时触发
+22. THE TLayout SHALL 新增 `scrolled` 信号（QEvent），在内容区域滚动时触发
+23. THE TLayoutSider SHALL 新增 `after_enter` 信号，在展开动画完成后触发
+24. THE TLayoutSider SHALL 新增 `after_leave` 信号，在折叠动画完成后触发
+25. THE TLayoutSider SHALL 新增 `scrolled` 信号（QEvent），在侧边栏内容滚动时触发
+26. THE TMenu SHALL 新增 `expanded_keys_changed` 信号（list[str]），在展开的菜单组 key 列表变化时触发
+
+### 需求 72：补充参数不完整的事件
+
+**用户故事：** 作为一名开发者，我希望现有事件携带完整的原始事件参数，以便在回调中获取鼠标位置、焦点来源等上下文信息。
+
+#### 验收标准
+
+1. THE TButton 的 `clicked` 信号 SHALL 携带 `QMouseEvent` 参数
+2. THE TInput 的 `cleared` 信号 SHALL 携带 `QMouseEvent` 参数
+3. THE TTag 的 `closed` 信号 SHALL 携带 `QMouseEvent` 参数
+4. THE TInputNumber 的 `focused` 信号 SHALL 携带 `QFocusEvent` 参数
+5. THE TInputNumber 的 `blurred` 信号 SHALL 携带 `QFocusEvent` 参数
+6. THE TInputNumber 的 `cleared` 信号 SHALL 携带 `QMouseEvent` 参数
+7. THE TBreadcrumb 的 `item_clicked` 信号 SHALL 新增 `QMouseEvent` 参数
+8. THE TCollapse 的 `item_header_clicked` 信号 SHALL 新增 `expanded: bool` 和 `QMouseEvent` 参数
+
+### 需求 73：修复语义不完整的事件
+
+**用户故事：** 作为一名开发者，我希望事件的语义与 NaiveUI 对齐，以便实现关闭拦截和完整的菜单选择回调。
+
+#### 验收标准
+
+1. THE TModal 的 `closed` 信号 SHALL 支持通过 `on_close` 回调属性拦截关闭操作，回调返回 False 时阻止关闭
+2. THE TMenu 的 `item_selected` 信号 SHALL 新增 MenuOption 对象参数，携带选中项的完整信息（key、label、icon 等）
+
+### 需求 74：事件总线集成
+
+**用户故事：** 作为一名开发者，我希望所有组件事件通过全局事件总线发布，并携带控件实例作为发布源上下文信息，以便实现跨组件的事件监听和调试。
+
+#### 验收标准
+
+1. WHEN 任何组件发射 Qt Signal 时，THE 组件 SHALL 同时通过 EventBus 发布对应事件
+2. THE EventBus 事件名称 SHALL 遵循 `{组件类名}:{信号名}` 格式（如 `TButton:clicked`、`TInput:text_changed`）
+3. THE EventBus 事件 SHALL 携带控件实例（self）作为第一个参数，后续参数与 Qt Signal 参数一致
+4. THE EventBus 集成 SHALL 在 BaseWidget 基类中提供统一的 `_emit_bus_event(event_name, *args)` 辅助方法
+
+### 需求 75：Playground 事件总线验证
+
+**用户故事：** 作为一名开发者，我希望在 Playground 中订阅事件总线并在控制台打印事件信息，以便验证事件总线机制的正确性。
+
+#### 验收标准
+
+1. THE Playground SHALL 在启动时订阅 EventBus 的所有组件事件
+2. WHEN 事件被触发时，THE Playground SHALL 在控制台打印事件名称、发布源控件类名和事件参数
+3. THE 控制台输出格式 SHALL 为 `[EventBus] {事件名称} from {控件类名} args={参数}`
+
+
+---
+
+# 需求文档：Tyto UI 组件库 V1.1.0 - Qt 原生事件总线集成（第二批）
+
+## 简介
+
+V1.1.0 Qt 原生事件总线集成（第二批）聚焦于将 Tyto 组件中已定义的 Qt Signal 但尚未发布到全局事件总线（EventBus）的事件补齐，同时实现尚未 emit 的 Signal 并发布到总线，以及按需转发高价值的 Qt 原生事件。参考文档：`docs/missing-events-vs-qt.md`。
+
+本批次涉及三个优先级：
+1. 高优先级：23 个已定义 Signal 且已 emit 但未发布到 EventBus 的事件
+2. 中优先级：4 个已定义 Signal 但从未调用 `.emit()` 的事件，需先实现再发布
+3. 低优先级：Qt 原生事件按需转发（表单焦点、菜单 hover、滚轮、弹窗显隐）
+
+## 术语表
+
+- **EventBus**：全局事件总线，非父子组件间的通讯机制
+- **_emit_bus_event**：BaseWidget 基类中的辅助方法，将事件发布到 EventBus
+- **Signal 已定义未发布**：组件中已通过 `Signal()` 定义并通过 `.emit()` 触发，但未调用 `_emit_bus_event()` 发布到总线
+- **Signal 未 emit**：组件中已通过 `Signal()` 定义，但从未调用 `.emit()` 触发
+
+## 需求
+
+### 需求 76：高优先级 - 已有 Signal 发布到事件总线（原子组件）
+
+**用户故事：** 作为一名开发者，我希望原子组件中已有的 Signal 在触发时同步发布到全局事件总线，以便通过 EventBus 统一监听所有组件事件。
+
+#### 验收标准
+
+1. WHEN TCheckbox 的 `state_changed` 信号被发射时，THE TCheckbox SHALL 同时通过 `_emit_bus_event("state_changed", state)` 发布到 EventBus
+2. WHEN TCheckboxGroup 的 `value_changed` 信号被发射时，THE TCheckboxGroup SHALL 同时通过 `_emit_bus_event("value_changed", values)` 发布到 EventBus
+3. WHEN TRadio 的 `toggled` 信号被发射时，THE TRadio SHALL 同时通过 `_emit_bus_event("toggled", checked)` 发布到 EventBus
+4. WHEN TRadioButton 的 `toggled` 信号被发射时，THE TRadioButton SHALL 同时通过 `_emit_bus_event("toggled", checked)` 发布到 EventBus
+5. WHEN TRadioGroup 的 `selection_changed` 信号被发射时，THE TRadioGroup SHALL 同时通过 `_emit_bus_event("selection_changed", value)` 发布到 EventBus
+6. WHEN TSwitch 的 `toggled` 信号被发射时，THE TSwitch SHALL 同时通过 `_emit_bus_event("toggled", checked)` 发布到 EventBus
+7. WHEN TTag 的 `checked_changed` 信号被发射时，THE TTag SHALL 同时通过 `_emit_bus_event("checked_changed", checked)` 发布到 EventBus
+8. WHEN TSpin 的 `spinning_changed` 信号被发射时，THE TSpin SHALL 同时通过 `_emit_bus_event("spinning_changed", spinning)` 发布到 EventBus
+9. WHEN TSlider 的 `value_changed` 信号被发射时，THE TSlider SHALL 同时通过 `_emit_bus_event("value_changed", value)` 发布到 EventBus
+10. WHEN TSlider 的 `drag_start` 信号被发射时，THE TSlider SHALL 同时通过 `_emit_bus_event("drag_start")` 发布到 EventBus
+11. WHEN TSlider 的 `drag_end` 信号被发射时，THE TSlider SHALL 同时通过 `_emit_bus_event("drag_end")` 发布到 EventBus
+12. WHEN TInputNumber 的 `value_changed` 信号通过 `set_value()`、键盘增减或编辑提交路径被发射时，THE TInputNumber SHALL 同时通过 `_emit_bus_event("value_changed", value)` 发布到 EventBus（当前仅 `_on_clear` 路径已发布）
+
+### 需求 77：高优先级 - 已有 Signal 发布到事件总线（分子组件）
+
+**用户故事：** 作为一名开发者，我希望分子组件中已有的 Signal 在触发时同步发布到全局事件总线。
+
+#### 验收标准
+
+1. WHEN TSearchBar 的 `search_changed` 信号被发射时，THE TSearchBar SHALL 同时通过 `_emit_bus_event("search_changed", text)` 发布到 EventBus
+2. WHEN TSearchBar 的 `search_submitted` 信号被发射时，THE TSearchBar SHALL 同时通过 `_emit_bus_event("search_submitted", text)` 发布到 EventBus
+3. WHEN TBreadcrumb 的 `item_clicked` 信号被发射时，THE TBreadcrumb SHALL 同时通过 `_emit_bus_event("item_clicked", index, data, event)` 发布到 EventBus
+4. WHEN TPopconfirm 的 `confirmed` 信号被发射时，THE TPopconfirm SHALL 同时通过 `_emit_bus_event("confirmed")` 发布到 EventBus
+5. WHEN TPopconfirm 的 `cancelled` 信号被发射时，THE TPopconfirm SHALL 同时通过 `_emit_bus_event("cancelled")` 发布到 EventBus
+6. WHEN TTimeline 的 `item_clicked` 信号被发射时，THE TTimeline SHALL 同时通过 `_emit_bus_event("item_clicked", index)` 发布到 EventBus
+7. WHEN TTimelineItem 的 `clicked` 信号被发射时，THE TTimelineItem SHALL 同时通过 `_emit_bus_event("clicked")` 发布到 EventBus
+
+### 需求 78：高优先级 - 已有 Signal 发布到事件总线（有机体组件）
+
+**用户故事：** 作为一名开发者，我希望有机体组件中已有的 Signal 在触发时同步发布到全局事件总线。
+
+#### 验收标准
+
+1. WHEN TCard 的 `closed` 信号被发射时，THE TCard SHALL 同时通过 `_emit_bus_event("closed")` 发布到 EventBus
+2. WHEN TLayoutSider 的 `collapsed_changed` 信号被发射时，THE TLayoutSider SHALL 同时通过 `_emit_bus_event("collapsed_changed", collapsed)` 发布到 EventBus
+3. WHEN TMenuItem 的 `clicked` 信号被发射时，THE TMenuItem SHALL 同时通过 `_emit_bus_event("clicked", key)` 发布到 EventBus
+4. WHEN TMenuItemGroup 的 `expanded_changed` 信号被发射时，THE TMenuItemGroup SHALL 同时通过 `_emit_bus_event("expanded_changed", expanded)` 发布到 EventBus
+
+### 需求 79：中优先级 - 实现未 emit 的 Signal 并发布到事件总线
+
+**用户故事：** 作为一名开发者，我希望已定义但从未触发的 Signal 被正确实现并发布到事件总线，以便完整覆盖组件的生命周期事件。
+
+#### 验收标准
+
+1. THE TLayout SHALL 在内容区域发生滚动时调用 `scrolled.emit(event)` 并通过 `_emit_bus_event("scrolled", event)` 发布到 EventBus
+2. THE TLayoutSider SHALL 在侧边栏内容发生滚动时调用 `scrolled.emit(event)` 并通过 `_emit_bus_event("scrolled", event)` 发布到 EventBus
+3. THE TModal SHALL 在 Dialog 模式下用户点击确认按钮时调用 `positive_clicked.emit()` 并通过 `_emit_bus_event("positive_clicked")` 发布到 EventBus
+4. THE TModal SHALL 在 Dialog 模式下用户点击取消按钮时调用 `negative_clicked.emit()` 并通过 `_emit_bus_event("negative_clicked")` 发布到 EventBus
+
+### 需求 80：低优先级 - Qt 原生事件按需转发到事件总线
+
+**用户故事：** 作为一名开发者，我希望高价值的 Qt 原生事件被转发到事件总线，以便在表单验证、无障碍访问和交互反馈场景中使用。
+
+#### 验收标准
+
+1. THE TButton、TCheckbox、TRadio、TSwitch、TSlider SHALL 在获得焦点时通过 `_emit_bus_event("focus_in", event)` 发布 `focusInEvent` 到 EventBus
+2. THE TButton、TCheckbox、TRadio、TSwitch、TSlider SHALL 在失去焦点时通过 `_emit_bus_event("focus_out", event)` 发布 `focusOutEvent` 到 EventBus
+3. THE TMenuItem SHALL 在鼠标进入时通过 `_emit_bus_event("mouse_enter", event)` 发布 `enterEvent` 到 EventBus
+4. THE TMenuItem SHALL 在鼠标离开时通过 `_emit_bus_event("mouse_leave", event)` 发布 `leaveEvent` 到 EventBus
+5. THE TSlider、TInputNumber SHALL 在鼠标滚轮事件时通过 `_emit_bus_event("wheel", event)` 发布 `wheelEvent` 到 EventBus
+6. THE TModal SHALL 在显示时通过 `_emit_bus_event("show", event)` 发布 `showEvent` 到 EventBus
+7. THE TModal SHALL 在隐藏时通过 `_emit_bus_event("hide", event)` 发布 `hideEvent` 到 EventBus
+8. THE TMessage SHALL 在显示时通过 `_emit_bus_event("show", event)` 发布 `showEvent` 到 EventBus
+9. THE TMessage SHALL 在隐藏时通过 `_emit_bus_event("hide", event)` 发布 `hideEvent` 到 EventBus
+
+### 需求 81：Playground 事件总线验证更新
+
+**用户故事：** 作为一名开发者，我希望 Playground 的事件总线订阅列表同步更新，覆盖所有新增的事件总线事件。
+
+#### 验收标准
+
+1. THE Playground 的 `_ALL_COMPONENT_EVENTS` 列表 SHALL 新增所有高优先级事件的总线事件名称
+2. THE Playground 的 `_ALL_COMPONENT_EVENTS` 列表 SHALL 新增所有中优先级事件的总线事件名称
+3. THE Playground 的 `_ALL_COMPONENT_EVENTS` 列表 SHALL 新增所有低优先级事件的总线事件名称
+4. WHEN 新增事件被触发时，THE Playground SHALL 在控制台打印 `[EventBus] {事件名称} from {控件类名} args={参数}`

@@ -687,8 +687,8 @@ class TSlider(
         # Connect track thumb_moved to emit value_changed
         self._track.thumb_moved.connect(self._on_thumb_moved)
         # Connect track drag signals to public signals
-        self._track.drag_started.connect(self.drag_start.emit)
-        self._track.drag_ended.connect(self.drag_end.emit)
+        self._track.drag_started.connect(self._on_drag_start)
+        self._track.drag_ended.connect(self._on_drag_end)
 
         # Enable keyboard focus
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -732,6 +732,7 @@ class TSlider(
             v = _snap_to_step(v, self._min, self._max, self._step)
             self._track.set_value_frac(self._track._value_to_frac(v), animate=False)
         self.value_changed.emit(self.value)
+        self._emit_bus_event("value_changed", self.value)
 
     # -- Property accessors --
 
@@ -981,6 +982,17 @@ class TSlider(
     def _on_thumb_moved(self) -> None:
         """Slot called when the track reports a thumb position change."""
         self.value_changed.emit(self.value)
+        self._emit_bus_event("value_changed", self.value)
+
+    def _on_drag_start(self) -> None:
+        """Slot called when a thumb drag begins."""
+        self.drag_start.emit()
+        self._emit_bus_event("drag_start")
+
+    def _on_drag_end(self) -> None:
+        """Slot called when a thumb drag ends."""
+        self.drag_end.emit()
+        self._emit_bus_event("drag_end")
 
     def _build_mark_labels(self) -> None:
         """Create QLabel widgets for each mark below the track (horizontal mode)."""
@@ -1005,3 +1017,19 @@ class TSlider(
             frac = self._track._value_to_frac(val)
             px = self._track._frac_to_px(frac)
             lbl.move(int(self._track.x() + px - lbl.width() / 2), track_top + 2)
+
+    def focusInEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-in event to the global EventBus."""
+        super().focusInEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_in", event)
+
+    def focusOutEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-out event to the global EventBus."""
+        super().focusOutEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_out", event)
+
+    def wheelEvent(self, event: object) -> None:  # noqa: N802
+        """Forward wheel event to the global EventBus."""
+        super().wheelEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("wheel", event)
+

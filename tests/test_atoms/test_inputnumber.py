@@ -187,3 +187,59 @@ class TestTInputNumberDisabled:
         w.set_disabled(True)
         assert w.is_disabled is True
         assert w.property("disabled") == "true"
+
+
+class TestTInputNumberClearableVisibility:
+    """Clear button should only appear on hover or focus when clearable is set."""
+
+    def test_clear_hidden_by_default(self, qtbot):
+        """Clear button should be hidden even with text when not hovered/focused."""
+        w = TInputNumber(value=42, clearable=True)
+        qtbot.addWidget(w)
+        w.show()
+        assert not w._btn_clear.isVisible()
+
+    def test_clear_visible_on_hover(self, qtbot):
+        """Clear button should appear when mouse enters the widget."""
+        w = TInputNumber(value=42, clearable=True)
+        qtbot.addWidget(w)
+        w.show()
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QEnterEvent
+
+        enter = QEnterEvent(QPointF(5, 5), QPointF(5, 5), QPointF(5, 5))
+        w.enterEvent(enter)
+        assert w._btn_clear.isVisible()
+
+    def test_clear_hidden_on_leave(self, qtbot):
+        """Clear button should hide when mouse leaves (and no focus)."""
+        w = TInputNumber(value=42, clearable=True)
+        qtbot.addWidget(w)
+        w.show()
+        from PySide6.QtCore import QEvent, QPointF
+        from PySide6.QtGui import QEnterEvent
+
+        w.enterEvent(QEnterEvent(QPointF(5, 5), QPointF(5, 5), QPointF(5, 5)))
+        assert w._btn_clear.isVisible()
+        w.leaveEvent(QEvent(QEvent.Type.Leave))
+        assert not w._btn_clear.isVisible()
+
+    def test_clear_visible_on_focus(self, qtbot):
+        """Clear button should appear when the line edit gains focus."""
+        w = TInputNumber(value=42, clearable=True)
+        qtbot.addWidget(w)
+        w.show()
+        w._line_edit.setFocus()
+        qtbot.waitUntil(lambda: w._focused, timeout=1000)
+        assert w._btn_clear.isVisible()
+
+    def test_clear_hidden_when_not_clearable(self, qtbot):
+        """Clear button should stay hidden on hover when clearable is False."""
+        w = TInputNumber(value=42, clearable=False)
+        qtbot.addWidget(w)
+        w.show()
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QEnterEvent
+
+        w.enterEvent(QEnterEvent(QPointF(5, 5), QPointF(5, 5), QPointF(5, 5)))
+        assert not w._btn_clear.isVisible()

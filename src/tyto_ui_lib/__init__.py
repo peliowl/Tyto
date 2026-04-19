@@ -54,7 +54,7 @@ from tyto_ui_lib.components.organisms.layout import (
     TLayoutHeader,
     TLayoutSider,
 )
-from tyto_ui_lib.components.organisms.menu import TMenu, TMenuItem, TMenuItemGroup
+from tyto_ui_lib.components.organisms.menu import MenuOption, TMenu, TMenuItem, TMenuItemGroup
 from tyto_ui_lib.components.organisms.message import (
     MessageManager,
     MessageSlot,
@@ -118,6 +118,7 @@ __all__ = [
     "TLayoutHeader",
     "TLayoutSider",
     "TMenu",
+    "MenuOption",
     "TMenuItem",
     "TMenuItemGroup",
     "TMessage",

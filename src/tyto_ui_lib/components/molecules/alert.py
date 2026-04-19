@@ -77,6 +77,7 @@ class TAlert(BaseWidget):
         ERROR = "error"
 
     closed = Signal()
+    after_leave = Signal()
 
     def __init__(
         self,
@@ -409,3 +410,6 @@ class TAlert(BaseWidget):
         """Called when fade-out animation completes."""
         self.setVisible(False)
         self.closed.emit()
+        self._emit_bus_event("closed")
+        self.after_leave.emit()
+        self._emit_bus_event("after_leave")

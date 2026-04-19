@@ -57,6 +57,10 @@ class ThemeEngine(QObject):
         self._themes: dict[str, DesignTokenSet] = {}
         self._current_theme: str = ""
         self._jinja_env: Environment | None = None
+        # Per-theme QSS render caches (theme_name -> {template_name: qss})
+        self._qss_cache: dict[str, dict[str, str]] = {}
+        # Per-theme concatenated global QSS cache (theme_name -> qss)
+        self._global_qss_cache: dict[str, str] = {}
 
     @classmethod
     def instance(cls) -> ThemeEngine:
@@ -91,6 +95,10 @@ class ThemeEngine(QObject):
         if not tokens_path.is_dir():
             raise FileNotFoundError(f"Tokens directory not found: {tokens_path}")
 
+        # Invalidate QSS caches since token data is being reloaded
+        self._qss_cache.clear()
+        self._global_qss_cache.clear()
+
         for json_file in sorted(tokens_path.glob("*.json")):
             token_set = load_tokens_from_file(json_file)
             theme_name = token_set.name or json_file.stem
@@ -108,6 +116,9 @@ class ThemeEngine(QObject):
     def switch_theme(self, theme_name: str) -> None:
         """Switch to the specified theme and re-apply global QSS.
 
+        Uses cached QSS when available and suppresses intermediate repaints
+        to minimise UI stutter during the transition.
+
         Args:
             theme_name: Name of the theme to activate (e.g. "light", "dark").
 
@@ -120,13 +131,25 @@ class ThemeEngine(QObject):
 
         self._current_theme = theme_name
 
-        # Re-render and apply global stylesheet
         app = QApplication.instance()
         if app is not None:
-            qss = self._render_all_templates()
-            app.setStyleSheet(qss)
+            # Suppress repaints while styles are being swapped
+            top_widgets = app.topLevelWidgets()
+            for w in top_widgets:
+                w.setUpdatesEnabled(False)
 
-        self.theme_changed.emit(theme_name)
+            # Use cached global QSS or render and cache it
+            if theme_name not in self._global_qss_cache:
+                self._global_qss_cache[theme_name] = self._render_all_templates()
+            app.setStyleSheet(self._global_qss_cache[theme_name])
+
+            self.theme_changed.emit(theme_name)
+
+            # Re-enable repaints — triggers a single composite refresh
+            for w in top_widgets:
+                w.setUpdatesEnabled(True)
+        else:
+            self.theme_changed.emit(theme_name)
 
     def get_token(self, category: str, key: str) -> str | int:
         """Retrieve a single token value from the current theme.
@@ -164,6 +187,10 @@ class ThemeEngine(QObject):
     def render_qss(self, template_name: str, **extra_context: Any) -> str:
         """Render a single Jinja2 QSS template with current token values.
 
+        Results are cached per theme when no extra context is provided,
+        so repeated calls for the same template within the same theme
+        return instantly.
+
         Args:
             template_name: Template filename (e.g. "button.qss.j2").
             **extra_context: Additional variables passed to the template.
@@ -178,6 +205,13 @@ class ThemeEngine(QObject):
             raise RuntimeError("Jinja2 environment not initialised. Call load_tokens() first.")
         if not self._current_theme:
             raise RuntimeError("No active theme. Call switch_theme() first.")
+
+        # Return cached result when no extra context overrides are given
+        if not extra_context:
+            theme_cache = self._qss_cache.setdefault(self._current_theme, {})
+            cached = theme_cache.get(template_name)
+            if cached is not None:
+                return cached
 
         tokens = self._themes[self._current_theme]
         context: dict[str, Any] = {
@@ -198,7 +232,14 @@ class ThemeEngine(QObject):
         }
 
         template = self._jinja_env.get_template(template_name)
-        return template.render(context)
+        result = template.render(context)
+
+        # Store in cache only when no extra context was provided
+        if not extra_context:
+            theme_cache = self._qss_cache.setdefault(self._current_theme, {})
+            theme_cache[template_name] = result
+
+        return result
 
     # -- Private helpers --
 

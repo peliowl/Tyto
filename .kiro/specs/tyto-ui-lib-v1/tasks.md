@@ -1487,3 +1487,315 @@
 - 任务 72.1（Bug 修复）应优先于 72.2（特性增强）
 - 任务 75 依赖对应组件增强完成
 - 属性基测试使用 Hypothesis，每个属性至少 100 次迭代
+
+
+---
+
+# 实现计划：Tyto UI 组件库 V1.1.0 - 事件补齐与事件总线集成
+
+## 概述
+
+补齐 Tyto 组件中缺失的事件、修复参数不完整和语义不完整的事件，集成 EventBus 发布事件，并在 Playground 中订阅验证。按依赖关系排序：先在 BaseWidget 中添加 EventBus 辅助方法，再逐组件补齐事件，最后集成 EventBus 发布和 Playground 验证。
+
+## 任务
+
+- [x] 77. BaseWidget EventBus 辅助方法
+  - [x] 77.1 在 BaseWidget 中添加 `_emit_bus_event` 方法
+    - 在 `src/tyto_ui_lib/common/base.py` 中
+    - 添加 `_emit_bus_event(event_name: str, *args: Any) -> None` 方法
+    - 方法内部通过 `EventBus.instance().emit(f"{type(self).__name__}:{event_name}", self, *args)` 发布事件
+    - _需求：74.4_
+
+- [x] 78. 原子组件事件补齐
+  - [x] 78.1 TButton - 补充 clicked 信号参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/button.py` 中
+    - 将 `clicked = Signal()` 改为 `clicked = Signal(object)`
+    - 在 `mouseReleaseEvent` 中将 `self.clicked.emit()` 改为 `self.clicked.emit(event)`
+    - 添加 `self._emit_bus_event("clicked", event)`
+    - _需求：72.1, 74.1_
+
+  - [x] 78.2 TInput - 新增 7 个信号、补充 cleared 参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/input.py` 中
+    - 新增信号：`input = Signal(str)`、`focus = Signal(object)`、`blur = Signal(object)`、`click = Signal(object)`、`mousedown = Signal(object)`、`keydown = Signal(object)`、`keyup = Signal(object)`
+    - 将 `cleared = Signal()` 改为 `cleared = Signal(object)`
+    - 安装事件过滤器监听内部 QLineEdit/QPlainTextEdit 的 FocusIn、FocusOut、MouseButtonPress、KeyPress、KeyRelease 事件
+    - 在 `_on_text_changed` 中发射 `input` 信号
+    - 在 `_on_clear_clicked` 中传递事件对象
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.1-71.7, 72.2, 74.1_
+
+  - [x] 78.3 TTag - 新增 mouse_enter/mouse_leave、补充 closed 参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/tag.py` 中
+    - 新增信号：`mouse_enter = Signal(object)`、`mouse_leave = Signal(object)`
+    - 将 `closed = Signal()` 改为 `closed = Signal(object)`
+    - 重写 `enterEvent` 和 `leaveEvent` 发射 mouse_enter/mouse_leave
+    - 在 `_on_close_clicked` 中传递事件对象
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.8-71.9, 72.3, 74.1_
+
+  - [x] 78.4 TInputNumber - 补充 focused/blurred/cleared 参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/inputnumber.py` 中
+    - 将 `focused = Signal()`、`blurred = Signal()`、`cleared = Signal()` 改为 `Signal(object)`
+    - 在 `eventFilter` 中传递 FocusEvent 对象
+    - 在 `_on_clear_clicked` 中传递事件对象
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：72.4-72.6, 74.1_
+
+  - [x] 78.5 TBackTop - 新增 shown/hidden 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/backtop.py` 中
+    - 新增信号：`shown = Signal()`、`hidden = Signal()`
+    - 在 `_set_visible_state` 中根据 visible 值发射 shown/hidden
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.10-71.11, 74.1_
+
+- [x] 79. 分子组件事件补齐
+  - [x] 79.1 TAlert - 新增 after_leave 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/molecules/alert.py` 中
+    - 新增信号：`after_leave = Signal()`
+    - 在 `_on_fade_finished` 中发射 `after_leave`（在 `closed` 之后）
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.12, 74.1_
+
+  - [x] 79.2 TCollapse - 新增 expanded_names_changed、补充 item_header_clicked 参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/molecules/collapse.py` 中
+    - 新增信号：`expanded_names_changed = Signal(list)`
+    - 将 `item_header_clicked = Signal(str)` 改为 `Signal(str, bool, object)`
+    - 在 `_on_item_expanded` 中发射 `expanded_names_changed(self.get_expanded_names())`
+    - 在 TCollapseItem 的 `mousePressEvent` 中传递 expanded 状态和 QMouseEvent
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.13, 72.8, 74.1_
+
+  - [x] 79.3 TBreadcrumb - 补充 item_clicked 参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/molecules/breadcrumb.py` 中
+    - 将 `item_clicked = Signal(int, object)` 改为 `Signal(int, object, object)` 新增 QMouseEvent
+    - 更新 `_ClickableLabel` 的 clicked 信号携带 QMouseEvent
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：72.7, 74.1_
+
+- [x] 80. 有机体组件事件补齐
+  - [x] 80.1 TMessage - 新增 leave 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/message.py` 中
+    - 新增信号：`leave = Signal()`
+    - 在 `close_message` 方法开始时发射 `leave`（动画开始前）
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.14, 74.1_
+
+  - [x] 80.2 TModal - 新增 7 个信号、语义修复并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/modal.py` 中
+    - 新增信号：`esc_pressed = Signal()`、`mask_clicked = Signal(object)`、`after_enter = Signal()`、`before_leave = Signal()`、`after_leave = Signal()`、`positive_clicked = Signal()`、`negative_clicked = Signal()`
+    - 新增 `on_close` 回调属性（Callable[[], bool] | None），在 `close()` 中调用，返回 False 时阻止关闭
+    - 重写 `keyPressEvent` 检测 Esc 键发射 `esc_pressed`
+    - 修改 `_MaskWidget` 传递 QMouseEvent 到 TModal 的 `mask_clicked`
+    - 在 `open()` 动画 finished 中发射 `after_enter`
+    - 在 `close()` 动画开始前发射 `before_leave`，finished 中发射 `after_leave`
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.15-71.21, 73.1, 74.1_
+
+  - [x] 80.3 TLayout/TLayoutSider - 新增 scrolled/after_enter/after_leave 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/layout.py` 中
+    - TLayout 新增 `scrolled = Signal(object)`，转发 TLayoutContent 的滚动事件
+    - TLayoutSider 新增 `after_enter = Signal()`、`after_leave = Signal()`、`scrolled = Signal(object)`
+    - 在 TLayoutSider 的 `_apply_width` 动画 finished 中根据折叠方向发射 after_enter/after_leave
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.22-71.25, 74.1_
+
+  - [x] 80.4 TMenu - 新增 expanded_keys_changed、补充 item_selected 参数并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/menu.py` 中
+    - 新增 `MenuOption` 数据类
+    - 新增信号：`expanded_keys_changed = Signal(list)`
+    - 将 `item_selected = Signal(str)` 改为 `Signal(str, object)` 携带 MenuOption
+    - 在 `_on_item_clicked` 中构造 MenuOption 并发射
+    - 监听 TMenuItemGroup 的 expanded_changed 收集展开 key 列表
+    - 为所有信号添加 `_emit_bus_event` 调用
+    - _需求：71.26, 73.2, 74.1_
+
+- [x] 81. Playground 事件总线验证
+  - [x] 81.1 在 PlaygroundWindow 中订阅 EventBus 事件并打印到控制台
+    - 在 `examples/playground/views/playground_window.py` 中
+    - 新增 `_setup_event_bus_logging()` 方法，订阅所有已知组件事件
+    - 新增 `_log_bus_event()` 方法，格式化打印 `[EventBus] {事件名称} from {控件类名} args={参数}`
+    - 在 `__init__` 中调用 `_setup_event_bus_logging()`
+    - _需求：75.1, 75.2, 75.3_
+
+- [x] 82. 更新 docs/component-events.md 事件文档
+  - [x] 82.1 更新组件事件文档
+    - 更新 `docs/component-events.md` 反映所有新增和变更的事件
+    - 更新 `docs/missing-events-vs-naiveui.md` 标记已实现的事件
+
+- [x] 83. 检查点 - 事件补齐全部验证
+  - 运行 `uv run pytest` 确保所有测试通过
+  - 手动运行 `uv run python examples/playground.py` 验证事件总线控制台输出
+
+## 备注
+
+- 任务 77 为前置任务，所有组件事件集成依赖 BaseWidget 的 `_emit_bus_event` 方法
+- 任务 78-80 可按任意顺序实现，彼此无依赖
+- 任务 81 依赖任务 77-80 完成
+- 信号签名变更为不兼容变更，现有连接到无参信号的 slot 需要更新
+
+
+---
+
+# 实现计划：Tyto UI 组件库 V1.1.0 - Qt 原生事件总线集成（第二批）
+
+## 概述
+
+将 23 个已定义 Signal 但未发布到 EventBus 的事件补齐，实现 4 个从未 emit 的 Signal 并发布到总线，按需转发高价值 Qt 原生事件，并更新 Playground 事件订阅。按依赖关系排序：先完成高优先级（追加 `_emit_bus_event` 调用），再完成中优先级（实现 Signal emit 逻辑），然后低优先级（重写 Qt 虚函数），最后更新 Playground 和文档。
+
+## 任务
+
+- [x] 84. 高优先级 - 原子组件事件总线集成
+  - [x] 84.1 TCheckbox/TCheckboxGroup - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/checkbox.py` 中
+    - TCheckbox：在 `state_changed.emit(int(state))` 后追加 `self._emit_bus_event("state_changed", int(state))`
+    - TCheckboxGroup：在所有 `value_changed.emit(self.get_value())` 后追加 `self._emit_bus_event("value_changed", self.get_value())`
+    - _需求：76.1, 76.2_
+
+  - [x] 84.2 TRadio/TRadioButton/TRadioGroup - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/radio.py` 中
+    - TRadio：在 `toggled.emit(checked)` 后追加 `self._emit_bus_event("toggled", checked)`
+    - TRadioButton：在 `toggled.emit(checked)` 后追加 `self._emit_bus_event("toggled", checked)`
+    - TRadioGroup：在 `selection_changed.emit(source.value)` 后追加 `self._emit_bus_event("selection_changed", source.value)`
+    - _需求：76.3, 76.4, 76.5_
+
+  - [x] 84.3 TSwitch - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/switch.py` 中
+    - 在 `toggled.emit(checked)` 后追加 `self._emit_bus_event("toggled", checked)`
+    - _需求：76.6_
+
+  - [x] 84.4 TTag - checked_changed 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/tag.py` 中
+    - 在 `checked_changed.emit(checked)` 后追加 `self._emit_bus_event("checked_changed", checked)`
+    - _需求：76.7_
+
+  - [x] 84.5 TSpin - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/spin.py` 中
+    - 在 `spinning_changed.emit(spinning)` 后追加 `self._emit_bus_event("spinning_changed", spinning)`
+    - _需求：76.8_
+
+  - [x] 84.6 TSlider - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/atoms/slider.py` 中
+    - 在所有 `value_changed.emit(self.value)` 后追加 `self._emit_bus_event("value_changed", self.value)`
+    - 将 `self._track.drag_started.connect(self.drag_start.emit)` 改为连接到新方法 `_on_drag_start`，方法内调用 `self.drag_start.emit()` 和 `self._emit_bus_event("drag_start")`
+    - 将 `self._track.drag_ended.connect(self.drag_end.emit)` 改为连接到新方法 `_on_drag_end`，方法内调用 `self.drag_end.emit()` 和 `self._emit_bus_event("drag_end")`
+    - _需求：76.9, 76.10, 76.11_
+
+  - [x] 84.7 TInputNumber - value_changed 补齐 EventBus（非 _on_clear 路径）
+    - 在 `src/tyto_ui_lib/components/atoms/inputnumber.py` 中
+    - 在 `set_value()` 方法中 `value_changed.emit(self.get_value())` 后追加 `self._emit_bus_event("value_changed", self.get_value())`
+    - 在 `_on_step()` 方法中 `value_changed.emit(self.get_value())` 后追加 `self._emit_bus_event("value_changed", self.get_value())`
+    - 在 `_on_text_committed()` 方法中 `value_changed.emit(self.get_value())` 后追加 `self._emit_bus_event("value_changed", self.get_value())`
+    - 注意：`_on_clear` 路径已有 `_emit_bus_event`，无需修改
+    - _需求：76.12_
+
+- [x] 85. 高优先级 - 分子组件事件总线集成
+  - [x] 85.1 TSearchBar - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/molecules/searchbar.py` 中
+    - 在 `search_changed.emit(text)` 后追加 `self._emit_bus_event("search_changed", text)`
+    - 在 `search_submitted.emit(...)` 后追加 `self._emit_bus_event("search_submitted", self._input.get_text())`
+    - _需求：77.1, 77.2_
+
+  - [x] 85.2 TBreadcrumb - 集成 EventBus（含任务 79.3 补充 QMouseEvent 参数）
+    - 在 `src/tyto_ui_lib/components/molecules/breadcrumb.py` 中
+    - 将 `item_clicked = Signal(int, object)` 改为 `Signal(int, object, object)` 新增 QMouseEvent
+    - 更新 `_ClickableLabel` 的 clicked 信号携带 QMouseEvent
+    - 在 `item_clicked.emit(...)` 后追加 `self._emit_bus_event("item_clicked", index, data, event)`
+    - _需求：72.7, 77.3_
+
+  - [x] 85.3 TPopconfirm - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/molecules/popconfirm.py` 中
+    - 在 `confirmed.emit()` 后追加 `self._emit_bus_event("confirmed")`
+    - 在 `cancelled.emit()` 后追加 `self._emit_bus_event("cancelled")`
+    - _需求：77.4, 77.5_
+
+  - [x] 85.4 TTimeline/TTimelineItem - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/molecules/timeline.py` 中
+    - TTimelineItem：在 `clicked.emit()` 后追加 `self._emit_bus_event("clicked")`
+    - TTimeline：在 `item_clicked.emit(_idx)` 后追加 `self._emit_bus_event("item_clicked", _idx)`
+    - 注意：TTimeline 的 `item_clicked` 通过 lambda 连接，需调整为包含 `_emit_bus_event` 的方法
+    - _需求：77.6, 77.7_
+
+- [x] 86. 高优先级 - 有机体组件事件总线集成
+  - [x] 86.1 TCard - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/card.py` 中
+    - 在 `closed.emit()` 后追加 `self._emit_bus_event("closed")`
+    - _需求：78.1_
+
+  - [x] 86.2 TLayoutSider - collapsed_changed 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/layout.py` 中
+    - 在 `collapsed_changed.emit(self._collapsed)` 后追加 `self._emit_bus_event("collapsed_changed", self._collapsed)`
+    - _需求：78.2_
+
+  - [x] 86.3 TMenuItem/TMenuItemGroup - 集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/menu.py` 中
+    - TMenuItem：在 `clicked.emit(self._key)` 后追加 `self._emit_bus_event("clicked", self._key)`
+    - TMenuItemGroup：在 `expanded_changed.emit(expanded)` 后追加 `self._emit_bus_event("expanded_changed", expanded)`
+    - _需求：78.3, 78.4_
+
+- [x] 87. 中优先级 - 实现未 emit 的 Signal 并集成 EventBus
+  - [x] 87.1 TLayout - 实现 scrolled 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/layout.py` 中
+    - 在 TLayout 初始化中检测 TLayoutContent 子组件，监听其内部滚动区域的 `verticalScrollBar().valueChanged`
+    - 新增 `_on_content_scrolled(value: int)` 方法，调用 `self.scrolled.emit(value)` 和 `self._emit_bus_event("scrolled", value)`
+    - _需求：79.1_
+
+  - [x] 87.2 TLayoutSider - 实现 scrolled 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/layout.py` 中
+    - 在 TLayoutSider 初始化中监听内部 QScrollArea 的 `verticalScrollBar().valueChanged`
+    - 新增 `_on_scrolled(value: int)` 方法，调用 `self.scrolled.emit(value)` 和 `self._emit_bus_event("scrolled", value)`
+    - _需求：79.2_
+
+  - [x] 87.3 TModal - 实现 positive_clicked/negative_clicked 信号并集成 EventBus
+    - 在 `src/tyto_ui_lib/components/organisms/modal.py` 中
+    - 新增 `_on_positive_button_clicked()` 方法，调用 `self.positive_clicked.emit()` 和 `self._emit_bus_event("positive_clicked")`
+    - 新增 `_on_negative_button_clicked()` 方法，调用 `self.negative_clicked.emit()` 和 `self._emit_bus_event("negative_clicked")`，然后调用 `self.close()`
+    - 在 Dialog 模式下将确认/取消按钮的 clicked 信号连接到上述方法
+    - _需求：79.3, 79.4_
+
+- [x] 88. 低优先级 - Qt 原生事件转发到事件总线
+  - [x] 88.1 表单控件焦点事件转发
+    - 在 `src/tyto_ui_lib/components/atoms/button.py`、`checkbox.py`、`radio.py`、`switch.py`、`slider.py` 中
+    - 重写 `focusInEvent(event)`：调用 `super().focusInEvent(event)` 后追加 `self._emit_bus_event("focus_in", event)`
+    - 重写 `focusOutEvent(event)`：调用 `super().focusOutEvent(event)` 后追加 `self._emit_bus_event("focus_out", event)`
+    - _需求：80.1, 80.2_
+
+  - [x] 88.2 TMenuItem hover 事件转发
+    - 在 `src/tyto_ui_lib/components/organisms/menu.py` 中
+    - 在 TMenuItem 现有 `enterEvent` 方法末尾追加 `self._emit_bus_event("mouse_enter", event)`
+    - 在 TMenuItem 现有 `leaveEvent` 方法末尾追加 `self._emit_bus_event("mouse_leave", event)`
+    - _需求：80.3, 80.4_
+
+  - [x] 88.3 滚轮事件转发
+    - 在 `src/tyto_ui_lib/components/atoms/slider.py` 和 `inputnumber.py` 中
+    - 重写 `wheelEvent(event)`：调用 `super().wheelEvent(event)` 后追加 `self._emit_bus_event("wheel", event)`
+    - _需求：80.5_
+
+  - [x] 88.4 弹窗显示/隐藏事件转发
+    - 在 `src/tyto_ui_lib/components/organisms/modal.py` 和 `message.py` 中
+    - 重写 `showEvent(event)`：调用 `super().showEvent(event)` 后追加 `self._emit_bus_event("show", event)`
+    - 重写 `hideEvent(event)`：调用 `super().hideEvent(event)` 后追加 `self._emit_bus_event("hide", event)`
+    - _需求：80.6, 80.7, 80.8, 80.9_
+
+- [x] 89. Playground 事件总线订阅更新
+  - [x] 89.1 更新 _ALL_COMPONENT_EVENTS 列表
+    - 在 `examples/playground/views/playground_window.py` 中
+    - 新增高优先级缺失事件：`"TRadioButton:toggled"`、`"TMenuItem:clicked"`、`"TMenuItemGroup:expanded_changed"`、`"TTimelineItem:clicked"`
+    - 新增低优先级 Qt 原生事件：`"TButton:focus_in"`、`"TButton:focus_out"`、`"TCheckbox:focus_in"`、`"TCheckbox:focus_out"`、`"TRadio:focus_in"`、`"TRadio:focus_out"`、`"TSwitch:focus_in"`、`"TSwitch:focus_out"`、`"TSlider:focus_in"`、`"TSlider:focus_out"`、`"TMenuItem:mouse_enter"`、`"TMenuItem:mouse_leave"`、`"TSlider:wheel"`、`"TInputNumber:wheel"`、`"TModal:show"`、`"TModal:hide"`、`"TMessage:show"`、`"TMessage:hide"`
+    - _需求：81.1, 81.2, 81.3, 81.4_
+
+- [x] 90. 更新文档
+  - [x] 90.1 更新 docs/missing-events-vs-qt.md 标记已实现的事件
+    - 在高优先级和中优先级事件表格中标记已实现状态
+    - 在低优先级事件表格中标记已转发状态
+
+- [ ] 91. 检查点 - Qt 原生事件总线集成全部验证
+  - 运行 `uv run pytest` 确保所有测试通过
+  - 手动运行 `uv run python examples/playground.py` 验证事件总线控制台输出
+
+## 备注
+
+- 任务 84-86（高优先级）彼此无依赖，可按任意顺序实现
+- 任务 87（中优先级）依赖对 TLayout/TLayoutSider/TModal 内部结构的理解
+- 任务 88（低优先级）依赖任务 84-87 完成后统一验证
+- 任务 89 依赖任务 84-88 完成
+- 任务 85.2 同时完成了之前遗留的任务 79.3（TBreadcrumb 补充 QMouseEvent 参数）

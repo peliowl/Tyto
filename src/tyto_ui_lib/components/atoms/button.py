@@ -138,10 +138,11 @@ class TButton(
 
     Signals:
         clicked: Emitted when the button is clicked (not loading, not disabled).
+            Carries the QMouseEvent from the release.
 
     Example:
         >>> btn = TButton("Submit", button_type=TButton.ButtonType.PRIMARY)
-        >>> btn.clicked.connect(lambda: print("clicked"))
+        >>> btn.clicked.connect(lambda e: print("clicked"))
     """
 
     class ButtonType(str, Enum):
@@ -178,7 +179,7 @@ class TButton(
         SUBMIT = "submit"
         RESET = "reset"
 
-    clicked = Signal()
+    clicked = Signal(object)
 
     def __init__(
         self,
@@ -211,6 +212,12 @@ class TButton(
         self._init_click_ripple()
         self._init_focus_glow()
         self._init_disabled()
+
+        # Coerce string values to enums (e.g. from dict-based kwargs)
+        if isinstance(button_type, str):
+            button_type = self.ButtonType(button_type)
+        if isinstance(size, str):
+            size = self.ButtonSize(size)
 
         self._button_type = button_type
         self._size = size
@@ -753,27 +760,29 @@ class TButton(
             return
         super().mouseReleaseEvent(event)
         if self.isEnabled() and self.rect().contains(event.position().toPoint()):
-            self.clicked.emit()
+            self.clicked.emit(event)
+            self._emit_bus_event("clicked", event)
 
     def sizeHint(self) -> QSize:  # noqa: N802
         """Provide a reasonable default size based on current size variant."""
-        # Try to get height from tokens for accurate sizing
+        # Border adds 1px on each side, so total height = content + 2
+        border_extra = 2
         try:
             engine = ThemeEngine.instance()
             tokens = engine.current_tokens()
             if tokens and tokens.component_sizes:
                 size_data = tokens.component_sizes.get(self._size.value, {})
                 h = size_data.get("height", 34)
-                return QSize(80, h)
+                return QSize(80, h + border_extra)
         except Exception:
             pass
         size_map = {
-            self.ButtonSize.TINY: QSize(60, 22),
-            self.ButtonSize.SMALL: QSize(70, 28),
-            self.ButtonSize.MEDIUM: QSize(80, 34),
-            self.ButtonSize.LARGE: QSize(90, 40),
+            self.ButtonSize.TINY: QSize(60, 22 + border_extra),
+            self.ButtonSize.SMALL: QSize(70, 28 + border_extra),
+            self.ButtonSize.MEDIUM: QSize(80, 34 + border_extra),
+            self.ButtonSize.LARGE: QSize(90, 40 + border_extra),
         }
-        return size_map.get(self._size, QSize(80, 34))
+        return size_map.get(self._size, QSize(80, 34 + border_extra))
 
     # -- Private helpers --
 
@@ -835,7 +844,13 @@ class TButton(
                 self._icon_label_right.setVisible(True)
 
     def _apply_size_from_tokens(self) -> None:
-        """Enforce button height and horizontal padding from design tokens."""
+        """Enforce button height and horizontal padding from design tokens.
+
+        The token height represents the QSS content-area min-height.
+        QSS ``border: 1px solid`` adds 1px on each side, so the actual
+        widget height must be ``token_height + 2`` to avoid a min > max
+        conflict that causes bottom-border clipping.
+        """
         if not hasattr(self, "_size"):
             return
         try:
@@ -845,7 +860,8 @@ class TButton(
                 size_data = tokens.component_sizes.get(self._size.value, {})
                 h = size_data.get("height", 0)
                 if h > 0:
-                    self.setFixedHeight(h)
+                    # Add 2px for the 1px border on top and bottom
+                    self.setFixedHeight(h + 2)
                 pad_h = size_data.get("padding_h", 0)
                 if pad_h > 0:
                     self._layout.setContentsMargins(pad_h, 0, pad_h, 0)
@@ -902,3 +918,14 @@ class TButton(
         except Exception:
             pass
         self._layout.setContentsMargins(17, 0, 17, 0)
+
+    def focusInEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-in event to the global EventBus."""
+        super().focusInEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_in", event)
+
+    def focusOutEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-out event to the global EventBus."""
+        super().focusOutEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_out", event)
+

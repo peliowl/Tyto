@@ -297,7 +297,14 @@ class TInput(
         ERROR = "error"
 
     text_changed = Signal(str)
-    cleared = Signal()
+    cleared = Signal(object)
+    input = Signal(str)
+    focus = Signal(object)
+    blur = Signal(object)
+    click = Signal(object)
+    mousedown = Signal(object)
+    keydown = Signal(object)
+    keyup = Signal(object)
 
     def __init__(
         self,
@@ -454,6 +461,7 @@ class TInput(
         if self._maxlength is not None:
             self._line_edit.setMaxLength(self._maxlength)
         self._line_edit.textChanged.connect(self._on_text_changed)
+        self._line_edit.installEventFilter(self)
         self._layout.addWidget(self._line_edit)
 
         # Clear action inside QLineEdit
@@ -479,6 +487,7 @@ class TInput(
         self._text_edit.setPlaceholderText(placeholder)
         self._text_edit.textChanged.connect(self._on_textarea_changed)
         self._text_edit.setObjectName("inputTextarea")
+        self._text_edit.installEventFilter(self)
 
         # Apply rows
         fm = self._text_edit.fontMetrics()
@@ -582,11 +591,23 @@ class TInput(
 
     def clear(self) -> None:
         """Clear the input text and emit the cleared signal."""
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QMouseEvent
+
         if self._is_textarea and self._text_edit is not None:
             self._text_edit.clear()
         elif self._line_edit is not None:
             self._line_edit.clear()
-        self.cleared.emit()
+        synthetic = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(0, 0),
+            QPointF(0, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.cleared.emit(synthetic)
+        self._emit_bus_event("cleared", synthetic)
 
     def get_text_length(self) -> int:
         """Return the current text length.
@@ -686,6 +707,33 @@ class TInput(
         x = le.width() - sp.width() - 6
         y = (le.height() - sp.height()) // 2
         sp.move(x, y)
+
+    def eventFilter(self, obj: object, event: object) -> bool:  # noqa: N802
+        """Intercept events on the internal editor to emit focus/blur/click/key signals."""
+        from PySide6.QtCore import QEvent as _QEvent
+
+        target = self._line_edit or self._text_edit
+        if obj is target and isinstance(event, _QEvent):
+            etype = event.type()
+            if etype == _QEvent.Type.FocusIn:
+                self.focus.emit(event)
+                self._emit_bus_event("focus", event)
+            elif etype == _QEvent.Type.FocusOut:
+                self.blur.emit(event)
+                self._emit_bus_event("blur", event)
+            elif etype == _QEvent.Type.MouseButtonPress:
+                self.mousedown.emit(event)
+                self._emit_bus_event("mousedown", event)
+            elif etype == _QEvent.Type.MouseButtonRelease:
+                self.click.emit(event)
+                self._emit_bus_event("click", event)
+            elif etype == _QEvent.Type.KeyPress:
+                self.keydown.emit(event)
+                self._emit_bus_event("keydown", event)
+            elif etype == _QEvent.Type.KeyRelease:
+                self.keyup.emit(event)
+                self._emit_bus_event("keyup", event)
+        return super().eventFilter(obj, event)  # type: ignore[arg-type]
 
     def resizeEvent(self, event: object) -> None:  # noqa: N802
         """Reposition the loading spinner when the widget resizes."""
@@ -845,6 +893,9 @@ class TInput(
         if self._clear_action is not None:
             self._clear_action.setVisible(bool(text) and self._clearable)
         self.text_changed.emit(text)
+        self._emit_bus_event("text_changed", text)
+        self.input.emit(text)
+        self._emit_bus_event("input", text)
         if self._show_count:
             self._update_count_display()
 
@@ -867,14 +918,29 @@ class TInput(
             text = self._text_edit.toPlainText()
 
         self.text_changed.emit(text)
+        self._emit_bus_event("text_changed", text)
+        self.input.emit(text)
+        self._emit_bus_event("input", text)
         if self._show_count:
             self._update_count_display()
 
     def _on_clear_clicked(self) -> None:
         """Handle clear action click."""
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QMouseEvent
+
         if self._line_edit is not None:
             self._line_edit.clear()
-        self.cleared.emit()
+        synthetic = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(0, 0),
+            QPointF(0, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.cleared.emit(synthetic)
+        self._emit_bus_event("cleared", synthetic)
 
     def _update_count_display(self) -> None:
         """Update the character count label text."""

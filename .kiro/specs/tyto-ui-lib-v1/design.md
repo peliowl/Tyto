@@ -4501,3 +4501,358 @@ tests/
 | parse_color alpha 值超出 [0, 1] 范围 | 自动 clamp 到 [0, 1] |
 | Gallery Showcase 工厂创建失败 | ComponentShowcase 显示错误提示文字 |
 | Playground 属性定义 apply 回调异常 | 捕获异常并记录日志 |
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.1.0 - 事件补齐与事件总线集成
+
+## 概述
+
+V1.1.0 事件补齐版本对齐 NaiveUI 的事件体系，涉及三类变更：(1) 新增 26 个完全缺失的事件信号；(2) 修改 8 个参数不完整的信号签名；(3) 修复 2 个语义不完整的事件。同时将所有组件事件集成到全局 EventBus，并在 Playground 中订阅验证。
+
+## 架构
+
+### 事件总线集成策略
+
+在 `BaseWidget` 基类中新增 `_emit_bus_event(event_name, *args)` 辅助方法，各组件在发射 Qt Signal 时同步调用此方法将事件发布到 EventBus。事件名称格式为 `{组件类名}:{信号名}`，第一个参数为控件实例（self），后续参数与 Signal 参数一致。
+
+```python
+class BaseWidget(QWidget):
+    def _emit_bus_event(self, event_name: str, *args: Any) -> None:
+        """Publish event to global EventBus with self as source."""
+        from tyto_ui_lib.core.event_bus import EventBus
+        bus = EventBus.instance()
+        full_name = f"{type(self).__name__}:{event_name}"
+        bus.emit(full_name, self, *args)
+```
+
+### 信号签名变更策略
+
+对于参数不完整的信号，将 `Signal()` 改为 `Signal(object)` 以携带事件对象参数。
+
+### MenuOption 数据类
+
+```python
+@dataclass
+class MenuOption:
+    """Menu item metadata carried by item_selected signal."""
+    key: str
+    label: str
+    icon: QIcon | None = None
+```
+
+## 组件变更清单
+
+### TButton
+- `clicked = Signal(object)` — 携带 QMouseEvent
+
+### TInput
+- 新增：`input(str)`、`focus(object)`、`blur(object)`、`click(object)`、`mousedown(object)`、`keydown(object)`、`keyup(object)`
+- 变更：`cleared = Signal(object)` — 携带 QMouseEvent
+
+### TTag
+- 新增：`mouse_enter(object)`、`mouse_leave(object)`
+- 变更：`closed = Signal(object)` — 携带 QMouseEvent
+
+### TInputNumber
+- 变更：`focused(object)`、`blurred(object)`、`cleared(object)` — 携带事件对象
+
+### TBackTop
+- 新增：`shown()`、`hidden()`
+
+### TAlert
+- 新增：`after_leave()`
+
+### TCollapse
+- 新增：`expanded_names_changed(list)`
+- 变更：`item_header_clicked = Signal(str, bool, object)` — 携带 name、expanded、QMouseEvent
+
+### TMessage
+- 新增：`leave()`
+
+### TModal
+- 新增：`esc_pressed()`、`mask_clicked(object)`、`after_enter()`、`before_leave()`、`after_leave()`、`positive_clicked()`、`negative_clicked()`
+- 语义修复：新增 `on_close` 回调属性拦截关闭
+
+### TLayout
+- 新增：`scrolled(object)` — 在 TLayoutContent 上
+
+### TLayoutSider
+- 新增：`after_enter()`、`after_leave()`、`scrolled(object)`
+
+### TMenu
+- 新增：`expanded_keys_changed(list)`
+- 变更：`item_selected = Signal(str, object)` — 携带 key 和 MenuOption
+
+### TBreadcrumb
+- 变更：`item_clicked = Signal(int, object, object)` — 新增 QMouseEvent 参数
+
+## Playground 事件总线验证
+
+在 PlaygroundWindow 中订阅已知组件事件并打印到控制台：
+
+```python
+def _log_bus_event(self, event_name: str, source: Any, *args: Any) -> None:
+    class_name = type(source).__name__ if source else "Unknown"
+    print(f"[EventBus] {event_name} from {class_name} args={args}")
+```
+
+## 正确性属性
+
+### 属性 135：EventBus 事件携带控件实例
+
+*对于任意*组件和任意信号发射，EventBus 收到的事件第一个参数应为发射信号的控件实例。
+
+**验证需求：74.3**
+
+### 属性 136：EventBus 事件名称格式
+
+*对于任意*组件事件，EventBus 事件名称应遵循 `{组件类名}:{信号名}` 格式。
+
+**验证需求：74.2**
+
+## 测试策略
+
+- 属性 135-136 通过单元测试验证
+- Playground 事件总线验证通过手动运行验证控制台输出
+
+
+---
+
+# 设计文档：Tyto UI 组件库 V1.1.0 - Qt 原生事件总线集成（第二批）
+
+## 概述
+
+V1.1.0 Qt 原生事件总线集成（第二批）将 23 个已定义 Signal 但未发布到 EventBus 的事件补齐，实现 4 个从未 emit 的 Signal 并发布到总线，以及按需转发高价值的 Qt 原生事件（焦点、hover、滚轮、显隐）。所有变更复用现有 `_emit_bus_event` 基础设施，无需修改 BaseWidget 或 EventBus 核心代码。
+
+## 架构
+
+### 集成策略
+
+复用 `BaseWidget._emit_bus_event(event_name, *args)` 方法。对于三类事件采用不同的集成方式：
+
+1. **高优先级（已有 Signal 未发布）**：在现有 `.emit()` 调用后追加一行 `self._emit_bus_event(...)` 即可
+2. **中优先级（Signal 未 emit）**：需先实现事件触发逻辑（如监听滚动事件、添加 Dialog 按钮回调），再追加 `_emit_bus_event`
+3. **低优先级（Qt 原生事件转发）**：重写 Qt 虚函数（`focusInEvent`、`focusOutEvent`、`enterEvent`、`leaveEvent`、`wheelEvent`、`showEvent`、`hideEvent`），在调用 `super()` 后追加 `_emit_bus_event`
+
+### TLayout/TLayoutSider 滚动事件实现方案
+
+TLayout 和 TLayoutSider 的 `scrolled` Signal 已定义但从未 emit。实现方案：
+
+```python
+# TLayoutSider: 监听内部 QScrollArea 的 verticalScrollBar().valueChanged
+class TLayoutSider(BaseWidget):
+    def __init__(self, ...):
+        ...
+        self._scroll_area.verticalScrollBar().valueChanged.connect(self._on_scrolled)
+
+    def _on_scrolled(self, value: int) -> None:
+        self.scrolled.emit(value)
+        self._emit_bus_event("scrolled", value)
+```
+
+```python
+# TLayout: 转发 TLayoutContent 内部滚动区域的滚动事件
+class TLayout(BaseWidget):
+    def _setup_scroll_forwarding(self) -> None:
+        if self._content and hasattr(self._content, '_scroll_area'):
+            self._content._scroll_area.verticalScrollBar().valueChanged.connect(
+                self._on_content_scrolled
+            )
+
+    def _on_content_scrolled(self, value: int) -> None:
+        self.scrolled.emit(value)
+        self._emit_bus_event("scrolled", value)
+```
+
+### TModal positive_clicked/negative_clicked 实现方案
+
+TModal 的 `positive_clicked` 和 `negative_clicked` Signal 已定义但从未 emit。需在 Dialog 模式下添加确认/取消按钮并连接信号：
+
+```python
+class TModal(BaseWidget):
+    def _on_positive_button_clicked(self) -> None:
+        self.positive_clicked.emit()
+        self._emit_bus_event("positive_clicked")
+
+    def _on_negative_button_clicked(self) -> None:
+        self.negative_clicked.emit()
+        self._emit_bus_event("negative_clicked")
+        self.close()
+```
+
+### 低优先级 Qt 原生事件转发模式
+
+对于 Qt 原生事件转发，采用统一的重写模式：
+
+```python
+class TButton(BaseWidget):
+    def focusInEvent(self, event: QFocusEvent) -> None:
+        super().focusInEvent(event)
+        self._emit_bus_event("focus_in", event)
+
+    def focusOutEvent(self, event: QFocusEvent) -> None:
+        super().focusOutEvent(event)
+        self._emit_bus_event("focus_out", event)
+```
+
+## 组件变更清单
+
+### 高优先级 - 原子组件
+
+#### TCheckbox
+- 追加：`state_changed` emit 后添加 `_emit_bus_event("state_changed", state)`
+
+#### TCheckboxGroup
+- 追加：所有 `value_changed` emit 后添加 `_emit_bus_event("value_changed", values)`
+
+#### TRadio
+- 追加：`toggled` emit 后添加 `_emit_bus_event("toggled", checked)`
+
+#### TRadioButton
+- 追加：`toggled` emit 后添加 `_emit_bus_event("toggled", checked)`
+
+#### TRadioGroup
+- 追加：`selection_changed` emit 后添加 `_emit_bus_event("selection_changed", value)`
+
+#### TSwitch
+- 追加：`toggled` emit 后添加 `_emit_bus_event("toggled", checked)`
+
+#### TTag
+- 追加：`checked_changed` emit 后添加 `_emit_bus_event("checked_changed", checked)`
+
+#### TSpin
+- 追加：`spinning_changed` emit 后添加 `_emit_bus_event("spinning_changed", spinning)`
+
+#### TSlider
+- 追加：所有 `value_changed` emit 后添加 `_emit_bus_event("value_changed", value)`
+- 追加：`drag_start` emit 后添加 `_emit_bus_event("drag_start")`
+- 追加：`drag_end` emit 后添加 `_emit_bus_event("drag_end")`
+- 注意：`drag_start`/`drag_end` 通过 `self._track.drag_started.connect(self.drag_start.emit)` 连接，需改为连接到包含 `_emit_bus_event` 的方法
+
+#### TInputNumber
+- 追加：`set_value()` 中 `value_changed` emit 后添加 `_emit_bus_event`
+- 追加：`_on_step()` 中 `value_changed` emit 后添加 `_emit_bus_event`
+- 追加：`_on_text_committed()` 中 `value_changed` emit 后添加 `_emit_bus_event`
+- 注意：`_on_clear` 路径已有 `_emit_bus_event`，无需重复
+
+### 高优先级 - 分子组件
+
+#### TSearchBar
+- 追加：`search_changed` emit 后添加 `_emit_bus_event("search_changed", text)`
+- 追加：`search_submitted` emit 后添加 `_emit_bus_event("search_submitted", text)`
+
+#### TBreadcrumb
+- 追加：`item_clicked` emit 后添加 `_emit_bus_event("item_clicked", index, data, event)`
+- 注意：任务 79.3（补充 QMouseEvent 参数）尚未完成，需一并处理
+
+#### TPopconfirm
+- 追加：`confirmed` emit 后添加 `_emit_bus_event("confirmed")`
+- 追加：`cancelled` emit 后添加 `_emit_bus_event("cancelled")`
+
+#### TTimeline
+- 追加：`item_clicked` emit 后添加 `_emit_bus_event("item_clicked", index)`
+
+#### TTimelineItem
+- 追加：`clicked` emit 后添加 `_emit_bus_event("clicked")`
+
+### 高优先级 - 有机体组件
+
+#### TCard
+- 追加：`closed` emit 后添加 `_emit_bus_event("closed")`
+
+#### TLayoutSider
+- 追加：`collapsed_changed` emit 后添加 `_emit_bus_event("collapsed_changed", collapsed)`
+
+#### TMenuItem
+- 追加：`clicked` emit 后添加 `_emit_bus_event("clicked", key)`
+
+#### TMenuItemGroup
+- 追加：`expanded_changed` emit 后添加 `_emit_bus_event("expanded_changed", expanded)`
+
+### 中优先级 - 实现未 emit 的 Signal
+
+#### TLayout
+- 新增：监听 TLayoutContent 内部滚动区域的 `valueChanged` 信号
+- 新增：`_on_content_scrolled` 方法，emit `scrolled` 并发布到 EventBus
+
+#### TLayoutSider
+- 新增：监听内部 QScrollArea 的 `verticalScrollBar().valueChanged` 信号
+- 新增：`_on_scrolled` 方法，emit `scrolled` 并发布到 EventBus
+
+#### TModal
+- 新增：`_on_positive_button_clicked` 方法，emit `positive_clicked` 并发布到 EventBus
+- 新增：`_on_negative_button_clicked` 方法，emit `negative_clicked` 并发布到 EventBus
+- 需在 Dialog 模式下将确认/取消按钮连接到上述方法
+
+### 低优先级 - Qt 原生事件转发
+
+#### TButton、TCheckbox、TRadio、TSwitch、TSlider
+- 重写 `focusInEvent`：调用 `super()` 后追加 `_emit_bus_event("focus_in", event)`
+- 重写 `focusOutEvent`：调用 `super()` 后追加 `_emit_bus_event("focus_out", event)`
+
+#### TMenuItem
+- 重写 `enterEvent`：在现有 hover 逻辑后追加 `_emit_bus_event("mouse_enter", event)`
+- 重写 `leaveEvent`：在现有逻辑后追加 `_emit_bus_event("mouse_leave", event)`
+
+#### TSlider、TInputNumber
+- 重写 `wheelEvent`：调用 `super()` 后追加 `_emit_bus_event("wheel", event)`
+
+#### TModal、TMessage
+- 重写 `showEvent`：调用 `super()` 后追加 `_emit_bus_event("show", event)`
+- 重写 `hideEvent`：调用 `super()` 后追加 `_emit_bus_event("hide", event)`
+
+### Playground 事件订阅更新
+
+在 `_ALL_COMPONENT_EVENTS` 列表中新增以下事件名称：
+
+```python
+# 高优先级 - 已有 Signal 未发布（大部分已在列表中，仅需新增缺失项）
+"TRadioButton:toggled",
+"TMenuItem:clicked",
+"TMenuItemGroup:expanded_changed",
+"TTimelineItem:clicked",
+
+# 低优先级 - Qt 原生事件转发
+"TButton:focus_in", "TButton:focus_out",
+"TCheckbox:focus_in", "TCheckbox:focus_out",
+"TRadio:focus_in", "TRadio:focus_out",
+"TSwitch:focus_in", "TSwitch:focus_out",
+"TSlider:focus_in", "TSlider:focus_out",
+"TMenuItem:mouse_enter", "TMenuItem:mouse_leave",
+"TSlider:wheel", "TInputNumber:wheel",
+"TModal:show", "TModal:hide",
+"TMessage:show", "TMessage:hide",
+```
+
+## 正确性属性
+
+### 属性 137：高优先级事件总线发布完整性
+
+*对于任意*高优先级组件（TCheckbox、TCheckboxGroup、TRadio、TRadioButton、TRadioGroup、TSwitch、TTag、TSpin、TSlider、TInputNumber、TSearchBar、TBreadcrumb、TPopconfirm、TTimeline、TTimelineItem、TCard、TLayoutSider、TMenuItem、TMenuItemGroup），当其 Signal 被 emit 时，EventBus 应收到对应的事件，且事件第一个参数为发射信号的控件实例。
+
+**验证需求：76.1-76.12, 77.1-77.7, 78.1-78.4**
+
+### 属性 138：中优先级 Signal 实现与发布
+
+*对于任意*中优先级组件（TLayout、TLayoutSider、TModal），当触发条件满足时（滚动事件、按钮点击），对应 Signal 应被 emit 且 EventBus 应收到事件。
+
+**验证需求：79.1-79.4**
+
+## 测试策略
+
+- 属性 137 通过单元测试验证：为每个组件创建实例，触发操作，验证 EventBus 收到事件
+- 属性 138 通过单元测试验证：模拟滚动和按钮点击，验证 Signal emit 和 EventBus 事件
+- 低优先级 Qt 原生事件转发通过手动运行 Playground 验证控制台输出
+- Playground 事件总线验证通过手动运行验证控制台输出
+
+## 边界情况与错误处理
+
+| 场景 | 处理方式 |
+|------|---------|
+| 组件在 EventBus 回调中抛出异常 | EventBus 捕获异常并记录日志，继续执行后续回调（已有机制） |
+| TLayout 无 TLayoutContent 子组件 | 不安装滚动监听，scrolled 不触发 |
+| TLayoutSider 无内部 QScrollArea | 不安装滚动监听，scrolled 不触发 |
+| TModal 非 Dialog 模式 | positive_clicked/negative_clicked 不触发 |
+| 组件已销毁后 EventBus 回调被调用 | EventBus 回调中检查 source 是否有效 |

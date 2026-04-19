@@ -6,6 +6,8 @@ and a cleanup hook for resource release.
 
 from __future__ import annotations
 
+from typing import Any
+
 from PySide6.QtWidgets import QWidget
 
 from tyto_ui_lib.core.theme_engine import ThemeEngine
@@ -74,3 +76,20 @@ class BaseWidget(QWidget):
         except (RuntimeError, TypeError):
             # Already disconnected or engine destroyed – safe to ignore.
             pass
+
+    def _emit_bus_event(self, event_name: str, *args: Any) -> None:
+        """Publish an event to the global EventBus with this widget as source.
+
+        The event is published under the name ``{ClassName}:{event_name}``
+        with ``self`` prepended to the argument list so subscribers can
+        identify the originating widget.
+
+        Args:
+            event_name: Signal name (e.g. ``"clicked"``, ``"text_changed"``).
+            *args: Signal arguments forwarded after *self*.
+        """
+        from tyto_ui_lib.core.event_bus import EventBus
+
+        bus = EventBus.instance()
+        full_name = f"{type(self).__name__}:{event_name}"
+        bus.emit(full_name, self, *args)

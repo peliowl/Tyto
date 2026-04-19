@@ -70,6 +70,18 @@ TTimelineItem[itemStatus="info"] QLabel#timeline_dot {
 }
 
 /* Size variants */
+TTimeline[timelineSize="small"] TTimelineItem QLabel#timeline_title {
+    font-size: {{ font_sizes.small }}px;
+}
+
+TTimeline[timelineSize="small"] TTimelineItem QLabel#timeline_content {
+    font-size: {{ font_sizes.small }}px;
+}
+
+TTimeline[timelineSize="small"] TTimelineItem QLabel#timeline_time {
+    font-size: {{ font_sizes.small }}px;
+}
+
 TTimeline[timelineSize="large"] TTimelineItem QLabel#timeline_title {
     font-size: {{ font_sizes.large }}px;
 }

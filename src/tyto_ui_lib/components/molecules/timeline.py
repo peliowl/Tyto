@@ -426,6 +426,7 @@ class TTimelineItem(BaseWidget):
         """Emit clicked signal on left-button press."""
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
+            self._emit_bus_event("clicked")
         super().mousePressEvent(event)
 
     # -- Private --
@@ -571,6 +572,7 @@ class TTimeline(BaseWidget):
     class TimelineSize(str, Enum):
         """Timeline size variants."""
 
+        SMALL = "small"
         MEDIUM = "medium"
         LARGE = "large"
 
@@ -739,7 +741,7 @@ class TTimeline(BaseWidget):
         item.setParent(self)
 
         # Connect clicked signal with captured index
-        item.clicked.connect(lambda _idx=idx: self.item_clicked.emit(_idx))
+        item.clicked.connect(lambda _idx=idx: self._on_item_clicked(_idx))
 
         # Apply icon size to the new item
         self._apply_icon_size_to_item(item)
@@ -761,6 +763,15 @@ class TTimeline(BaseWidget):
             List of TTimelineItem instances in order.
         """
         return list(self._items)
+
+    def _on_item_clicked(self, index: int) -> None:
+        """Handle a timeline item click: emit signal and bus event.
+
+        Args:
+            index: Index of the clicked item.
+        """
+        self.item_clicked.emit(index)
+        self._emit_bus_event("item_clicked", index)
 
     # -- Theme --
 

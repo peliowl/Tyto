@@ -206,9 +206,9 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
         ERROR = "error"
 
     value_changed = Signal(object)
-    focused = Signal()
-    blurred = Signal()
-    cleared = Signal()
+    focused = Signal(object)
+    blurred = Signal(object)
+    cleared = Signal(object)
 
     _LONG_PRESS_DELAY_MS = 500
     _REPEAT_INTERVAL_MS = 100
@@ -385,6 +385,7 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
         self._update_clear_visibility()
         if clamped != old:
             self.value_changed.emit(self.get_value())
+            self._emit_bus_event("value_changed", self.get_value())
 
     def set_disabled(self, disabled: bool) -> None:
         """Enable or disable the component.
@@ -759,9 +760,16 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
         self._spinner.move(builtins.max(x, 0), builtins.max(y, 0))
 
     def _update_clear_visibility(self) -> None:
-        """Show or hide the clear button based on current text and loading state."""
+        """Show or hide the clear button based on current text, loading, hover and focus state.
+
+        The clear button is only visible when the component is hovered or focused,
+        matching NaiveUI behaviour where the clear icon appears on interaction.
+        """
         has_text = bool(self._line_edit.text().strip())
-        self._btn_clear.setVisible(has_text and self._clearable and not self._loading)
+        interactive = self._hovered or self._focused
+        self._btn_clear.setVisible(
+            has_text and self._clearable and not self._loading and interactive
+        )
 
     def _step_value(self, direction: int) -> None:
         """Increment or decrement the value by one step."""
@@ -774,6 +782,7 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
             self._sync_display()
             self._update_clear_visibility()
             self.value_changed.emit(self.get_value())
+            self._emit_bus_event("value_changed", self.get_value())
 
     # -- Button press / long-press handlers --
 
@@ -841,18 +850,32 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
         if clamped != self._value:
             self._value = clamped
             self.value_changed.emit(self.get_value())
+            self._emit_bus_event("value_changed", self.get_value())
         self._update_clear_visibility()
 
     def _on_clear_clicked(self) -> None:
         """Handle clear action click."""
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QMouseEvent
+
         self._line_edit.clear()
         self._value = _round_to_precision(
             _clamp(0.0, self._min, self._max), self._precision
         )
         self._sync_display()
         self._update_clear_visibility()
-        self.cleared.emit()
+        synthetic = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(0, 0),
+            QPointF(0, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.cleared.emit(synthetic)
+        self._emit_bus_event("cleared", synthetic)
         self.value_changed.emit(self.get_value())
+        self._emit_bus_event("value_changed", self.get_value())
 
     # -- Paint border manually --
 
@@ -905,6 +928,7 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
     def enterEvent(self, event: Any) -> None:  # noqa: N802
         """Track mouse enter to update outer border color."""
         self._hovered = True
+        self._update_clear_visibility()
         self.update()
         super().enterEvent(event)
 
@@ -916,6 +940,7 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
     def leaveEvent(self, event: Any) -> None:  # noqa: N802
         """Track mouse leave to restore outer border color."""
         self._hovered = False
+        self._update_clear_visibility()
         self.update()
         super().leaveEvent(event)
 
@@ -935,12 +960,16 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
             from PySide6.QtCore import QEvent as _QEvent
             if event.type() == _QEvent.Type.FocusIn:
                 self._focused = True
+                self._update_clear_visibility()
                 self.update()
-                self.focused.emit()
+                self.focused.emit(event)
+                self._emit_bus_event("focused", event)
             elif event.type() == _QEvent.Type.FocusOut:
                 self._focused = False
+                self._update_clear_visibility()
                 self.update()
-                self.blurred.emit()
+                self.blurred.emit(event)
+                self._emit_bus_event("blurred", event)
             elif event.type() == _QEvent.Type.Resize:
                 self._position_spinner()
         return super().eventFilter(obj, event)
@@ -952,3 +981,8 @@ class TInputNumber(FocusGlowMixin, BaseWidget):
         if self._spinner is not None:
             self._spinner.stop()
         super().cleanup()
+
+    def wheelEvent(self, event: object) -> None:  # noqa: N802
+        """Forward wheel event to the global EventBus."""
+        super().wheelEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("wheel", event)

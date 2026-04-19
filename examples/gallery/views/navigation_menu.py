@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from examples.gallery.styles.gallery_styles import GalleryStyles
 from examples.gallery.viewmodels.gallery_viewmodel import GalleryViewModel
@@ -22,7 +22,8 @@ class NavigationMenu(QWidget):
 
     The menu is built dynamically from the ``ComponentRegistry`` held by
     the view-model.  Clicking an item emits ``component_selected`` and
-    highlights the active entry.
+    highlights the active entry.  Content is wrapped in a QScrollArea so
+    that long component lists remain accessible.
 
     Args:
         viewmodel: Gallery view-model providing the registry.
@@ -42,7 +43,20 @@ class NavigationMenu(QWidget):
         self._buttons: dict[str, QPushButton] = {}
         self._active_key: str | None = None
 
-        layout = QVBoxLayout(self)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        # Wrap menu content in a scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setObjectName("nav_scroll_area")
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        scroll_content = QWidget()
+        scroll_content.setObjectName("nav_scroll_content")
+        layout = QVBoxLayout(scroll_content)
         layout.setContentsMargins(0, 8, 0, 8)
         layout.setSpacing(0)
 
@@ -64,6 +78,9 @@ class NavigationMenu(QWidget):
                 self._buttons[info.key] = btn
 
         layout.addStretch()
+
+        scroll_area.setWidget(scroll_content)
+        outer_layout.addWidget(scroll_area)
 
         # Apply initial style and listen for theme changes
         self._apply_style()
@@ -100,3 +117,4 @@ class NavigationMenu(QWidget):
         engine = ThemeEngine.instance()
         theme = engine.current_theme() or "light"
         self.setStyleSheet(GalleryStyles.nav_menu_style(theme))
+

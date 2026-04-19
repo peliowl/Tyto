@@ -56,7 +56,12 @@
     "hover_color": "rgba(255, 255, 255, 0.09)",
     "pressed_color": "rgba(255, 255, 255, 0.05)",
     "collapse_toggle_bg": "#48484e",
-    "collapse_toggle_border": "transparent"
+    "collapse_toggle_border": "transparent",
+    "tag_checkable_primary_bg": "rgba(99, 226, 183, 0.15)",
+    "tag_checkable_success_bg": "rgba(99, 226, 183, 0.15)",
+    "tag_checkable_info_bg": "rgba(112, 192, 232, 0.15)",
+    "tag_checkable_warning_bg": "rgba(242, 201, 125, 0.15)",
+    "tag_checkable_error_bg": "rgba(232, 128, 128, 0.15)"
   },
   "spacing": {
     "small": 4,

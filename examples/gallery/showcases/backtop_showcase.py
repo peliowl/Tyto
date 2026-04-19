@@ -33,16 +33,10 @@ class BackTopShowcase(BaseShowcase):
 
         backtop = TBackTop(target=scroll, visibility_height=100)
 
-        wrapper = QWidget()
-        wrapper_layout = QVBoxLayout(wrapper)
-        wrapper_layout.setContentsMargins(0, 0, 0, 0)
-        wrapper_layout.addWidget(scroll)
-        wrapper_layout.addWidget(backtop)
-
         self.add_section(
             "Basic Usage",
             "Scroll down to reveal the back-to-top button.",
-            wrapper,
+            scroll,
         )
 
         # Controlled visibility (show=True forces the button to always be visible)
@@ -58,14 +52,8 @@ class BackTopShowcase(BaseShowcase):
 
         backtop_forced = TBackTop(target=scroll2, show=True)
 
-        wrapper2 = QWidget()
-        wrapper2_layout = QVBoxLayout(wrapper2)
-        wrapper2_layout.setContentsMargins(0, 0, 0, 0)
-        wrapper2_layout.addWidget(scroll2)
-        wrapper2_layout.addWidget(backtop_forced)
-
         self.add_section(
             "Controlled Show",
             "BackTop forced visible via show=True, regardless of scroll position.",
-            wrapper2,
+            scroll2,
         )

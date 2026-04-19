@@ -356,6 +356,7 @@ class TCheckbox(
         self.style().unpolish(self)
         self.style().polish(self)
         self.state_changed.emit(int(state))
+        self._emit_bus_event("state_changed", int(state))
 
     def toggle(self) -> None:
         """Toggle between Unchecked and Checked states."""
@@ -484,6 +485,17 @@ class TCheckbox(
         self.style().polish(self)
         self.update()
 
+    def focusInEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-in event to the global EventBus."""
+        super().focusInEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_in", event)
+
+    def focusOutEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-out event to the global EventBus."""
+        super().focusOutEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_out", event)
+
+
 
 
 class TCheckboxGroup(BaseWidget):
@@ -584,6 +596,7 @@ class TCheckboxGroup(BaseWidget):
             if cb.get_state() != target:
                 cb.set_state(target)
         self.value_changed.emit(self.get_value())
+        self._emit_bus_event("value_changed", self.get_value())
 
     def set_disabled(self, disabled: bool) -> None:
         """Enable or disable all checkboxes in the group.
@@ -626,3 +639,4 @@ class TCheckboxGroup(BaseWidget):
             return
 
         self.value_changed.emit(self.get_value())
+        self._emit_bus_event("value_changed", self.get_value())

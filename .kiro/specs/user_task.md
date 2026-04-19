@@ -288,4 +288,77 @@
   - 设置为垂直方向时，菜单能够展开和收缩
   - 效果图
 
+- [x] 整理所有原子、分子、有机体组件能够触发的所有事件，说明每个事件能够携带的信息，并以markdown格式输出到docs目录下
+
+- [x] 修改specs中的requirement、task、design文档及其它相关文档，比对Tyto控件与naiveUI控件
+  - 增加Tyto控件未实现的事件（详见 [docs/missing-events-vs-naiveui.md](../../docs/missing-events-vs-naiveui.md)）
+    - 完全缺失的事件：
+      - TInput：`input(str)`、`focus(QFocusEvent)`、`blur(QFocusEvent)`、`click(QMouseEvent)`、`mousedown(QMouseEvent)`、`keydown(QKeyEvent)`、`keyup(QKeyEvent)`
+      - TTag：`mouse_enter(QMouseEvent)`、`mouse_leave(QMouseEvent)`
+      - TBackTop：`shown()`、`hidden()`
+      - TAlert：`after_leave()`
+      - TCollapse：`expanded_names_changed(list[str])`
+      - TMessage：`leave()`
+      - TModal：`esc_pressed()`、`mask_clicked(QMouseEvent)`、`after_enter()`、`before_leave()`、`after_leave()`、`positive_clicked()`、`negative_clicked()`
+      - TLayout：`scrolled(QEvent)`
+      - TLayoutSider：`after_enter()`、`after_leave()`、`scrolled(QEvent)`
+      - TMenu：`expanded_keys_changed(list[str])`
+    - 参数不完整的事件（需补充参数）：
+      - TButton：`clicked` 缺少 `QMouseEvent` 参数
+      - TInput：`cleared` 缺少 `QMouseEvent` 参数
+      - TTag：`closed` 缺少 `QMouseEvent` 参数
+      - TInputNumber：`focused` 缺少 `QFocusEvent` 参数、`blurred` 缺少 `QFocusEvent` 参数、`cleared` 缺少 `QMouseEvent` 参数
+      - TBreadcrumb：`item_clicked` 缺少 `QMouseEvent` 参数
+      - TCollapse：`item_header_clicked` 缺少 `expanded: bool` 和 `QMouseEvent` 参数
+    - 语义不完整的事件：
+      - TModal：`closed` 不支持返回值阻止关闭（NaiveUI `onClose` 支持 `Promise<bool>` 拦截）
+      - TMenu：`item_selected` 缺少 MenuOption 对象参数
+  - 集成事件总线，发布事件，事件需携带控件实例（发布源，作为上下文信息）
+  - 在playground中订阅事件验证事件总线机制正确性，消费逻辑：在控制台打印出事件信息
+
+- [x] 比对Tyto控件与Qt控件，将Qt控件已有的且Tyto控件未发送到事件总线的事件，以markdown格式列举到docs目录下
+
+- [x] 修改specs中的requirement、task、design文档及其它相关文档
+  - 增加Tyto控件未实现的事件（详见 [docs/missing-events-vs-qt.md](../../docs/missing-events-vs-qt.md)）
+    - 高优先级：Tyto 已定义 Signal 但未发布到事件总线的事件（共 23 个）
+      - TCheckbox：`state_changed(int)` 未发布到总线
+      - TCheckboxGroup：`value_changed(list)` 未发布到总线
+      - TRadio：`toggled(bool)` 未发布到总线
+      - TRadioButton：`toggled(bool)` 未发布到总线
+      - TRadioGroup：`selection_changed(object)` 未发布到总线
+      - TSwitch：`toggled(bool)` 未发布到总线
+      - TTag：`checked_changed(bool)` 未发布到总线
+      - TSpin：`spinning_changed(bool)` 未发布到总线
+      - TSlider：`value_changed(object)`、`drag_start()`、`drag_end()` 未发布到总线
+      - TInputNumber：`value_changed(object)` 部分路径（set_value、键盘增减、编辑提交）未发布到总线
+      - TSearchBar：`search_changed(str)`、`search_submitted(str)` 未发布到总线
+      - TBreadcrumb：`item_clicked(int, object)` 未发布到总线
+      - TPopconfirm：`confirmed()`、`cancelled()` 未发布到总线
+      - TTimeline：`item_clicked(int)` 未发布到总线
+      - TTimelineItem：`clicked()` 未发布到总线
+      - TCard：`closed()` 未发布到总线
+      - TLayoutSider：`collapsed_changed(bool)` 未发布到总线
+      - TMenuItem：`clicked(str)` 未发布到总线
+      - TMenuItemGroup：`expanded_changed(bool)` 未发布到总线
+    - 中优先级：Signal 已定义但从未 emit，需先实现再发布（共 4 个）
+      - TLayout：`scrolled(object)` — Signal 已定义但从未调用 `.emit()`，需先在滚动事件中触发
+      - TLayoutSider：`scrolled(object)` — 同上
+      - TModal：`positive_clicked()` — Signal 已定义但从未调用 `.emit()`，需先实现 Dialog 模式按钮逻辑
+      - TModal：`negative_clicked()` — 同上
+    - 低优先级：Qt 原生事件按需转发
+      - 表单控件焦点事件：TButton、TCheckbox、TRadio、TSwitch、TSlider 的 `focusInEvent` / `focusOutEvent`
+      - 菜单项 hover 事件：TMenuItem 的 `enterEvent` / `leaveEvent`
+      - 滚轮事件：TSlider、TInputNumber 的 `wheelEvent`
+      - 弹窗显示/隐藏事件：TModal、TMessage 的 `showEvent` / `hideEvent`
+  - 集成事件总线，发布事件，事件需携带控件实例（发布源，作为上下文信息）
+  - 在playground中订阅事件验证事件总线机制正确性，消费逻辑：在控制台打印出事件信息
+
+- [x] 更新gallery界面，减小界面高度，左侧菜单栏使用滚动的方式显示所有菜单项，允许用户调整gallery和playground界面的宽度和高度
+
+- [x] 修改inputNumber控件，在设置clearable后，当鼠标hover或者控件获取到焦点后，才能显示清空按钮
+
+- [x] 在切换light/dark模式时，出现明显的卡顿现象，请排查分析原因，并解决该问题：
+  - 排查分析可能导致该问题的所有原因，及对应的解决方案，并输出到docs/references/solution目录下
+  - 修改代码优化性能，解决该问题
+
 

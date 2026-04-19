@@ -7,6 +7,7 @@ active item highlighting.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -45,6 +46,21 @@ _CHEVRON_PATH_DATA = (
     "C6.15829 2.95118 5.84171 2.95118 5.64645 3.14645Z"
 )
 _CHEVRON_VIEWBOX = 16.0
+
+
+@dataclass
+class MenuOption:
+    """Menu item metadata carried by the item_selected signal.
+
+    Attributes:
+        key: Unique identifier for the menu item.
+        label: Display text for the menu item.
+        icon: Optional icon associated with the menu item.
+    """
+
+    key: str = ""
+    label: str = ""
+    icon: QIcon | None = field(default=None, repr=False)
 
 
 class _MenuPopupContainer(QWidget):
@@ -661,6 +677,7 @@ class TMenuItem(BaseWidget):
         """Emit clicked signal on mouse press if not disabled."""
         if isinstance(event, QMouseEvent) and not self._disabled and not self._menu_disabled:
             self.clicked.emit(self._key)
+            self._emit_bus_event("clicked", self._key)
 
     def enterEvent(self, event: object) -> None:  # type: ignore[override]
         """Show hover background on mouse enter."""
@@ -681,11 +698,13 @@ class TMenuItem(BaseWidget):
             self.setStyleSheet(
                 f"background-color: {hover_color}; border: none; border-radius: {radius}px;"
             )
+        self._emit_bus_event("mouse_enter", event)
 
     def leaveEvent(self, event: object) -> None:  # type: ignore[override]
         """Remove hover background on mouse leave."""
         super().leaveEvent(event)  # type: ignore[arg-type]
         self.setStyleSheet("")
+        self._emit_bus_event("mouse_leave", event)
 
 
 class TMenuItemGroup(BaseWidget):
@@ -846,6 +865,7 @@ class TMenuItemGroup(BaseWidget):
                 self._children_wrapper.setVisible(False)
 
         self.expanded_changed.emit(expanded)
+        self._emit_bus_event("expanded_changed", expanded)
 
     def add_item(self, item: TMenuItem | TMenuItemGroup) -> None:
         """Add a child menu item or sub-group.
@@ -1523,7 +1543,8 @@ class TMenu(BaseWidget):
         VERTICAL = "vertical"
         HORIZONTAL = "horizontal"
 
-    item_selected = Signal(str)
+    item_selected = Signal(str, object)
+    expanded_keys_changed = Signal(list)
 
     _COLLAPSE_ANIMATION_DURATION = 200
 
@@ -1872,6 +1893,7 @@ class TMenu(BaseWidget):
         if isinstance(item, TMenuItem):
             item.clicked.connect(self._on_item_clicked)
         elif isinstance(item, TMenuItemGroup):
+            item.expanded_changed.connect(self._on_group_expanded_changed)
             for child in item.get_items():
                 self._connect_item_signals(child)
 
@@ -1884,9 +1906,85 @@ class TMenu(BaseWidget):
         if self._disabled:
             return
         self.set_active_key(key)
-        self.item_selected.emit(key)
+        # Find the item to build MenuOption
+        option = MenuOption(key=key)
+        item = self._find_item_by_key(key)
+        if item is not None and isinstance(item, TMenuItem):
+            option = MenuOption(key=key, label=item.label)
+        self.item_selected.emit(key, option)
+        self._emit_bus_event("item_selected", key, option)
         # Close all popup chains after selection
         self._hide_all_popups()
+
+    def _find_item_by_key(self, key: str) -> TMenuItem | None:
+        """Find a TMenuItem by key in the item tree.
+
+        Args:
+            key: The key to search for.
+
+        Returns:
+            The matching TMenuItem or None.
+        """
+        for item in self._items:
+            if isinstance(item, TMenuItem) and item.key == key:
+                return item
+            if isinstance(item, TMenuItemGroup):
+                found = self._find_item_in_group(item, key)
+                if found is not None:
+                    return found
+        return None
+
+    def _find_item_in_group(self, group: TMenuItemGroup, key: str) -> TMenuItem | None:
+        """Recursively find a TMenuItem in a group.
+
+        Args:
+            group: The group to search.
+            key: The key to search for.
+
+        Returns:
+            The matching TMenuItem or None.
+        """
+        for child in group.get_items():
+            if isinstance(child, TMenuItem) and child.key == key:
+                return child
+            if isinstance(child, TMenuItemGroup):
+                found = self._find_item_in_group(child, key)
+                if found is not None:
+                    return found
+        return None
+
+    def _collect_expanded_keys(self) -> list[str]:
+        """Collect all expanded group keys.
+
+        Returns:
+            List of expanded group key strings.
+        """
+        keys: list[str] = []
+        for item in self._items:
+            if isinstance(item, TMenuItemGroup):
+                self._collect_expanded_keys_recursive(item, keys)
+        return keys
+
+    def _collect_expanded_keys_recursive(
+        self, group: TMenuItemGroup, keys: list[str]
+    ) -> None:
+        """Recursively collect expanded group keys.
+
+        Args:
+            group: The group to check.
+            keys: Accumulator list.
+        """
+        if group.is_expanded:
+            keys.append(group.key)
+        for child in group.get_items():
+            if isinstance(child, TMenuItemGroup):
+                self._collect_expanded_keys_recursive(child, keys)
+
+    def _on_group_expanded_changed(self, _expanded: bool) -> None:
+        """Handle a group's expanded state change to emit expanded_keys_changed."""
+        keys = self._collect_expanded_keys()
+        self.expanded_keys_changed.emit(keys)
+        self._emit_bus_event("expanded_keys_changed", keys)
 
     def _apply_active_key_recursive(
         self, items: list[TMenuItem | TMenuItemGroup], key: str

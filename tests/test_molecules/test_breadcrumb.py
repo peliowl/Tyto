@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from tyto_ui_lib.components.molecules.breadcrumb import BreadcrumbItem, TBreadcrumb
@@ -61,13 +62,26 @@ class TestTBreadcrumbSignals:
         ]
         bc = TBreadcrumb(items=items)
         received: list[tuple[int, object]] = []
-        bc.item_clicked.connect(lambda i, d: received.append((i, d)))
+        bc.item_clicked.connect(lambda i, d, e: received.append((i, d)))
+
+        from PySide6.QtCore import QPointF
+        from PySide6.QtGui import QMouseEvent
 
         from tyto_ui_lib.components.molecules.breadcrumb import _ClickableLabel
 
         clickable_labels = bc.findChildren(_ClickableLabel)
         assert len(clickable_labels) == 2
-        clickable_labels[0].clicked.emit()
+
+        # Synthesize a QMouseEvent to pass through the signal chain
+        synthetic = QMouseEvent(
+            QMouseEvent.Type.MouseButtonPress,
+            QPointF(0, 0),
+            QPointF(0, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        clickable_labels[0].clicked.emit(synthetic)
         assert received == [(0, "/home")]
 
     def test_last_item_not_clickable(self, qapp: QApplication) -> None:

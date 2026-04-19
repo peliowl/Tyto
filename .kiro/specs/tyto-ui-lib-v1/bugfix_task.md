@@ -180,13 +180,9 @@
 
 - [x] 修复bug：在playground中点击message菜单项，提示"No preview factory for 'message'"；点击Modal菜单项，提示"No preview factory for 'modal'"
 
-- [ ] menu控件，发现以下缺陷：
-  - 设置mode、disabled属性不生效
-  - 样式错误
-
 - [ ] 修复控件样式及功能逻辑缺陷：
-  - [ ] 点击弹出TConfirm弹窗后，在任务栏中生成了一个新的会话窗口（错误），正确做法是始终保持任务栏只有一个顶级父窗口
-  - [ ] inputNumber控件，清空按钮与'-'按钮、'+'按钮的间距过大，清空按钮图标显示模糊且有锯齿
+  - [x] 点击弹出TConfirm弹窗后，在任务栏中生成了一个新的会话窗口（错误），正确做法是始终保持任务栏只有一个顶级父窗口
+  - [x] inputNumber控件，清空按钮与'-'按钮、'+'按钮的间距过大，清空按钮图标显示模糊且有锯齿
   - [ ] collapse控件，在展开/收缩时，会抖动重刷
   - [ ] input控件，当type为textarea时，在playground中设置placeholder、clearable属性，未实时显示效果
 
@@ -204,4 +200,43 @@
 
 - [x] button控件，不同尺寸的按钮，当设置loading和circle属性时，加载图标未居中显示
 
+- [x] 在gallery中，点击timeline菜单项，抛出异常：`AttributeError: type object 'TimelineSize' has no attribute 'SMALL'
+Traceback (most recent call last):
+  File "D:\Working\Me\Tyto\examples\gallery\views\component_showcase.py", line 63, in show_component
+    showcase = info.showcase_factory(container)
+  File "D:\Working\Me\Tyto\examples\gallery\showcases\__init__.py", line 88, in <lambda>
+    showcase_factory=lambda parent: TimelineShowcase(parent)))
+                                    ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "D:\Working\Me\Tyto\examples\gallery\showcases\timeline_showcase.py", line 59, in __init__
+    self._make_sized_timeline(TTimeline.TimelineSize.SMALL, "Small"),
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'TimelineSize' has no attribute 'SMALL'`
 
+- [x] 在gallery的popconfirm界面，点击button customization中的按钮，抛出异常：`Error calling Python override of QWidget::eventFilter(): Traceback (most recent call last):
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\molecules\popconfirm.py", line 410, in eventFilter
+    self.show_popup()
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\molecules\popconfirm.py", line 343, in show_popup
+    self._popup = self._build_popup()
+                  ~~~~~~~~~~~~~~~~~^^
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\molecules\popconfirm.py", line 555, in _build_popup
+    cancel_btn = TButton(**cancel_kwargs)
+  File "D:\Working\Me\Tyto\src\tyto_ui_lib\components\atoms\button.py", line 266, in __init__
+    self.setProperty("buttonType", button_type.value)
+                                   ^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'value'`
+
+- [x] popconfirm弹窗，按钮底部被遮挡，无法看到底部边界
+
+- [x] radio控件，选中单选项后，圆点未在圆圈中居中显示
+
+- [x] radio控件，显示的样式效果未与naiveUI的样式保持一致
+
+- [x] 在点击触发按钮，弹出popconfirm弹窗时，有明显的卡顿，请排查分析原因，并解决该问题：
+  - 排查分析可能导致该问题的所有原因，及对应的解决方案，并输出到docs/references/solution目录下
+  - 修改代码优化性能，解决该问题
+
+- 修复bug：tag控件，在设置checkable属性，选中tag后，文本颜色显示错误
+
+- 修复bug：dark模式下，backtop控件演示界面的文本颜色显示不正确
+
+- 修复bug：backtop控件显示位置不正确，未浮动显示在容器内部的右下角区域

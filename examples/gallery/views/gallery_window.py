@@ -25,7 +25,8 @@ class GalleryWindow(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Tyto UI Gallery")
-        self.resize(1000, 720)
+        self.resize(1000, 600)
+        self.setMinimumSize(640, 400)
 
         # -- Core setup --
         engine = ThemeEngine.instance()

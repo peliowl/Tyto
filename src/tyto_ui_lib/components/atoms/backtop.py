@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Union
 
-from PySide6.QtCore import QPointF, QRectF, QTimer, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
@@ -65,6 +65,8 @@ class TBackTop(BaseWidget):
 
     clicked = Signal()
     visibility_changed = Signal(bool)
+    shown = Signal()
+    hidden = Signal()
 
     def __init__(
         self,
@@ -220,6 +222,7 @@ class TBackTop(BaseWidget):
         # Disconnect old target
         if self._target is not None:
             try:
+                self._target.removeEventFilter(self)
                 vbar = self._target.verticalScrollBar()
                 if vbar is not None:
                     vbar.valueChanged.disconnect(self._on_scroll_changed)
@@ -234,6 +237,9 @@ class TBackTop(BaseWidget):
         else:
             self.setParent(target)  # type: ignore[call-overload]
 
+        # Install event filter to track target resize
+        target.installEventFilter(self)
+
         # Resolve listen_to or fall back to target
         if self._listen_to is not None:
             self._resolve_and_connect_listen_to()
@@ -242,6 +248,8 @@ class TBackTop(BaseWidget):
             if vbar is not None:
                 vbar.valueChanged.connect(self._on_scroll_changed)
             self._on_scroll_changed(vbar.value() if vbar else 0)
+
+        self._update_position()
 
     def set_content(self, widget: QWidget) -> None:
         """Set custom button content, replacing the default arrow icon.
@@ -311,6 +319,12 @@ class TBackTop(BaseWidget):
 
         painter.end()
 
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
+        """Reposition the button when the target scroll area is resized."""
+        if hasattr(self, "_target") and obj is self._target and event.type() == QEvent.Type.Resize:
+            self._update_position()
+        return super().eventFilter(obj, event)
+
     def mousePressEvent(self, event: object) -> None:  # noqa: N802
         """Handle mouse press to trigger scroll-to-top."""
         self.clicked.emit()
@@ -331,6 +345,13 @@ class TBackTop(BaseWidget):
         if visible != self._is_visible_state:
             self._is_visible_state = visible
             self.visibility_changed.emit(visible)
+            self._emit_bus_event("visibility_changed", visible)
+            if visible:
+                self.shown.emit()
+                self._emit_bus_event("shown")
+            else:
+                self.hidden.emit()
+                self._emit_bus_event("hidden")
 
     def _on_scroll_changed(self, value: int) -> None:
         """React to scroll position changes."""
@@ -384,8 +405,9 @@ class TBackTop(BaseWidget):
         """Position the button relative to the target scroll area."""
         if self._target is None:
             return
-        tw = self._target.viewport().width() if self._target.viewport() else self._target.width()
-        th = self._target.viewport().height() if self._target.viewport() else self._target.height()
+        # Use the scroll area's own size (button is a child of the scroll area)
+        tw = self._target.width()
+        th = self._target.height()
         x = tw - self.width() - self._right
         y = th - self.height() - self._bottom
         self.move(max(0, x), max(0, y))
@@ -471,6 +493,7 @@ class TBackTop(BaseWidget):
         self._disconnect_listen_target()
         if self._target is not None:
             try:
+                self._target.removeEventFilter(self)
                 vbar = self._target.verticalScrollBar()
                 if vbar is not None:
                     vbar.valueChanged.disconnect(self._on_scroll_changed)

@@ -148,6 +148,8 @@ class TPopconfirm(BaseWidget):
         self._placement = placement
         self._popup: QWidget | None = None
         self._fade_anim: QPropertyAnimation | None = None
+        self._fade_anim_connected = False  # Track whether finished signal is connected
+        self._opacity_effect: QGraphicsOpacityEffect | None = None
 
         # V1.1.0 enhancement attributes
         self._show_icon = show_icon
@@ -156,6 +158,12 @@ class TPopconfirm(BaseWidget):
         self._on_positive_click = on_positive_click
         self._on_negative_click = on_negative_click
         self._custom_icon_widget: QWidget | None = None
+
+        # Cached popup internal widget references for reuse
+        self._cached_title_label: QLabel | None = None
+        self._cached_confirm_btn: TButton | None = None
+        self._cached_cancel_btn: TButton | None = None
+        self._popup_dirty = True  # Flag: rebuild popup content on next show
 
         # Validate trigger mode, fallback to CLICK
         try:
@@ -200,7 +208,11 @@ class TPopconfirm(BaseWidget):
     @title.setter
     def title(self, value: str) -> None:
         """Set the confirmation title text."""
-        self._title_text = value
+        if self._title_text != value:
+            self._title_text = value
+            # Update cached label directly if popup exists, avoid full rebuild
+            if self._cached_title_label is not None:
+                self._cached_title_label.setText(value)
 
     @property
     def confirm_text(self) -> str:
@@ -210,7 +222,10 @@ class TPopconfirm(BaseWidget):
     @confirm_text.setter
     def confirm_text(self, value: str) -> None:
         """Set the confirm button text."""
-        self._confirm_text = value
+        if self._confirm_text != value:
+            self._confirm_text = value
+            if self._cached_confirm_btn is not None:
+                self._cached_confirm_btn.set_text(value)
 
     @property
     def cancel_text(self) -> str:
@@ -220,7 +235,10 @@ class TPopconfirm(BaseWidget):
     @cancel_text.setter
     def cancel_text(self, value: str) -> None:
         """Set the cancel button text."""
-        self._cancel_text = value
+        if self._cancel_text != value:
+            self._cancel_text = value
+            if self._cached_cancel_btn is not None:
+                self._cached_cancel_btn.set_text(value)
 
     @property
     def show_icon(self) -> bool:
@@ -254,6 +272,7 @@ class TPopconfirm(BaseWidget):
     def positive_button_props(self, value: dict[str, Any]) -> None:
         """Set the confirm button custom props."""
         self._positive_button_props = value
+        self._popup_dirty = True
 
     @property
     def negative_button_props(self) -> dict[str, Any]:
@@ -264,6 +283,7 @@ class TPopconfirm(BaseWidget):
     def negative_button_props(self, value: dict[str, Any]) -> None:
         """Set the cancel button custom props."""
         self._negative_button_props = value
+        self._popup_dirty = True
 
     @property
     def on_positive_click(self) -> Callable[[], None] | None:
@@ -335,12 +355,35 @@ class TPopconfirm(BaseWidget):
         self._negative_button_props = props
 
     def show_popup(self) -> None:
-        """Show the confirmation popup near the trigger element."""
+        """Show the confirmation popup near the trigger element.
+
+        Reuses a cached popup widget when possible to avoid the overhead
+        of rebuilding the entire widget tree on every click.  The popup
+        is only rebuilt when properties that affect the button layout
+        (positive/negative_button_props) have changed.
+        """
         if self._trigger is None:
             return
 
-        self.hide_popup()
-        self._popup = self._build_popup()
+        # If popup is already visible, toggle it off
+        if self._popup is not None and self._popup.isVisible():
+            self.hide_popup()
+            return
+
+        # Build or reuse the cached popup
+        if self._popup is None or self._popup_dirty:
+            self._destroy_popup()
+            self._popup = self._build_popup()
+            self._popup_dirty = False
+        else:
+            # Reuse cached popup — just sync text properties
+            if self._cached_title_label is not None:
+                self._cached_title_label.setText(self._title_text)
+            if self._cached_confirm_btn is not None:
+                self._cached_confirm_btn.set_text(self._confirm_text)
+            if self._cached_cancel_btn is not None:
+                self._cached_cancel_btn.set_text(self._cancel_text)
+
         self._popup.show()
         self._popup.raise_()
         self._position_popup()
@@ -355,18 +398,31 @@ class TPopconfirm(BaseWidget):
         self._reposition_timer.start()
 
     def hide_popup(self) -> None:
-        """Hide and destroy the confirmation popup."""
+        """Hide the confirmation popup (keeps it cached for reuse)."""
+        if hasattr(self, "_reposition_timer"):
+            self._reposition_timer.stop()
+        if self._popup is not None:
+            self._popup.hide()
+
+    def _destroy_popup(self) -> None:
+        """Destroy the cached popup and release all references."""
         if hasattr(self, "_reposition_timer"):
             self._reposition_timer.stop()
         if self._popup is not None:
             self._popup.hide()
             self._popup.deleteLater()
             self._popup = None
+        self._cached_title_label = None
+        self._cached_confirm_btn = None
+        self._cached_cancel_btn = None
+        self._opacity_effect = None
+        self._fade_anim = None
+        self._fade_anim_connected = False
 
     # -- Theme --
 
     def apply_theme(self) -> None:
-        """Apply the current theme's QSS to this popconfirm."""
+        """Apply the current theme's QSS to this popconfirm and cached popup."""
         engine = ThemeEngine.instance()
         if not engine.current_theme():
             return
@@ -375,6 +431,8 @@ class TPopconfirm(BaseWidget):
             self.setStyleSheet(qss)
             if self._popup is not None:
                 self._popup.setStyleSheet(qss)
+                # Force container repaint for theme-aware background
+                self._popup.update()
         except Exception:
             pass
 
@@ -487,13 +545,17 @@ class TPopconfirm(BaseWidget):
         app = QApplication.instance()
         if app is not None:
             app.removeEventFilter(self)
-        self.hide_popup()
+        self._destroy_popup()
         super().cleanup()
 
     # -- Private helpers --
 
     def _build_popup(self) -> QWidget:
-        """Construct the popup widget with icon, title, and buttons."""
+        """Construct the popup widget with icon, title, and buttons.
+
+        Stores references to the title label and buttons so that
+        subsequent show_popup() calls can update text without rebuilding.
+        """
         popup = QWidget(
             self.window(),
             Qt.WindowType.Tool
@@ -510,7 +572,7 @@ class TPopconfirm(BaseWidget):
         container = _PopconfirmContainer(popup)
         container.setObjectName("popconfirm_container")
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(12, 8, 12, 12)
+        container_layout.setContentsMargins(12, 8, 12, 14)
         container_layout.setSpacing(8)
 
         # Row 1: icon + title
@@ -534,6 +596,7 @@ class TPopconfirm(BaseWidget):
         title_label.setObjectName("popconfirm_title")
         title_label.setWordWrap(True)
         header.addWidget(title_label, 1)
+        self._cached_title_label = title_label
 
         container_layout.addLayout(header)
 
@@ -555,6 +618,7 @@ class TPopconfirm(BaseWidget):
         cancel_btn = TButton(**cancel_kwargs)
         cancel_btn.clicked.connect(self._on_cancel)
         btn_layout.addWidget(cancel_btn)
+        self._cached_cancel_btn = cancel_btn
 
         confirm_kwargs: dict[str, Any] = {
             "text": self._confirm_text,
@@ -566,6 +630,7 @@ class TPopconfirm(BaseWidget):
         confirm_btn = TButton(**confirm_kwargs)
         confirm_btn.clicked.connect(self._on_confirm)
         btn_layout.addWidget(confirm_btn)
+        self._cached_confirm_btn = confirm_btn
 
         container_layout.addWidget(btn_row)
         root.addWidget(container)
@@ -577,6 +642,11 @@ class TPopconfirm(BaseWidget):
                 popup.setStyleSheet(qss)
             except Exception:
                 pass
+
+        # Pre-create the opacity effect and animation for reuse
+        self._opacity_effect = QGraphicsOpacityEffect(popup)
+        popup.setGraphicsEffect(self._opacity_effect)
+        self._fade_anim = QPropertyAnimation(self._opacity_effect, b"opacity", self)
 
         popup.adjustSize()
         return popup
@@ -617,30 +687,41 @@ class TPopconfirm(BaseWidget):
         self._position_popup()
 
     def _fade_in(self) -> None:
-        """Animate popup fade-in over 150ms."""
-        if self._popup is None:
+        """Animate popup fade-in over 150ms, reusing cached effect."""
+        if self._popup is None or self._opacity_effect is None:
             return
-        effect = QGraphicsOpacityEffect(self._popup)
-        self._popup.setGraphicsEffect(effect)
 
-        self._fade_anim = QPropertyAnimation(effect, b"opacity", self)
+        # Stop any running animation before starting a new one
+        if self._fade_anim is not None:
+            self._fade_anim.stop()
+            if self._fade_anim_connected:
+                self._fade_anim.finished.disconnect()
+                self._fade_anim_connected = False
+
+        self._fade_anim = QPropertyAnimation(self._opacity_effect, b"opacity", self)
         self._fade_anim.setDuration(150)
         self._fade_anim.setStartValue(0.0)
         self._fade_anim.setEndValue(1.0)
         self._fade_anim.start()
 
     def _fade_out(self) -> None:
-        """Animate popup fade-out over 150ms, then destroy."""
-        if self._popup is None:
+        """Animate popup fade-out over 150ms, then hide."""
+        if self._popup is None or self._opacity_effect is None:
             return
-        effect = QGraphicsOpacityEffect(self._popup)
-        self._popup.setGraphicsEffect(effect)
 
-        self._fade_anim = QPropertyAnimation(effect, b"opacity", self)
+        # Stop any running animation before starting a new one
+        if self._fade_anim is not None:
+            self._fade_anim.stop()
+            if self._fade_anim_connected:
+                self._fade_anim.finished.disconnect()
+                self._fade_anim_connected = False
+
+        self._fade_anim = QPropertyAnimation(self._opacity_effect, b"opacity", self)
         self._fade_anim.setDuration(150)
         self._fade_anim.setStartValue(1.0)
         self._fade_anim.setEndValue(0.0)
         self._fade_anim.finished.connect(self.hide_popup)
+        self._fade_anim_connected = True
         self._fade_anim.start()
 
     def _on_confirm(self) -> None:
@@ -649,6 +730,7 @@ class TPopconfirm(BaseWidget):
         if self._on_positive_click is not None:
             self._on_positive_click()
         self.confirmed.emit()
+        self._emit_bus_event("confirmed")
 
     def _on_cancel(self) -> None:
         """Handle cancel button click."""
@@ -656,6 +738,7 @@ class TPopconfirm(BaseWidget):
         if self._on_negative_click is not None:
             self._on_negative_click()
         self.cancelled.emit()
+        self._emit_bus_event("cancelled")
 
     def _is_child_of_popup(self, obj: Any) -> bool:
         """Check if obj is a descendant of the popup widget.

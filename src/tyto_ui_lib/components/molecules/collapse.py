@@ -357,7 +357,12 @@ class TCollapseItem(BaseWidget):
                 click_pos = event.pos() - header_rect.topLeft()
                 area = self._hit_test_area(click_pos)
                 if self._parent_collapse is not None:
-                    self._parent_collapse.item_header_clicked.emit(self._item_name)
+                    self._parent_collapse.item_header_clicked.emit(
+                        self._item_name, self._expanded, event
+                    )
+                    self._parent_collapse._emit_bus_event(
+                        "item_header_clicked", self._item_name, self._expanded, event
+                    )
                 if area in self._trigger_areas:
                     self.toggle()
                 return
@@ -507,7 +512,8 @@ class TCollapse(BaseWidget):
     """
 
     item_expanded = Signal(str, bool)
-    item_header_clicked = Signal(str)
+    item_header_clicked = Signal(str, bool, object)
+    expanded_names_changed = Signal(list)
 
     def __init__(
         self,
@@ -639,3 +645,6 @@ class TCollapse(BaseWidget):
                 if other is not item and other.expanded:
                     other.set_expanded(False)
         self.item_expanded.emit(item.item_name, expanded)
+        self._emit_bus_event("item_expanded", item.item_name, expanded)
+        self.expanded_names_changed.emit(self.get_expanded_names())
+        self._emit_bus_event("expanded_names_changed", self.get_expanded_names())

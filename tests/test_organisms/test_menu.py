@@ -143,7 +143,9 @@ class TestTMenu:
         menu.add_item(item)
         with qtbot.waitSignal(menu.item_selected, timeout=1000) as blocker:
             item.mousePressEvent(_make_click())
-        assert blocker.args == ["x"]
+        assert blocker.args[0] == "x"
+        assert blocker.args[1].key == "x"
+        assert blocker.args[1].label == "X"
 
     def test_disabled_blocks_signal(self, qapp: QApplication) -> None:
         menu = TMenu(disabled=True)
@@ -194,7 +196,9 @@ class TestTMenu:
         menu.add_item(group)
         with qtbot.waitSignal(menu.item_selected, timeout=1000) as blocker:
             child.mousePressEvent(_make_click())
-        assert blocker.args == ["child"]
+        assert blocker.args[0] == "child"
+        assert blocker.args[1].key == "child"
+        assert blocker.args[1].label == "Child"
 
 
 class TestPopupEventFilter:

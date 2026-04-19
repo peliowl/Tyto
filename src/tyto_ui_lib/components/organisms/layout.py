@@ -17,6 +17,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
     QHBoxLayout,
     QSizePolicy,
     QVBoxLayout,
@@ -314,6 +315,9 @@ class TLayoutSider(BaseWidget):
     """
 
     collapsed_changed = Signal(bool)
+    after_enter = Signal()
+    after_leave = Signal()
+    scrolled = Signal(object)
 
     _ANIMATION_DURATION = 200  # ms
 
@@ -387,6 +391,7 @@ class TLayoutSider(BaseWidget):
         self._collapsed = collapsed
         self._apply_width(animate=animate)
         self.collapsed_changed.emit(self._collapsed)
+        self._emit_bus_event("collapsed_changed", self._collapsed)
 
     def toggle_collapsed(self) -> None:
         """Toggle between collapsed and expanded states with animation."""
@@ -431,6 +436,7 @@ class TLayoutSider(BaseWidget):
             if item.widget():
                 item.widget().setParent(None)
         self._content_layout.addWidget(widget)
+        self._connect_scroll(widget)
 
     # -- Theme --
 
@@ -503,8 +509,45 @@ class TLayoutSider(BaseWidget):
         self._anim_max.setEndValue(target)
         self._anim_max.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
+        # Emit after_enter/after_leave when animation finishes
+        is_collapsing = self._collapsed
+        self._anim.finished.connect(
+            lambda: self._on_width_anim_finished(is_collapsing)
+        )
+
         self._anim.start()
         self._anim_max.start()
+
+    def _on_width_anim_finished(self, was_collapsing: bool) -> None:
+        """Handle width animation completion to emit after_enter/after_leave."""
+        if was_collapsing:
+            self.after_leave.emit()
+            self._emit_bus_event("after_leave")
+        else:
+            self.after_enter.emit()
+            self._emit_bus_event("after_enter")
+
+    def _connect_scroll(self, widget: QWidget) -> None:
+        """Detect QScrollArea inside the content widget and monitor its vertical scrollbar.
+
+        Args:
+            widget: The content widget to scan for scroll areas.
+        """
+        if isinstance(widget, QAbstractScrollArea):
+            scroll_area = widget
+        else:
+            scroll_area = widget.findChild(QAbstractScrollArea)
+        if scroll_area is not None:
+            scroll_area.verticalScrollBar().valueChanged.connect(self._on_scrolled)
+
+    def _on_scrolled(self, value: int) -> None:
+        """Handle sider scroll events.
+
+        Args:
+            value: Current vertical scrollbar position.
+        """
+        self.scrolled.emit(value)
+        self._emit_bus_event("scrolled", value)
 
 
 class TLayout(BaseWidget):
@@ -534,6 +577,8 @@ class TLayout(BaseWidget):
         >>> layout.add_content(TLayoutContent())
         >>> layout.add_footer(TLayoutFooter())
     """
+
+    scrolled = Signal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -585,6 +630,7 @@ class TLayout(BaseWidget):
             content: The content widget.
         """
         self._content = content
+        self._connect_content_scroll(content)
         self._rebuild_layout()
 
     @property
@@ -631,6 +677,25 @@ class TLayout(BaseWidget):
             self._sider.check_breakpoint(self.width())
 
     # -- Private --
+
+    def _connect_content_scroll(self, content: TLayoutContent) -> None:
+        """Detect QScrollArea inside TLayoutContent and monitor its vertical scrollbar.
+
+        Args:
+            content: The content widget to scan for scroll areas.
+        """
+        scroll_area = content.findChild(QAbstractScrollArea)
+        if scroll_area is not None:
+            scroll_area.verticalScrollBar().valueChanged.connect(self._on_content_scrolled)
+
+    def _on_content_scrolled(self, value: int) -> None:
+        """Handle content area scroll events.
+
+        Args:
+            value: Current vertical scrollbar position.
+        """
+        self.scrolled.emit(value)
+        self._emit_bus_event("scrolled", value)
 
     def _rebuild_layout(self) -> None:
         """Rebuild the internal layout hierarchy from current children.

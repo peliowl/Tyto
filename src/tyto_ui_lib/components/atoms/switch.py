@@ -459,6 +459,7 @@ class TSwitch(
         self.style().unpolish(self)
         self.style().polish(self)
         self.toggled.emit(checked)
+        self._emit_bus_event("toggled", checked)
 
     def toggle(self) -> None:
         """Toggle the switch to the opposite state."""
@@ -531,3 +532,14 @@ class TSwitch(
         """Provide a reasonable default size based on current size variant."""
         dims = _get_switch_dims(self._size.value)
         return QSize(dims["width"] + 8, dims["height"] + 8)
+
+    def focusInEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-in event to the global EventBus."""
+        super().focusInEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_in", event)
+
+    def focusOutEvent(self, event: object) -> None:  # noqa: N802
+        """Forward focus-out event to the global EventBus."""
+        super().focusOutEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("focus_out", event)
+

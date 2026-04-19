@@ -30,7 +30,7 @@ from tyto_ui_lib.core.theme_engine import ThemeEngine
 class _MaskWidget(QWidget):
     """Semi-transparent overlay that captures clicks outside the dialog."""
 
-    mask_clicked = Signal()
+    mask_clicked = Signal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -38,7 +38,7 @@ class _MaskWidget(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Emit mask_clicked when the mask area is pressed."""
-        self.mask_clicked.emit()
+        self.mask_clicked.emit(event)
         event.accept()
 
 
@@ -65,12 +65,20 @@ class TModal(BaseWidget):
     """
 
     closed = Signal()
+    esc_pressed = Signal()
+    mask_clicked = Signal(object)
+    after_enter = Signal()
+    before_leave = Signal()
+    after_leave = Signal()
+    positive_clicked = Signal()
+    negative_clicked = Signal()
 
     def __init__(
         self,
         title: str = "",
         closable: bool = True,
         mask_closable: bool = True,
+        on_close: object = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -78,6 +86,7 @@ class TModal(BaseWidget):
         self._title_text = title
         self._closable = closable
         self._mask_closable = mask_closable
+        self._on_close = on_close
 
         # Full-screen overlay
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -91,7 +100,7 @@ class TModal(BaseWidget):
 
         # Mask background
         self._mask = _MaskWidget(self)
-        self._mask.mask_clicked.connect(self._on_mask_clicked)
+        self._mask.mask_clicked.connect(self._on_mask_clicked_with_event)
         root_layout.addWidget(self._mask)
 
         # Mask layout centres the dialog
@@ -190,6 +199,39 @@ class TModal(BaseWidget):
         self._footer_layout.addWidget(widget)
         self._footer.setVisible(True)
 
+    def set_dialog_footer(
+        self,
+        positive_text: str = "OK",
+        negative_text: str = "Cancel",
+    ) -> None:
+        """Set up a dialog-style footer with confirm and cancel buttons.
+
+        Creates two buttons in the footer area and connects them to
+        ``positive_clicked`` / ``negative_clicked`` signals.
+
+        Args:
+            positive_text: Label for the confirm button.
+            negative_text: Label for the cancel button.
+        """
+        footer_widget = QWidget()
+        footer_layout = QHBoxLayout(footer_widget)
+        footer_layout.setContentsMargins(0, 0, 0, 0)
+        footer_layout.addStretch()
+
+        cancel_btn = QPushButton(negative_text)
+        cancel_btn.setObjectName("modal_negative_btn")
+        cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        cancel_btn.clicked.connect(self._on_negative_button_clicked)
+        footer_layout.addWidget(cancel_btn)
+
+        confirm_btn = QPushButton(positive_text)
+        confirm_btn.setObjectName("modal_positive_btn")
+        confirm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        confirm_btn.clicked.connect(self._on_positive_button_clicked)
+        footer_layout.addWidget(confirm_btn)
+
+        self.set_footer(footer_widget)
+
     def open(self) -> None:
         """Show the modal with a scale-in animation."""
         # Resize to parent or screen
@@ -207,10 +249,28 @@ class TModal(BaseWidget):
         anim.setStartValue(QSize(int(target_size.width() * 0.8), int(target_size.height() * 0.8)))
         anim.setEndValue(target_size)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        anim.finished.connect(self._on_open_finished)
         anim.start()
 
+    def _on_open_finished(self) -> None:
+        """Handle open animation completion."""
+        self.after_enter.emit()
+        self._emit_bus_event("after_enter")
+
     def close(self) -> None:
-        """Close the modal with animation and emit ``closed``."""
+        """Close the modal with animation and emit ``closed``.
+
+        If an ``on_close`` callback is set and returns False, the close
+        is cancelled.
+        """
+        if self._on_close is not None and callable(self._on_close):
+            result = self._on_close()
+            if result is False:
+                return
+
+        self.before_leave.emit()
+        self._emit_bus_event("before_leave")
+
         anim = QPropertyAnimation(self._dialog, b"size", self)
         target_size = self._dialog.size()
         anim.setDuration(150)
@@ -240,7 +300,49 @@ class TModal(BaseWidget):
         if self._closable and self._mask_closable:
             self.close()
 
+    def _on_mask_clicked_with_event(self, event: object) -> None:
+        """Handle mask click with event: emit mask_clicked and close."""
+        self.mask_clicked.emit(event)
+        self._emit_bus_event("mask_clicked", event)
+        self._on_mask_clicked()
+
+    def _on_positive_button_clicked(self) -> None:
+        """Handle confirm button click in dialog mode."""
+        self.positive_clicked.emit()
+        self._emit_bus_event("positive_clicked")
+
+    def _on_negative_button_clicked(self) -> None:
+        """Handle cancel button click in dialog mode."""
+        self.negative_clicked.emit()
+        self._emit_bus_event("negative_clicked")
+        self.close()
+
     def _on_close_finished(self) -> None:
         """Handle close animation completion."""
         self.hide()
         self.closed.emit()
+        self._emit_bus_event("closed")
+        self.after_leave.emit()
+        self._emit_bus_event("after_leave")
+
+    def keyPressEvent(self, event: object) -> None:  # noqa: N802
+        """Detect Esc key press and emit esc_pressed signal."""
+        from PySide6.QtGui import QKeyEvent
+
+        if isinstance(event, QKeyEvent) and event.key() == Qt.Key.Key_Escape:
+            self.esc_pressed.emit()
+            self._emit_bus_event("esc_pressed")
+            if self._closable:
+                self.close()
+            return
+        super().keyPressEvent(event)  # type: ignore[arg-type]
+
+    def showEvent(self, event: object) -> None:  # noqa: N802
+        """Forward show event to the global EventBus."""
+        super().showEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("show", event)
+
+    def hideEvent(self, event: object) -> None:  # noqa: N802
+        """Forward hide event to the global EventBus."""
+        super().hideEvent(event)  # type: ignore[arg-type]
+        self._emit_bus_event("hide", event)

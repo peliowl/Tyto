@@ -58,6 +58,13 @@ class GalleryStyles:
             f"  background-color: {tk['bg_elevated']};"
             f"  border-right: 1px solid {tk['border']};"
             f"}}"
+            f"QScrollArea#nav_scroll_area {{"
+            f"  background-color: {tk['bg_elevated']};"
+            f"  border: none;"
+            f"}}"
+            f"QWidget#nav_scroll_content {{"
+            f"  background-color: {tk['bg_elevated']};"
+            f"}}"
             f"QPushButton.nav_item {{"
             f"  text-align: left;"
             f"  border: none;"
@@ -140,6 +147,9 @@ class GalleryStyles:
             f"}}"
             f"QScrollArea > QWidget > QWidget {{"
             f"  background-color: {tk['bg_default']};"
+            f"}}"
+            f"QScrollArea QLabel {{"
+            f"  color: {tk['text_primary']};"
             f"}}"
         )
 

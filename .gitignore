@@ -41,3 +41,6 @@ uv.lock
 
 # Project-specific: reference images (large binary files)
 docs/image/reference/
+
+# Temporary test output
+test_output.txt
